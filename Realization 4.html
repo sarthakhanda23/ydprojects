@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOGIJI DIGI Streamliner | Enterprise OS</title>
+    <style>
+        /* =========================================
+           1. CORE VARIABLES & THEME ENGINE
+           ========================================= */
+        :root {
+            /* Palette - The "YOGIJI DIGI" Slate & Blue Theme */
+            --bg-body: #f1f5f9;
+            --bg-sidebar: #0f172a;
+            --bg-header: rgba(255, 255, 255, 0.9);
+            --bg-card: #ffffff;
+            
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --text-inverse: #f8fafc;
+            
+            --primary: #2563eb;       /* Enterprise Blue */
+            --primary-hover: #1d4ed8;
+            --secondary: #475569;
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+
+            --border: #e2e8f0;
+            --border-sidebar: #1e293b;
+
+            /* Dimensions */
+            --sidebar-width: 260px;
+            --header-height: 64px;
+            --border-radius: 8px;
+            
+            /* Animation Speeds */
+            --trans-speed: 0.25s;
+        }
+
+        /* Executive Demo Mode - Slower, Flashier Animations */
+        body.demo-mode { --trans-speed: 0.8s; }
+        body.demo-mode .kpi-card { animation: pulse-border 3s infinite; }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0px rgba(37, 99, 235, 0.1); }
+            50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.15); }
+            100% { box-shadow: 0 0 0 0px rgba(37, 99, 235, 0); }
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        /* =========================================
+           2. LAYOUT STRUCTURE
+           ========================================= */
+        #app-root { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+
+        /* Login Overlay */
+        #login-view {
+            position: fixed; inset: 0; background: #f8fafc; 
+            display: flex; align-items: center; justify-content: center; 
+            z-index: 9999;
+        }
+        .login-card {
+            background: white; width: 400px; padding: 40px;
+            border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            color: var(--text-inverse);
+            display: flex; flex-direction: column;
+            border-right: 1px solid var(--border-sidebar);
+            flex-shrink: 0; z-index: 50;
+            transition: width var(--trans-speed);
+        }
+        .brand {
+            height: var(--header-height); display: flex; align-items: center;
+            padding: 0 24px; font-weight: 700; font-size: 18px; letter-spacing: -0.5px;
+            border-bottom: 1px solid var(--border-sidebar);
+            gap: 12px;
+        }
+        .nav-section { margin-top: 24px; }
+        .nav-label {
+            text-transform: uppercase; font-size: 11px; font-weight: 600;
+            color: #64748b; padding: 0 24px; margin-bottom: 8px;
+        }
+        .nav-item {
+            display: flex; align-items: center; padding: 12px 24px;
+            cursor: pointer; transition: all var(--trans-speed);
+            color: #94a3b8; border-left: 3px solid transparent;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-item.active {
+            background: rgba(37, 99, 235, 0.1); color: white;
+            border-left-color: var(--primary);
+        }
+        .nav-item svg { width: 18px; height: 18px; margin-right: 12px; }
+
+        /* Main Content */
+        #main-wrapper { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
+        #header {
+            height: var(--header-height);
+            background: var(--bg-header);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 32px; flex-shrink: 0;
+        }
+        
+        #content-canvas { flex: 1; overflow-y: auto; padding: 32px; position: relative; }
+
+        /* =========================================
+           3. UI COMPONENTS
+           ========================================= */
+        /* Cards */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 24px; margin-bottom: 24px;
+            transition: transform var(--trans-speed), box-shadow var(--trans-speed);
+        }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-size: 16px; font-weight: 700; margin: 0; }
+
+        /* Grid Systems */
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px; }
+
+        /* KPIs */
+        .kpi-card { display: flex; flex-direction: column; }
+        .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        .kpi-value { font-size: 28px; font-weight: 700; margin: 8px 0; color: var(--text-main); }
+        .kpi-trend { font-size: 12px; display: flex; align-items: center; gap: 4px; font-weight: 500; }
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        tr:hover td { background-color: #f8fafc; cursor: pointer; }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #e0f2fe; color: #075985; }
+        .badge-neutral { background: #f1f5f9; color: #475569; }
+
+        /* Buttons & Inputs */
+        .btn {
+            padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 13px;
+            cursor: pointer; border: 1px solid transparent; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3); }
+        .btn-outline { background: white; border-color: var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        .input-group { margin-bottom: 16px; text-align: left; }
+        .input-label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 6px; color: var(--text-muted); }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; transition: 0.2s; }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+        /* Toggle Demo */
+        .toggle-demo {
+            display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;
+            background: #eff6ff; color: var(--primary); padding: 6px 12px; border-radius: 20px;
+            cursor: pointer; border: 1px solid #bfdbfe;
+        }
+        .toggle-demo.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Gantt Specifics (From Streamliner) */
+        .gantt-container { border: 1px solid var(--border); background: white; border-radius: 6px; display: flex; flex-direction: column; height: 500px; overflow: hidden; }
+        .gantt-header { padding: 12px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+        .gantt-body { display: flex; flex: 1; overflow: hidden; }
+        .gantt-sidebar { width: 220px; border-right: 1px solid var(--border); background: white; z-index: 2; overflow-y: hidden; }
+        .gantt-row-label { height: 40px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; padding-left: 16px; font-size: 12px; font-weight: 500; }
+        .gantt-timeline { flex: 1; overflow: auto; position: relative; background: white; cursor: grab; }
+        .gantt-timeline:active { cursor: grabbing; }
+        .gantt-bar { rx: 4; cursor: pointer; transition: filter 0.2s; }
+        .gantt-bar:hover { filter: brightness(0.9); }
+        .gantt-connector { stroke: #cbd5e1; stroke-width: 1.5; fill: none; }
+
+        /* Chart SVG */
+        .chart-svg { width: 100%; height: 100%; display: block; }
+
+        /* Modals & Toasts */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px);
+            z-index: 2000; display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.open { display: flex; opacity: 1; }
+        .modal-window {
+            background: white; width: 500px; border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            transform: scale(0.95); transition: transform 0.3s;
+        }
+        .modal-overlay.open .modal-window { transform: scale(1); }
+        
+        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: #1e293b; color: white; padding: 12px 20px; border-radius: 6px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-size: 13px;
+            animation: slideIn 0.3s ease-out; min-width: 250px; display: flex; align-items: center; gap: 10px;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+        .loader { width: 20px; height: 20px; border: 2px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="login-view">
+        <div class="login-card">
+            <div class="flex-center" style="margin-bottom: 24px;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <h2 style="margin: 0 0 8px 0;">YOGIJI DIGI</h2>
+            <p style="color:var(--text-muted); margin: 0 0 24px 0;">Enterprise Project OS</p>
+            
+            <div class="input-group">
+                <label class="input-label">Email Address</label>
+                <input type="email" class="form-control" id="login-email" value="sarthak.handa@ydgroup.com">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" class="form-control" value="password">
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="App.Auth.login()">
+                Secure Login
+            </button>
+            <div style="margin-top: 16px; font-size: 11px; color: var(--text-muted);">
+                v3.0.0-ENT | Local Encrypted Storage
+            </div>
+        </div>
+    </div>
+
+    <div id="app-root" class="hidden">
+        
+        <nav id="sidebar">
+            <div class="brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                YOGIJI DIGI
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-label">Workspace</div>
+                <div class="nav-item active" data-view="dashboard" onclick="App.Router.go('dashboard')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Executive Dashboard1
+                </div>
+                <div class="nav-item" data-view="projects" onclick="App.Router.go('projects')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    Project Registry
+                </div>
+                <div class="nav-item" data-view="gantt" onclick="App.Router.go('gantt')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"></path></svg>
+                    Master Schedule
+                </div>
+                <div class="nav-item" data-view="financials2" onclick="App.Router.go('financials2')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    Financials2
+                </div>
+            </div>
+
+            <div style="margin-top: auto; padding: 24px; border-top: 1px solid var(--border-sidebar);">
+                <div class="flex-center" style="justify-content: flex-start; gap: 12px; margin-bottom: 16px;">
+                    <div style="width: 32px; height: 32px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">JD</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 13px;">Sarthak Handa</div>
+                        <div style="font-size: 11px; color: var(--text-muted); opacity: 0.7;">Program Director</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline btn-sm" style="width: 100%; background: transparent; color: #94a3b8; border-color: #334155;" onclick="App.Auth.logout()">Sign Out</button>
+            </div>
+        </nav>
+
+        <div id="main-wrapper">
+            <header id="header">
+                <div style="font-size: 14px; color: var(--text-muted);">
+                    YOGIJI DIGI OS / <span id="breadcrumb-active" style="color: var(--text-main); font-weight: 600;">Dashboard</span>
+                </div>
+                
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <div class="toggle-demo" id="demo-toggle" onclick="App.UI.toggleDemo()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Demo Mode
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="App.UI.Modal.open('project-modal')">+ New Project</button>
+                    <button class="btn btn-outline btn-sm" onclick="App.Store.reset()">Reset Data</button>
+                </div>
+            </header>
+
+            <div id="content-canvas">
+                </div>
+        </div>
+    </div>
+
+    <div id="project-modal" class="modal-overlay">
+        <div class="modal-window">
+            <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
+                <h3 style="margin:0;">New Project Initiative</h3>
+                <button class="btn btn-sm btn-outline" onclick="App.UI.Modal.close('project-modal')">✕</button>
+            </div>
+            <div style="padding: 24px;">
+                <div class="input-group">
+                    <label class="input-label">Project Name</label>
+                    <input type="text" id="np-name" class="form-control" placeholder="e.g. Q3 Cloud Migration">
+                </div>
+                <div class="grid-2" style="margin-bottom: 0;">
+                    <div class="input-group">
+                        <label class="input-label">Budget ($)</label>
+                        <input type="number" id="np-budget" class="form-control" value="50000">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Duration (Days)</label>
+                        <input type="number" id="np-dur" class="form-control" value="30">
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 20px; background: #f8fafc; border-top: 1px solid var(--border); text-align: right; border-radius: 0 0 12px 12px;">
+                <button class="btn btn-outline" onclick="App.UI.Modal.close('project-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="App.Actions.createProject()">Initialize Project</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+    /**
+     * YOGIJI DIGI STREAMLINER CORE
+     * A unified logic engine combining Streamliner's Data Store with YOGIJI DIGI's UI Rendering
+     */
+
+    const App = {
+        // --- 1. DATA STORE (LocalStorage Persistance) ---
+        Store: {
+            DB_KEY: 'APEX_DB_V1',
+            state: null,
+
+            init() {
+                const raw = localStorage.getItem(this.DB_KEY);
+                if (!raw) {
+                    this.seed();
+                } else {
+                    this.state = JSON.parse(raw);
+                }
+            },
+
+            seed() {
+                // High Fidelity Mock Data
+                const projects = [
+                    { id: 'p1', name: 'Global ERP Migration', status: 'In Progress', budget: 1200000, actual: 450000, start: '2025-01-10', duration: 120, progress: 35 },
+                    { id: 'p2', name: 'AI Analytics Pilot', status: 'At Risk', budget: 500000, actual: 380000, start: '2025-02-01', duration: 90, progress: 65 },
+                    { id: 'p3', name: 'Infrastructure Refresh', status: 'On Track', budget: 250000, actual: 50000, start: '2025-03-15', duration: 60, progress: 15 },
+                    { id: 'p4', name: 'Q3 Marketing Launch', status: 'Planned', budget: 150000, actual: 0, start: '2025-05-01', duration: 45, progress: 0 }
+                ];
+                
+                // Auto-generate tasks for Gantt
+                const tasks = [];
+                projects.forEach(p => {
+                    const phases = ['Discovery', 'Planning', 'Execution', 'UAT', 'Deployment'];
+                    let currentDay = 0;
+                    const phaseLen = Math.floor(p.duration / 5);
+                    
+                    phases.forEach((ph, i) => {
+                        tasks.push({
+                            id: `t-${p.id}-${i}`,
+                            projectId: p.id,
+                            name: `${p.name} - ${ph}`,
+                            startOffset: currentDay,
+                            duration: phaseLen,
+                            progress: p.progress > (i+1)*20 ? 100 : (p.progress > i*20 ? (p.progress%20)*5 : 0),
+                            status: p.status
+                        });
+                        currentDay += phaseLen;
+                    });
+                });
+
+                this.state = { projects, tasks, user: { name: 'Sarthak Handa', role: 'Director' } };
+                this.save();
+            },
+
+            save() {
+                localStorage.setItem(this.DB_KEY, JSON.stringify(this.state));
+            },
+
+            reset() {
+                if(confirm("Reset entire database to factory settings?")) {
+                    this.seed();
+                    location.reload();
+                }
+            },
+
+            addProject(proj) {
+                this.state.projects.push(proj);
+                this.save();
+            }
+        },
+
+        // --- 2. ROUTER & NAVIGATION ---
+        Router: {
+            current: 'dashboard',
+            go(view) {
+                this.current = view;
+                // Update UI Nav
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                const link = document.querySelector(`.nav-item[data-view="${view}"]`);
+                if(link) link.classList.add('active');
+                
+                // Update Breadcrumb
+                document.getElementById('breadcrumb-active').innerText = view.charAt(0).toUpperCase() + view.slice(1);
+                
+                // Render View
+                App.UI.showLoader(true);
+                setTimeout(() => {
+                    App.Views.render(view);
+                    App.UI.showLoader(false);
+                }, 150); // Slight artificial delay for smoothness
+            }
+        },
+
+        // --- 3. AUTHENTICATION ---
+        Auth: {
+            login() {
+                const btn = document.querySelector('#login-view .btn');
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<div class="loader"></div>';
+                
+                setTimeout(() => {
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('app-root').classList.remove('hidden');
+                    App.Store.init();
+                    App.Router.go('dashboard');
+                    App.UI.Toast.show('Welcome back, Executive', 'success');
+                }, 800);
+            },
+            logout() {
+                location.reload();
+            }
+        },
+
+        // --- 4. VIEWS (THE RENDERERS) ---
+        Views: {
+            render(viewName) {
+                const canvas = document.getElementById('content-canvas');
+                canvas.innerHTML = ''; // Clear
+
+                if (viewName === 'dashboard') this.dashboard(canvas);
+                else if (viewName === 'projects') this.projects(canvas);
+                else if (viewName === 'gantt') this.gantt(canvas);
+                else if (viewName === 'financials2') this.financials2(canvas);
+            },
+
+            dashboard(el) {
+                const s = App.Store.state;
+                const totalBudget = s.projects.reduce((a,b) => a + b.budget, 0);
+                const totalActual = s.projects.reduce((a,b) => a + b.actual, 0);
+                const atRisk = s.projects.filter(p => p.status === 'At Risk').length;
+                
+                const fmt = n => '$' + (n/1000).toFixed(1) + 'k';
+
+                el.innerHTML = `
+                    <div class="grid-4">
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Portfolio Value</span>
+                            <span class="kpi-value">${fmt(totalBudget)}</span>
+                            <span class="kpi-trend trend-up">▲ 12% YoY</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Burn Rate</span>
+                            <span class="kpi-value">${Math.round((totalActual/totalBudget)*100)}%</span>
+                            <span class="kpi-trend ${totalActual > totalBudget ? 'trend-down' : 'trend-up'}">of Budget</span>
+                        </div>
+                        <div class="card kpi-card" style="border-left: 4px solid var(--danger);">
+                            <span class="kpi-label">Critical Projects</span>
+                            <span class="kpi-value" style="color:var(--danger)">${atRisk}</span>
+                            <span class="kpi-trend">Requires Intervention</span>
+                        </div>
+                         <div class="card kpi-card">
+                            <span class="kpi-label">Active Initiatives</span>
+                            <span class="kpi-value">${s.projects.length}</span>
+                            <span class="kpi-trend">Global Scope</span>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card" style="height: 350px;">
+                            <div class="card-header"><h3 class="card-title">Portfolio Health (Donut)</h3></div>
+                            <div id="chart-donut" style="height: 250px;"></div>
+                        </div>
+                        <div class="card" style="height: 350px;">
+                            <div class="card-header"><h3 class="card-title">Buffer Consumption (Fever Chart)</h3></div>
+                            <div id="chart-fever" style="height: 250px; display:flex; justify-content:center;"></div>
+                        </div>
+                    </div>
+                `;
+
+                // Render Charts
+                App.Charts.drawDonut('chart-donut', [
+                    { label: 'On Track', value: s.projects.filter(p=>p.status==='On Track').length, color: '#10b981' },
+                    { label: 'At Risk', value: atRisk, color: '#ef4444' },
+                    { label: 'In Progress', value: s.projects.filter(p=>p.status==='In Progress').length, color: '#2563eb' }
+                ]);
+
+                App.Charts.drawFever('chart-fever', s.projects);
+            },
+
+            projects(el) {
+                const rows = App.Store.state.projects.map(p => {
+                    const badge = p.status === 'At Risk' ? 'badge-danger' : (p.status === 'On Track' ? 'badge-success' : 'badge-info');
+                    return `
+                        <tr>
+                            <td><span class="badge ${badge}">${p.status}</span></td>
+                            <td style="font-weight:600; color:var(--text-main);">${p.name}</td>
+                            <td>${App.UI.fmtMoney(p.budget)}</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div style="flex:1; height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+                                        <div style="width:${p.progress}%; height:100%; background:${p.status==='At Risk' ? 'var(--danger)' : 'var(--primary)'}"></div>
+                                    </div>
+                                    <span style="font-size:11px;">${p.progress}%</span>
+                                </div>
+                            </td>
+                            <td><button class="btn btn-sm btn-outline" onclick="App.Router.go('gantt')">Plan</button></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                el.innerHTML = `
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Master Project Registry</h3></div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>Status</th><th>Project Name</th><th>Budget</th><th>Completion</th><th>Action</th></tr></thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+
+            gantt(el) {
+                // Prepare Data
+                const tasks = App.Store.state.tasks;
+                const rowHeight = 40;
+                const headerHeight = 40;
+                const dayWidth = 20;
+                const totalWidth = 60 * dayWidth; // Fixed view window for demo
+                
+                let sidebarHtml = '';
+                let barsHtml = '';
+
+                tasks.forEach((t, i) => {
+                    const y = i * rowHeight + 10;
+                    const x = t.startOffset * dayWidth;
+                    const w = t.duration * dayWidth;
+                    const color = t.status === 'At Risk' ? '#ef4444' : '#2563eb';
+                    
+                    sidebarHtml += `<div class="gantt-row-label">${t.name}</div>`;
+                    
+                    barsHtml += `
+                        <rect x="${x}" y="${y}" width="${w}" height="20" fill="${color}" rx="4" class="gantt-bar">
+                            <title>${t.name}</title>
+                        </rect>
+                        <text x="${x+w+5}" y="${y+14}" font-size="10" fill="#64748b">${t.progress}%</text>
+                        ${i > 0 ? `<path d="M ${x-10} ${y-rowHeight+10} L ${x} ${y+10}" stroke="#cbd5e1" stroke-width="1" fill="none"/>` : ''}
+                    `;
+                });
+
+                el.innerHTML = `
+                    <div class="card" style="padding:0; overflow:hidden;">
+                        <div class="gantt-header">
+                            <h3 class="card-title" style="font-size:14px;">Master Schedule</h3>
+                            <div>
+                                <button class="btn btn-sm btn-outline">Zoom In</button>
+                                <button class="btn btn-sm btn-outline">Zoom Out</button>
+                            </div>
+                        </div>
+                        <div class="gantt-container" style="border:none;">
+                            <div class="gantt-body">
+                                <div class="gantt-sidebar">
+                                    <div style="height:${headerHeight}px; background:#f8fafc; border-bottom:1px solid #e2e8f0;"></div>
+                                    ${sidebarHtml}
+                                </div>
+                                <div class="gantt-timeline">
+                                    <div style="height:${headerHeight}px; width:${totalWidth}px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex;">
+                                        ${Array.from({length:20}).map((_,i) => `<div style="width:${dayWidth*7}px; border-right:1px solid #e2e8f0; padding:5px; font-size:10px; color:#94a3b8;">Week ${i+1}</div>`).join('')}
+                                    </div>
+                                    <svg width="${totalWidth}" height="${tasks.length * rowHeight + 50}">
+                                        ${barsHtml}
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            financials2(el) {
+                const s = App.Store.state;
+                el.innerHTML = `
+                    <div class="card">
+                         <div class="card-header"><h3 class="card-title">Financial Performance</h3></div>
+                         <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>Initiative</th><th>Budget</th><th>Actual</th><th>Variance</th><th>CPI</th></tr></thead>
+                                <tbody>
+                                    ${s.projects.map(p => {
+                                        const variance = p.budget - p.actual;
+                                        const cpi = p.actual > 0 ? (p.budget * (p.progress/100)) / p.actual : 1;
+                                        return `
+                                            <tr>
+                                                <td style="font-weight:500;">${p.name}</td>
+                                                <td>${App.UI.fmtMoney(p.budget)}</td>
+                                                <td>${App.UI.fmtMoney(p.actual)}</td>
+                                                <td style="color:${variance<0?'var(--danger)':'var(--success)'}">${App.UI.fmtMoney(variance)}</td>
+                                                <td style="font-weight:bold; color:${cpi<0.9?'var(--danger)':'var(--success)'}">${cpi.toFixed(2)}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                         </div>
+                    </div>
+                `;
+            }
+        },
+
+        // --- 5. ACTIONS (Controller) ---
+        Actions: {
+            createProject() {
+                const name = document.getElementById('np-name').value;
+                const budget = document.getElementById('np-budget').value;
+                if(!name) return App.UI.Toast.show('Project name required', 'error');
+                
+                const newProj = {
+                    id: 'p' + Date.now(),
+                    name: name,
+                    budget: parseInt(budget),
+                    actual: 0,
+                    status: 'Planned',
+                    start: new Date().toISOString().split('T')[0],
+                    duration: 60,
+                    progress: 0
+                };
+                
+                App.Store.addProject(newProj);
+                App.UI.Modal.close('project-modal');
+                App.UI.Toast.show('Project initialized successfully', 'success');
+                App.Router.go('projects');
+            }
+        },
+
+        // --- 6. CHART ENGINE (SVG) ---
+        Charts: {
+            drawDonut(id, data) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                const total = data.reduce((a,b)=>a+b.value,0);
+                let acc = 0;
+                
+                // SVG Construction
+                let svg = `<svg viewBox="0 0 100 100" class="chart-svg">`;
+                
+                data.forEach(slice => {
+                    if(slice.value === 0) return;
+                    const startAngle = (acc / total) * 360;
+                    const sliceAngle = (slice.value / total) * 360;
+                    acc += slice.value;
+                    
+                    // Simple trig for arc
+                    const r = 15.9155; const cx = 50; const cy = 50;
+                    const offset = 25 - (startAngle / 360) * 100;
+                    const dashArray = `${(sliceAngle/360)*100} ${100 - (sliceAngle/360)*100}`;
+                    
+                    svg += `<circle cx="50" cy="50" r="${r}" fill="transparent" stroke="${slice.color}" stroke-width="8" stroke-dasharray="${dashArray}" stroke-dashoffset="${offset}" />`;
+                });
+                
+                // Center Text
+                svg += `<text x="50" y="50" font-size="8" text-anchor="middle" dy="2.5" font-weight="bold" fill="#334155">${total} Projs</text>`;
+                svg += `</svg>`;
+                el.innerHTML = svg;
+            },
+
+            drawFever(id, projects) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                // Fever chart logic: X=Time/Progress, Y=Buffer Consumed
+                // Mocking buffer consumption for demo
+                const pts = projects.map(p => {
+                    const x = (p.progress / 100) * 200;
+                    const y = 150 - (Math.random() * (p.status==='At Risk'?140:50)); 
+                    return `<circle cx="${x+20}" cy="${y}" r="4" fill="${p.status==='At Risk'?'#ef4444':'#10b981'}" stroke="white" stroke-width="1"><title>${p.name}</title></circle>`;
+                }).join('');
+
+                el.innerHTML = `
+                    <svg viewBox="0 0 240 160" class="chart-svg" style="background:#fff;">
+                        <path d="M20,150 L220,150 L220,20 L20,20 Z" fill="#f0fdf4" />
+                        <path d="M20,150 L220,50 L20,20 Z" fill="#fef2f2" opacity="0.5" />
+                        <line x1="20" y1="150" x2="220" y2="150" stroke="#cbd5e1" stroke-width="1" />
+                        <line x1="20" y1="20" x2="20" y2="150" stroke="#cbd5e1" stroke-width="1" />
+                        ${pts}
+                        <text x="120" y="158" font-size="6" text-anchor="middle" fill="#94a3b8">Project Completion %</text>
+                    </svg>
+                `;
+            }
+        },
+
+        // --- 7. UI UTILS ---
+        UI: {
+            fmtMoney: (n) => '$' + n.toLocaleString(),
+            
+            showLoader(show) {
+                // In a real app, overlay a spinner. Here we just rely on transition speed.
+            },
+            
+            toggleDemo() {
+                document.body.classList.toggle('demo-mode');
+                const isActive = document.body.classList.contains('demo-mode');
+                document.getElementById('demo-toggle').classList.toggle('active');
+                this.Toast.show(isActive ? "Executive Demo Mode: ENABLED" : "Demo Mode: Disabled", "info");
+            },
+
+            Modal: {
+                open(id) { document.getElementById(id).classList.add('open'); },
+                close(id) { document.getElementById(id).classList.remove('open'); }
+            },
+
+            Toast: {
+                show(msg, type) {
+                    const c = document.getElementById('toast-container');
+                    const t = document.createElement('div');
+                    t.className = 'toast';
+                    if(type==='error') t.style.borderLeft = '4px solid var(--danger)';
+                    if(type==='success') t.style.borderLeft = '4px solid var(--success)';
+                    t.innerHTML = msg;
+                    c.appendChild(t);
+                    setTimeout(() => t.remove(), 3000);
+                }
+            }
+        }
+    };
+
+    // --- BOOTSTRAP ---
+    window.addEventListener('DOMContentLoaded', () => {
+        // Check session mock
+        // If we were real, we'd check cookies. For now, show login.
+    });
+
+    </script>
+</body>
+</html>

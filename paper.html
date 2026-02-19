@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Notebook Store | Future Edition</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📓</text></svg>">
+    
+    <!-- 1. Typography: Inter Variable (Crucial for fluid weight animation) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- 2. Frameworks -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/phosphor-icons"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#050505',
+                        charcoal: '#121212',
+                        paper: '#F5F5F7',
+                        blueprint: '#2563EB',
+                        glass: 'rgba(255, 255, 255, 0.6)'
+                    },
+                    animation: {
+                        'reveal': 'reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'loader': 'loader 1.2s ease-in-out forwards',
+                    },
+                    keyframes: {
+                        reveal: {
+                            '0%': { transform: 'translateY(100%)' },
+                            '100%': { transform: 'translateY(0)' },
+                        },
+                        loader: {
+                            '0%': { width: '0%' },
+                            '100%': { width: '100%' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* A. The "Light Diffusion" System */
+        body {
+            background-color: #F5F5F7;
+            color: #050505;
+            cursor: none; /* Hiding default cursor for physics cursor */
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* B. Variable Font Engineering */
+        .sculpted-text {
+            font-variation-settings: "wght" 400;
+            transition: font-variation-settings 0.4s ease, letter-spacing 0.4s ease;
+            letter-spacing: -0.02em;
+        }
+        .group:hover .sculpted-text {
+            font-variation-settings: "wght" 650;
+            letter-spacing: -0.03em;
+        }
+
+        /* C. Cursor Physics */
+        .cursor-dot {
+            width: 12px;
+            height: 12px;
+            background-color: #050505;
+        }
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+        /* Hover State for Cursor */
+        body.hovering .cursor-dot {
+            transform: scale(0.5);
+            background-color: #2563EB;
+        }
+        body.hovering .cursor-outline {
+            transform: scale(1.5);
+            border-color: rgba(37, 99, 235, 0.3);
+            background-color: rgba(37, 99, 235, 0.05);
+        }
+
+        /* D. Glassmorphism 2.0 (Borders + Blur, No Shadow) */
+        .industrial-glass {
+            background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.9);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+        }
+
+        /* E. Text Reveal Mask */
+        .text-mask {
+            overflow: hidden;
+            display: block;
+        }
+        .text-mask span {
+            display: block;
+            transform: translateY(110%);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .group:hover .text-mask span, 
+        .animate-reveal span {
+            transform: translateY(0);
+        }
+
+        /* F. Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- 0. PHYSICS ENGINE & HOOKS ---
+        
+        // Custom Hook for 3D Tilt
+        const useTilt = (active = true) => {
+            const ref = useRef(null);
+
+            useEffect(() => {
+                if (!ref.current || !active) return;
+                
+                const el = ref.current;
+                
+                const handleMove = (e) => {
+                    const height = el.clientHeight;
+                    const width = el.clientWidth;
+                    const rect = el.getBoundingClientRect();
+                    const xVal = e.clientX - rect.left;
+                    const yVal = e.clientY - rect.top;
+                    const yRotation = 20 * ((xVal - width / 2) / width);
+                    const xRotation = -20 * ((yVal - height / 2) / height);
+                    
+                    const string = `perspective(1000px) scale(1.02) rotateX(${xRotation}deg) rotateY(${yRotation}deg)`;
+                    el.style.transform = string;
+                };
+
+                const handleOut = () => {
+                    el.style.transform = 'perspective(1000px) scale(1) rotateX(0) rotateY(0)';
+                };
+
+                el.addEventListener('mousemove', handleMove);
+                el.addEventListener('mouseleave', handleOut);
+                
+                return () => {
+                    el.removeEventListener('mousemove', handleMove);
+                    el.removeEventListener('mouseleave', handleOut);
+                };
+            }, [active]);
+
+            return ref;
+        };
+
+        // --- 1. CORE COMPONENTS ---
+
+        const Cursor = () => {
+            const dot = useRef(null);
+            const outline = useRef(null);
+
+            useEffect(() => {
+                const moveCursor = (e) => {
+                    const posX = e.clientX;
+                    const posY = e.clientY;
+
+                    // Dot follows instantly
+                    if (dot.current) {
+                        dot.current.style.left = `${posX}px`;
+                        dot.current.style.top = `${posY}px`;
+                    }
+
+                    // Outline follows with physics delay
+                    if (outline.current) {
+                        outline.current.animate({
+                            left: `${posX}px`,
+                            top: `${posY}px`
+                        }, { duration: 500, fill: "forwards" });
+                    }
+                };
+                
+                window.addEventListener('mousemove', moveCursor);
+                return () => window.removeEventListener('mousemove', moveCursor);
+            }, []);
+
+            return (
+                <>
+                    <div ref={dot} className="cursor-dot fixed top-0 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none z-[9999] mix-blend-difference transition-transform duration-100"></div>
+                    <div ref={outline} className="cursor-outline fixed top-0 left-0 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none z-[9998] transition-all duration-300 ease-out"></div>
+                </>
+            );
+        };
+
+        const SplashScreen = ({ onComplete }) => {
+            const [mounted, setMounted] = useState(true);
+
+            useEffect(() => {
+                const timer = setTimeout(() => {
+                    setMounted(false);
+                    onComplete();
+                }, 1600);
+                return () => clearTimeout(timer);
+            }, []);
+
+            if (!mounted) return null;
+
+            return (
+                <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center">
+                    <div className="text-mask mb-4">
+                        <span className="text-4xl font-bold tracking-tighter">THE NOTEBOOK STORE</span>
+                    </div>
+                    <div className="w-64 h-[2px] bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-black animate-loader"></div>
+                    </div>
+                    <p className="mt-4 font-mono text-xs text-gray-400">EST. 2013 • SYSTEM INITIALIZING</p>
+                </div>
+            );
+        };
+
+        const TiltCard = ({ children, className, onClick }) => {
+            const ref = useTilt();
+            return (
+                <div 
+                    ref={ref} 
+                    onClick={onClick}
+                    className={`transition-transform duration-200 ease-out preserve-3d cursor-none ${className}`}
+                    onMouseEnter={() => document.body.classList.add('hovering')}
+                    onMouseLeave={() => document.body.classList.remove('hovering')}
+                >
+                    {children}
+                </div>
+            );
+        };
+
+        const AdminCommandPalette = ({ isOpen, onClose }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-start justify-center pt-32">
+                    <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden animate-reveal">
+                        <div className="p-4 border-b border-gray-100 flex items-center gap-3">
+                            <i className="ph-command text-gray-400"></i>
+                            <input 
+                                autoFocus
+                                placeholder="Type a command..." 
+                                className="w-full outline-none text-lg font-medium placeholder:text-gray-300"
+                            />
+                            <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500">ESC</span>
+                        </div>
+                        <div className="p-2">
+                            <div className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer flex justify-between group">
+                                <span className="font-medium group-hover:translate-x-1 transition-transform">Add New Product</span>
+                                <span className="text-gray-300 font-mono text-xs">⌘ N</span>
+                            </div>
+                            <div className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer flex justify-between group">
+                                <span className="font-medium group-hover:translate-x-1 transition-transform">View Analytics</span>
+                                <span className="text-gray-300 font-mono text-xs">⌘ A</span>
+                            </div>
+                            <div className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer flex justify-between group">
+                                <span className="font-medium group-hover:translate-x-1 transition-transform">Manage Orders</span>
+                                <span className="text-gray-300 font-mono text-xs">⌘ O</span>
+                            </div>
+                        </div>
+                        <div className="p-2 bg-gray-50 border-t border-gray-100 text-[10px] text-gray-400 flex justify-between px-4">
+                            <span>ADMIN MODE ACTIVE</span>
+                            <span>v2.4.0 SYSTEM</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 2. DATA & STATE ---
+
+        const PRODUCTS = [
+            {
+                id: 1,
+                title: "Executive Journal",
+                price: 895,
+                tag: "Best Seller",
+                image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=800",
+                desc: "1.4mm Millboard. 100 GSM."
+            },
+            {
+                id: 2,
+                title: "2026 Architect Planner",
+                price: 1250,
+                tag: "New",
+                image: "https://images.unsplash.com/photo-1506784365847-bbad939e9335?auto=format&fit=crop&q=80&w=800",
+                desc: "Japanese Tomoe River Paper."
+            },
+            {
+                id: 3,
+                title: "Obsidian Memo Block",
+                price: 450,
+                tag: "Accessory",
+                image: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&q=80&w=800",
+                desc: "700 Sheets. Pure Carbon Black."
+            },
+            {
+                id: 4,
+                title: "Walnut Limited Edition",
+                price: 1495,
+                tag: "Vegan Leather",
+                image: "https://images.unsplash.com/photo-1595079676339-1534801fafde?auto=format&fit=crop&q=80&w=800",
+                desc: "Italian Synt3 Cover material."
+            }
+        ];
+
+        // --- 3. SUB-COMPONENTS ---
+
+        const Navbar = ({ cartCount, onOpenCart }) => (
+            <nav className="fixed top-0 w-full z-40 industrial-glass">
+                <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-12">
+                        <div className="text-mask cursor-pointer" onMouseEnter={() => document.body.classList.add('hovering')} onMouseLeave={() => document.body.classList.remove('hovering')}>
+                            <span className="font-bold tracking-tighter text-xl">THE NOTEBOOK STORE</span>
+                        </div>
+                        <div className="hidden md:flex gap-8 text-sm font-medium text-gray-500">
+                            {['Shop', 'Atelier', 'About'].map(item => (
+                                <a key={item} href="#" className="hover:text-black transition-colors relative group">
+                                    {item}
+                                    <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-black transition-all duration-300 group-hover:w-full"></span>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                        <div className="hidden md:block text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                            ⌘ + K
+                        </div>
+                        <div 
+                            onClick={onOpenCart}
+                            className="relative cursor-pointer group"
+                            onMouseEnter={() => document.body.classList.add('hovering')} 
+                            onMouseLeave={() => document.body.classList.remove('hovering')}
+                        >
+                            <span className="text-sm font-medium group-hover:opacity-0 transition-opacity">Cart</span>
+                            <span className="absolute left-0 top-0 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
+                                Open
+                            </span>
+                            {cartCount > 0 && (
+                                <span className="absolute -top-2 -right-3 w-4 h-4 bg-blueprint text-white text-[9px] flex items-center justify-center rounded-full font-mono">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        );
+
+        const ProductCard = ({ product, onAdd }) => (
+            <TiltCard className="group relative bg-white rounded-xl overflow-hidden aspect-[3/4]" onClick={() => onAdd(product)}>
+                <div className="absolute inset-0 bg-gray-100">
+                    <img src={product.image} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+                </div>
+                <div className="absolute inset-0 p-6 flex flex-col justify-between">
+                    <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-mono uppercase tracking-widest bg-white/90 backdrop-blur px-2 py-1 rounded">
+                            {product.tag}
+                        </span>
+                    </div>
+                    
+                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <div className="bg-white/80 backdrop-blur-md p-4 rounded-lg border border-white/50 shadow-sm">
+                            <h3 className="sculpted-text text-lg leading-tight mb-1">{product.title}</h3>
+                            <div className="flex justify-between items-end">
+                                <p className="text-xs text-gray-500 max-w-[70%]">{product.desc}</p>
+                                <span className="font-mono text-sm">₹{product.price}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </TiltCard>
+        );
+
+        const CartDrawer = ({ isOpen, onClose, cart, onRemove }) => {
+            const subtotal = cart.reduce((acc, item) => acc + item.price, 0);
+            const freeShippingThreshold = 995;
+            const progress = Math.min((subtotal / freeShippingThreshold) * 100, 100);
+            const shipping = subtotal > freeShippingThreshold ? 0 : 99;
+            const total = subtotal + shipping;
+
+            return (
+                <div className={`fixed inset-0 z-50 pointer-events-none ${isOpen ? 'pointer-events-auto' : ''}`}>
+                    <div 
+                        className={`absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-500 ${isOpen ? 'opacity-100' : 'opacity-0'}`} 
+                        onClick={onClose}
+                    ></div>
+                    <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transform transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                        <div className="h-full flex flex-col p-8">
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-2xl font-bold tracking-tight">Cart ({cart.length})</h2>
+                                <button onClick={onClose} className="hover:rotate-90 transition-transform duration-300">
+                                    <i className="ph-x text-2xl"></i>
+                                </button>
+                            </div>
+
+                            {/* Predictive Progress Bar */}
+                            <div className="mb-8">
+                                <div className="flex justify-between text-xs font-mono mb-2 text-gray-500">
+                                    <span>PROGRESS TO FREE SHIPPING</span>
+                                    <span>{Math.round(progress)}%</span>
+                                </div>
+                                <div className="h-1 bg-gray-100 w-full rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-blueprint transition-all duration-1000 ease-out" 
+                                        style={{ width: `${progress}%` }}
+                                    ></div>
+                                </div>
+                                {subtotal < freeShippingThreshold && (
+                                    <p className="text-xs text-gray-400 mt-2">Add ₹{freeShippingThreshold - subtotal} more to unlock.</p>
+                                )}
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto space-y-6 pr-2 no-scrollbar">
+                                {cart.map((item, idx) => (
+                                    <div key={`${item.id}-${idx}`} className="flex gap-4 group">
+                                        <div className="w-16 h-20 bg-gray-100 rounded overflow-hidden shrink-0">
+                                            <img src={item.image} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between mb-1">
+                                                <h4 className="font-medium text-sm">{item.title}</h4>
+                                                <button onClick={() => onRemove(idx)} className="text-gray-300 hover:text-red-500 transition-colors">
+                                                    <i className="ph-trash"></i>
+                                                </button>
+                                            </div>
+                                            <p className="text-xs text-gray-400 mb-2">{item.tag}</p>
+                                            <p className="font-mono text-sm">₹{item.price}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {cart.length === 0 && (
+                                    <div className="text-center py-20 text-gray-300">
+                                        <p>Cart is empty</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Predictive Add-On (Fake AI) */}
+                            {cart.length > 0 && (
+                                <div className="py-4 border-t border-gray-100 mb-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Frequently bought together</p>
+                                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer group">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                                            <span className="text-xs font-medium">Classic Ball Pen</span>
+                                        </div>
+                                        <span className="text-xs font-mono group-hover:text-blueprint transition-colors">+ ₹450</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="border-t border-gray-100 pt-6">
+                                <div className="flex justify-between mb-2 text-sm">
+                                    <span className="text-gray-500">Subtotal</span>
+                                    <span className="font-mono">₹{subtotal.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between mb-6 text-sm">
+                                    <span className="text-gray-500">Shipping</span>
+                                    <span className="font-mono text-gray-500">{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
+                                </div>
+                                <div className="flex justify-between text-xl font-bold mb-6">
+                                    <span>Total</span>
+                                    <span className="font-mono tracking-tight transition-all">₹{total.toLocaleString()}</span>
+                                </div>
+                                <button className="w-full bg-obsidian text-white py-4 font-bold uppercase tracking-widest hover:bg-blueprint transition-colors duration-300 rounded-lg overflow-hidden relative group">
+                                    <span className="relative z-10">Checkout</span>
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 4. MAIN APP ---
+
+        const App = () => {
+            const [loading, setLoading] = useState(true);
+            const [cartOpen, setCartOpen] = useState(false);
+            const [cart, setCart] = useState([]);
+            const [adminOpen, setAdminOpen] = useState(false);
+
+            // Command Palette Listener
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                        e.preventDefault();
+                        setAdminOpen(prev => !prev);
+                    }
+                    if (e.key === 'Escape') {
+                        setAdminOpen(false);
+                        setCartOpen(false);
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, []);
+
+            const addToCart = (product) => {
+                setCart([...cart, product]);
+                setCartOpen(true);
+            };
+
+            const removeFromCart = (index) => {
+                setCart(cart.filter((_, i) => i !== index));
+            };
+
+            return (
+                <>
+                    <Cursor />
+                    {loading ? (
+                        <SplashScreen onComplete={() => setLoading(false)} />
+                    ) : (
+                        <div className="animate-reveal">
+                            <AdminCommandPalette isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
+                            <Navbar cartCount={cart.length} onOpenCart={() => setCartOpen(true)} />
+                            <CartDrawer 
+                                isOpen={cartOpen} 
+                                onClose={() => setCartOpen(false)} 
+                                cart={cart} 
+                                onRemove={removeFromCart} 
+                            />
+
+                            <main className="pt-32 pb-20 px-8 max-w-7xl mx-auto">
+                                {/* Hero Section */}
+                                <section className="mb-32 relative">
+                                    <div className="text-mask">
+                                        <h1 className="text-[12vw] leading-[0.85] font-bold tracking-tighter text-obsidian mb-8">
+                                            PAPER<br />
+                                            FOR<br />
+                                            THOUGHT
+                                        </h1>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <p className="max-w-md text-lg text-gray-500 leading-relaxed text-mask">
+                                            <span>
+                                                Engineered for the architects of the future. 
+                                                Japanese paper, Italian leather, and an obsession with detail.
+                                            </span>
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {/* Product Grid */}
+                                <section>
+                                    <div className="flex justify-between items-end mb-12 border-b border-gray-200 pb-4">
+                                        <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400">The Collection</h2>
+                                        <span className="font-mono text-xs text-gray-400">2026 SERIES</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                                        {PRODUCTS.map(p => (
+                                            <ProductCard key={p.id} product={p} onAdd={addToCart} />
+                                        ))}
+                                    </div>
+                                </section>
+
+                                {/* Footerish Area */}
+                                <section className="mt-40 border-t border-gray-200 pt-12 flex justify-between items-end">
+                                    <div>
+                                        <p className="font-mono text-xs text-gray-400 mb-2">SYSTEM STATUS: ONLINE</p>
+                                        <p className="font-mono text-xs text-gray-400">© 2026 THE NOTEBOOK STORE</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-medium">Design is intelligence made visible.</p>
+                                    </div>
+                                </section>
+                            </main>
+                        </div>
+                    )}
+                </>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

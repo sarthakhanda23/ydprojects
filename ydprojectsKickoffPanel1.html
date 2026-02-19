@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Project Kick-Off Panel | YOGIJI DIGI</title>
+    
+    <!-- Favicon (Placeholder) -->
+    <link href="assets/img/yd-favicon.png" rel="icon" />
+    
+    <!-- Vendor CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" />
+    
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Main CSS Simulation (Matching YDProjects) -->
+    <style>
+      :root {
+        --yd-primary: #2a5071;
+        --yd-red: #ad283f;
+        --yd-bg: #f5f7fa;
+      }
+      
+      body {
+        background-color: #f6f9ff;
+        font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+        color: #444444;
+      }
+
+      /* Header Styling */
+      .header {
+        transition: all 0.5s;
+        z-index: 997;
+        padding: 15px 0;
+        background-color: #ffffff;
+        box-shadow: 0px 2px 20px rgba(1, 41, 112, 0.1);
+      }
+      
+      .logo img {
+        max-height: 40px;
+        margin-right: 6px;
+      }
+
+      .btn-getstarted {
+        color: #2a5071;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      /* Main Content */
+      .main {
+        margin-top: 80px;
+        padding: 20px 0;
+      }
+
+      .section {
+        padding: 20px 0;
+      }
+
+      /* Table Container Styling (Match Current Projects) */
+      .table-container {
+        background: #fffffff0;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0px 0px 30px rgba(127, 137, 161, 0.25);
+      }
+
+      h2.page-title {
+        color: var(--yd-red);
+        font-weight: 600;
+        font-family: "Nunito", sans-serif;
+      }
+
+      /* Modal Styling */
+      .modal-header {
+        background-color: #ffffff; 
+      }
+      .modal-title {
+        color: var(--yd-red);
+        font-weight: 600;
+      }
+      .btn-close-black {
+        filter: none;
+      }
+      
+      /* Form Controls */
+      .form-control:focus, .form-select:focus {
+        border-color: #2a5071 !important;
+        outline: 0 !important;
+        box-shadow: 0 0 0 0.25rem #427eb375 !important;
+      }
+
+      /* Footer */
+      .footer {
+        background: #f1f1f1;
+        padding: 30px 0;
+        font-size: 14px;
+      }
+      .footer h4 {
+        font-size: 16px;
+        font-weight: bold;
+        position: relative;
+        padding-bottom: 12px;
+        color: #2a5071;
+      }
+      .footer-links ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .footer-links ul li {
+        padding: 10px 0;
+        display: flex;
+        align-items: center;
+      }
+      .footer-links ul li:first-child {
+        padding-top: 0;
+      }
+      .footer-links ul li a {
+        color: #6c757d;
+        transition: 0.3s;
+        display: inline-block;
+        line-height: 1;
+        text-decoration: none;
+      }
+      .footer-links ul li a:hover {
+        color: #2a5071;
+      }
+      .copyright {
+        padding-top: 25px;
+        border-top: 1px solid #d1d7dc;
+        color: #2a5071;
+      }
+
+      /* Governance Panel Specifics */
+      .badge-sla-green { background-color: #198754; color: white; }
+      .badge-sla-amber { background-color: #ffc107; color: #000; }
+      .badge-sla-red { background-color: #dc3545; color: white; animation: pulse-red 2s infinite; }
+      
+      /* Semantic Stage Colors */
+      .stage-pending-decision { background-color: #ffc107; color: #000; } /* Warning */
+      .stage-awaiting-advance { background-color: #0dcaf0; color: #000; } /* Info */
+      .stage-pending-pm { background-color: #0d6efd; color: #fff; } /* Primary */
+      .stage-pending-kickoff { background-color: #6f42c1; color: #fff; } /* Purple/Secondary */
+      .stage-active { background-color: #198754; color: #fff; } /* Success */
+
+      /* Active Row Styling */
+      tr.row-active td {
+        background-color: #f0fff4 !important;
+        border-bottom: 1px solid #d1e7dd;
+      }
+      
+      @keyframes pulse-red {
+          0% { opacity: 1; }
+          50% { opacity: 0.8; }
+          100% { opacity: 1; }
+      }
+      
+      /* DataTables overrides for ERP density */
+      table.dataTable tbody td {
+        vertical-align: middle;
+        font-size: 0.9rem;
+      }
+      table.dataTable thead th {
+        background-color: #212529;
+        color: white;
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+      
+      /* Action Bar Controls */
+      .role-select {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 14px;
+        color: #495057;
+      }
+    </style>
+  </head>
+
+  <body class="index-page">
+    
+    <!-- HEADER -->
+    <header id="header" class="header d-flex align-items-center sticky-top" style="padding: 15px">
+      <ul class="container-fluid position-relative d-flex align-items-center gap-3" style="margin-bottom: 0px">
+        <a href="#" class="logo d-flex align-items-center me-auto">
+          <!-- Placeholder logo if assets missing -->
+          <img src="YDLOGO.png" alt="YD" onerror="this.onerror=null; this.src='https://via.placeholder.com/40x40?text=YD';">
+        </a>
+        
+        <!-- YD Nav Style Links -->
+        <a href="projectReport.html" class="position-relative d-inline-block btn btn-sm" style="background: #fde2e4; color: #9f1239; font-weight:600;">Report</a>
+        <a href="meetings.html" class="position-relative d-inline-block btn btn-sm" style="background: #fff4cc; color: #92400e; font-weight:600;">Meeting</a>
+        
+        <a href="#" class="position-relative d-inline-block">
+          <i class="fa-solid fa-bell text-primary"></i>
+          <span id="unreadCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px; padding: 3px 6px">3</span>
+        </a>
+        
+        <div class="dropdown">
+          <a class="btn-getstarted d-flex align-items-center dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="assets/img/user.png" height="20px" onerror="this.style.display='none'; this.innerHTML='<i class=\'fa fa-user\'></i>'"/>&nbsp;
+            <span id="engineerNameDisplay">Sashikanth Tripathi (Sales)</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><h6 class="dropdown-header">Role Simulator</h6></li>
+            <li><a class="dropdown-item" href="#" onclick="app.switchRole('SALES')">Sales (Sashikanth)</a></li>
+            <li><a class="dropdown-item" href="#" onclick="app.switchRole('DIRECTOR')">Director (Navneet)</a></li>
+            <li><a class="dropdown-item" href="#" onclick="app.switchRole('FINANCE')">Finance (Anup)</a></li>
+            <li><a class="dropdown-item" href="#" onclick="app.switchRole('VP')">COO/VP (Varun)</a></li>
+            <li><a class="dropdown-item" href="#" onclick="app.switchRole('PM')">PM (Aditya)</a></li>
+            <li><hr class="dropdown-divider" /></li>
+            <li><a class="dropdown-item" href="#" onclick="location.reload()">Reset Demo</a></li>
+          </ul>
+        </div>
+      </ul>
+    </header>
+
+    <main class="main">
+      <section id="contact" class="contact section">
+        <div class="container table-container">
+          
+          <div class="row align-items-center mb-4">
+            <div class="col-md-5">
+              <h2 class="page-title mb-0">Project Kick-Off Panel</h2>
+              <p class="text-muted small mb-0">Manage initiation, advances, and assignments pipeline.</p>
+            </div>
+            <div class="col-md-7 text-end">
+               <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <!-- Sorting -->
+                    <select class="form-select form-select-sm w-auto" id="sortControl" onchange="app.handleSort(this.value)">
+                        <option value="sla">Sort: Priority (SLA)</option>
+                        <option value="stage">Sort: Workflow Stage</option>
+                        <option value="date">Sort: Created Date</option>
+                    </select>
+
+                    <!-- PDF Export -->
+                    <button class="btn btn-outline-danger btn-sm" onclick="app.exportPDF()">
+                        <i class="fa-solid fa-file-pdf"></i> PDF
+                    </button>
+
+                    <!-- Add Project (Sales Only) -->
+                    <button class="btn btn-primary btn-sm" id="btnNewProject" data-bs-toggle="modal" data-bs-target="#createModal" style="background-color: #0d6efd;">
+                        <i class="fa fa-plus"></i> Initiate Project
+                    </button>
+               </div>
+            </div>
+            <div class="col-12 mt-2">
+                 <hr />
+            </div>
+          </div>
+
+          <table id="kickoffTable" class="table table-striped table-bordered" style="width:100%">
+            <thead class="table-dark">
+              <tr>
+                <th>SLA</th>
+                <th>Project No.</th>
+                <th>Client Name</th>
+                <th>Site / Machine</th>
+                <th>Value & Terms</th>
+                <th>Status</th>
+                <th>Owner</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="kickoffTableBody">
+              <!-- JS Loaded Rows -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="footer" class="footer position-relative light-background">
+      <div class="container-fluid footer-top">
+        <div class="row gy-4" style="padding-left: 50px">
+          <div class="col-lg-3 col-md-3 footer-about">
+            <a href="#" class="logo d-flex align-items-center">
+              <img height="80" src="yd-footer.png" onerror="this.onerror=null; this.src='https://via.placeholder.com/150x80?text=YD+Group';" />
+            </a>
+          </div>
+          <div class="col-lg-3 col-md-3 footer-links">
+            <h4>Products</h4>
+            <ul>
+              <li><a href="#">Cold Rolling Mills</a></li>
+              <li><a href="#">GI/GL Lines</a></li>
+              <li><a href="#">Color Coating lines</a></li>
+              <li><a href="#">Pickling Lines</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-3 col-md-3 footer-links footer-right" style="padding-left: 90px">
+            <h4>Information</h4>
+            <ul>
+              <li><a href="#">Company Profile</a></li>
+              <li><a href="#">Infrastructure</a></li>
+              <li><a href="#">Products</a></li>
+              <li><a href="#">Contact Us</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-3 col-md-3 footer-links footer-right" style="padding-left: 70px">
+            <h4>Get In Touch</h4>
+            <ul>
+              <li><a href="#">147-148, Sector - 58</a></li>
+              <li><a href="#">Faridabad 121004</a></li>
+              <li><a href="#">Haryana, India</a></li>
+              <li><a href="#">+91 129 429 5200</a></li>
+              <li><a href="#">sales@ydgroup.com</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="container copyright text-center">
+        <p>
+          © <span>Copyright</span>
+          <strong class="px-1 sitename">YOGIJI DIGI</strong>
+          <span>All Rights Reserved</span>
+        </p>
+      </div>
+    </footer>
+
+    <!-- MODALS -->
+
+    <!-- Create Project Modal -->
+    <div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Initiate New Project</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="createForm" onsubmit="event.preventDefault(); app.submitProject();">
+              <div class="row g-2">
+                <div class="col-6">
+                  <label class="form-label"><small>Client Name</small></label>
+                  <input type="text" class="form-control" id="inputClient" required>
+                </div>
+                <div class="col-6">
+                  <label class="form-label"><small>Site Name (Location)</small></label>
+                  <input type="text" class="form-control" id="inputLocation" required>
+                </div>
+                <div class="col-6">
+                  <label class="form-label"><small>Machine</small></label>
+                  <input type="text" class="form-control" id="inputMachine" placeholder="CGL / CRM..." required>
+                </div>
+                <div class="col-6">
+                  <label class="form-label"><small>PO Value (INR)</small></label>
+                  <input type="number" class="form-control" id="inputValue" required>
+                </div>
+                <div class="col-6">
+                  <label class="form-label"><small>PO Number</small></label>
+                  <input type="text" class="form-control" id="inputPO" required>
+                </div>
+                <div class="col-6">
+                  <label class="form-label"><small>Sales Order No.</small></label>
+                  <input type="text" class="form-control" id="inputSO" required>
+                </div>
+                <div class="col-12">
+                  <label class="form-label"><small>Payment Terms</small></label>
+                  <input type="text" class="form-control" id="inputTerms" required>
+                </div>
+                <div class="col-12 mt-3">
+                  <button type="submit" class="btn btn-primary w-100" style="background-color: #2a5071;">Submit for Approval</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Modals (Shared for simplicity, content updated via JS) -->
+    <div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="actionModalTitle">Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="actionModalBody">
+                    <!-- Dynamic Content -->
+                </div>
+                <div class="modal-footer p-2">
+                    <button type="button" class="btn btn-primary w-100" id="actionModalBtn" onclick="app.executeAction()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const CONSTANTS = {
+            STATUS: {
+                PENDING_DECISION: 'PENDING_DECISION',
+                AWAITING_ADVANCE: 'AWAITING_ADVANCE',
+                PENDING_PM: 'PENDING_PM',
+                PENDING_KICKOFF: 'PENDING_KICKOFF',
+                ACTIVE: 'ACTIVE'
+            },
+            SLA_DAYS: { DECISION: 2, ADVANCE: 15, PM_ASSIGN: 2, KICKOFF: 2 }
+        };
+
+        const app = {
+            data: [],
+            currentUser: { role: 'SALES', name: 'Sashikanth Tripathi' },
+            currentActionId: null,
+            table: null,
+
+            init() {
+                this.loadData();
+                this.initDataTable();
+                this.renderUI();
+            },
+
+            loadData() {
+                const stored = localStorage.getItem('yd_kickoff_data_v2');
+                if (stored) {
+                    this.data = JSON.parse(stored);
+                } else {
+                    this.data = this.generateDummyData();
+                    this.saveData();
+                }
+            },
+
+            saveData() {
+                localStorage.setItem('yd_kickoff_data_v2', JSON.stringify(this.data));
+                this.reloadTable();
+            },
+
+            // Expanded Dataset (15+ Items)
+            generateDummyData() {
+                const now = new Date();
+                const day = 24 * 60 * 60 * 1000;
+                const mkDate = (daysAgo) => new Date(now - daysAgo * day).toISOString();
+
+                return [
+                    // Pending Decision
+                    { id: 2601, code: '2601-BMWIL-CGL', client: 'BMWIL', site: 'Mumbai', machine: 'CGL', val: '45L', terms: '30% Adv', status: CONSTANTS.STATUS.PENDING_DECISION, created: mkDate(4), stageDate: mkDate(4), owner: 'DIRECTOR' },
+                    { id: 2605, code: '2605-TPI-SLIT', client: 'TPI', site: 'Chennai', machine: 'Slitter', val: '22L', terms: '100% Adv', status: CONSTANTS.STATUS.PENDING_DECISION, created: mkDate(0), stageDate: mkDate(0), owner: 'DIRECTOR' },
+                    { id: 2613, code: '2613-SURYA-TUBE', client: 'SURYA', site: 'Bhiwadi', machine: 'Tube Mill', val: '1.45Cr', terms: 'LC 90', status: CONSTANTS.STATUS.PENDING_DECISION, created: mkDate(1), stageDate: mkDate(1), owner: 'DIRECTOR' },
+                    
+                    // Awaiting Advance
+                    { id: 2602, code: '2602-APL-PICK', client: 'APL', site: 'Raipur', machine: 'Pickling', val: '1.2Cr', terms: '10% Adv', status: CONSTANTS.STATUS.AWAITING_ADVANCE, created: mkDate(12), stageDate: mkDate(12), owner: 'FINANCE' },
+                    { id: 2606, code: '2606-AART-TUBE', client: 'AART', site: 'Nashik', machine: 'Tube', val: '65L', terms: 'Std', status: CONSTANTS.STATUS.AWAITING_ADVANCE, created: mkDate(20), stageDate: mkDate(20), owner: 'FINANCE' },
+                    { id: 2611, code: '2611-LODHIA-CRM', client: 'LODHIA', site: 'Tanzania', machine: '4HI CRM', val: '$450k', terms: '20% Adv', status: CONSTANTS.STATUS.AWAITING_ADVANCE, created: mkDate(5), stageDate: mkDate(5), owner: 'FINANCE' },
+                    
+                    // Pending PM
+                    { id: 2603, code: '2603-JSW-TRIM', client: 'JSW', site: 'Bellary', machine: 'Trimming', val: '85L', terms: 'LC 90', status: CONSTANTS.STATUS.PENDING_PM, created: mkDate(1), stageDate: mkDate(1), owner: 'VP', noAdv: true },
+                    { id: 2607, code: '2607-AL-CTL', client: 'AL SHAKER', site: 'Dubai', machine: 'CTL', val: '$150k', terms: 'LC', status: CONSTANTS.STATUS.PENDING_PM, created: mkDate(5), stageDate: mkDate(5), owner: 'VP' },
+                    { id: 2614, code: '2614-UTTAM-GALV', client: 'UTTAM', site: 'Khopoli', machine: 'Galvanizing', val: '2.1Cr', terms: '5% Adv', status: CONSTANTS.STATUS.PENDING_PM, created: mkDate(2), stageDate: mkDate(0.5), owner: 'VP' },
+                    
+                    // Pending Kickoff
+                    { id: 2604, code: '2604-GAURANG-6HI', client: 'GAURANG', site: 'Punjab', machine: '6HI CRM', val: '3.5Cr', terms: 'PI', status: CONSTANTS.STATUS.PENDING_KICKOFF, created: mkDate(8), stageDate: mkDate(3), owner: 'Aditya Saini' },
+                    { id: 2608, code: '2608-JTL-MILL', client: 'JTL', site: 'Punjab', machine: 'Tube Mill', val: '90L', terms: 'Check', status: CONSTANTS.STATUS.PENDING_KICKOFF, created: mkDate(1), stageDate: mkDate(1), owner: 'Saurabh Jangra' },
+                    { id: 2612, code: '2612-PROMPT-SLIT', client: 'PROMPT', site: 'Faridabad', machine: 'Slitter', val: '18L', terms: '50% Adv', status: CONSTANTS.STATUS.PENDING_KICKOFF, created: mkDate(2), stageDate: mkDate(0.2), owner: 'Aditya Saini' },
+                    
+                    // Active (Started)
+                    { id: 2609, code: '2609-JSW-CGL', client: 'JSW', site: 'Vasind', machine: 'CGL 2', val: '5.5Cr', terms: 'LC', status: CONSTANTS.STATUS.ACTIVE, created: mkDate(15), stageDate: mkDate(10), owner: 'Operations' },
+                    { id: 2610, code: '2610-MMI-PICK', client: 'MMI', site: 'Durgapur', machine: 'Push Pickle', val: '75L', terms: 'Adv', status: CONSTANTS.STATUS.ACTIVE, created: mkDate(30), stageDate: mkDate(25), owner: 'Operations' },
+                    { id: 2615, code: '2615-HULAS-TUBE', client: 'HULAS', site: 'Nepal', machine: 'Tube Mill', val: '1.1Cr', terms: 'LC', status: CONSTANTS.STATUS.ACTIVE, created: mkDate(40), stageDate: mkDate(35), owner: 'Operations' }
+                ];
+            },
+
+            // SLA Logic
+            getSLA(p) {
+                if (p.status === CONSTANTS.STATUS.ACTIVE) return { color: 'badge-sla-green', text: 'Started', score: 5 };
+                
+                const diffDays = (new Date() - new Date(p.stageDate)) / (1000 * 60 * 60 * 24);
+                let limit = 2;
+                if (p.status === CONSTANTS.STATUS.AWAITING_ADVANCE) limit = 15;
+                if (p.noAdv && p.status === CONSTANTS.STATUS.PENDING_PM) limit = 1;
+
+                if (diffDays > limit) return { color: 'badge-sla-red', text: 'Overdue', score: 1 };
+                if (diffDays > limit * 0.7) return { color: 'badge-sla-amber', text: 'Due Soon', score: 2 };
+                return { color: 'badge-sla-green', text: 'On Track', score: 3 };
+            },
+
+            // DataTables Integration
+            initDataTable() {
+                if ($.fn.DataTable.isDataTable("#kickoffTable")) {
+                    $("#kickoffTable").DataTable().destroy();
+                }
+
+                this.table = $("#kickoffTable").DataTable({
+                    data: this.processDataForTable(this.data), // Default sort (SLA) applied here
+                    columns: [
+                        { data: 'sla', render: (data) => `<span class="badge rounded-pill ${data.color}" style="min-width: 70px;">${data.text}</span>` },
+                        { data: 'code', className: "fw-bold text-primary" },
+                        { data: 'client' }, // Merged Client + Site/Machine for density match? No, separate per prompt columns
+                        { data: 'siteDetails' },
+                        { data: 'valDetails' },
+                        { data: 'statusHtml' },
+                        { data: 'ownerHtml' },
+                        { data: 'actionHtml' }
+                    ],
+                    order: [], // Disable initial sort to let our pre-processed order take precedence
+                    pageLength: 25,
+                    lengthMenu: [25, 50, 100],
+                    createdRow: (row, data, dataIndex) => {
+                        if (data.statusRaw === CONSTANTS.STATUS.ACTIVE) {
+                            $(row).addClass('row-active');
+                        }
+                    }
+                });
+            },
+
+            processDataForTable(data) {
+                // Pre-sort based on current criteria (Default: SLA Score Ascending)
+                const sortMode = document.getElementById('sortControl')?.value || 'sla';
+                
+                const sorted = [...data].sort((a, b) => {
+                    const slaA = this.getSLA(a).score;
+                    const slaB = this.getSLA(b).score;
+                    
+                    if (sortMode === 'sla') return slaA - slaB; // 1 (Red) comes first
+                    if (sortMode === 'stage') {
+                        const order = Object.values(CONSTANTS.STATUS);
+                        return order.indexOf(a.status) - order.indexOf(b.status);
+                    }
+                    if (sortMode === 'date') return new Date(b.created) - new Date(a.created);
+                    return 0;
+                });
+
+                return sorted.map(p => {
+                    const sla = this.getSLA(p);
+                    
+                    // Status Badge Logic
+                    let statusClass = 'bg-secondary';
+                    let statusText = p.status.replace(/_/g, ' ');
+                    if (p.status === CONSTANTS.STATUS.PENDING_DECISION) statusClass = 'stage-pending-decision';
+                    if (p.status === CONSTANTS.STATUS.AWAITING_ADVANCE) statusClass = 'stage-awaiting-advance';
+                    if (p.status === CONSTANTS.STATUS.PENDING_PM) statusClass = 'stage-pending-pm';
+                    if (p.status === CONSTANTS.STATUS.PENDING_KICKOFF) statusClass = 'stage-pending-kickoff';
+                    if (p.status === CONSTANTS.STATUS.ACTIVE) { statusClass = 'stage-active'; statusText = 'PROJECT STARTED'; }
+
+                    const statusHtml = `<span class="badge ${statusClass}"><i class="fa-solid fa-diagram-project me-1"></i> ${statusText}</span>`;
+
+                    // Owner Logic
+                    const ownerHtml = `<div><small class="text-muted d-block" style="font-size:10px">${p.status === CONSTANTS.STATUS.ACTIVE ? 'EXECUTION' : 'OWNER'}</small><span class="fw-bold" style="font-size:13px">${p.owner}</span></div>`;
+
+                    // Action Button Logic
+                    let btn = `<button class="btn btn-sm btn-secondary" disabled><i class="fa fa-lock"></i> Locked</button>`;
+                    
+                    if (p.status !== CONSTANTS.STATUS.ACTIVE) {
+                        if (this.currentUser.role === 'DIRECTOR' && p.status === CONSTANTS.STATUS.PENDING_DECISION) {
+                            btn = `<button class="btn btn-sm btn-warning" onclick="app.openAction(${p.id}, 'DIRECTOR')">Decision</button>`;
+                        }
+                        if (this.currentUser.role === 'FINANCE' && p.status === CONSTANTS.STATUS.AWAITING_ADVANCE) {
+                            btn = `<button class="btn btn-sm btn-info text-white" onclick="app.openAction(${p.id}, 'FINANCE')">Record Adv</button>`;
+                        }
+                        if (this.currentUser.role === 'VP' && p.status === CONSTANTS.STATUS.PENDING_PM) {
+                            btn = `<button class="btn btn-sm btn-primary" onclick="app.openAction(${p.id}, 'VP')">Assign PM</button>`;
+                        }
+                        if (this.currentUser.role === 'PM' && p.status === CONSTANTS.STATUS.PENDING_KICKOFF) {
+                            // Check if assigned to current user (Simulated)
+                            const isMyProject = (this.currentUser.role === 'PM' && p.owner.includes(this.currentUser.name.split(' ')[0]));
+                            // allowing all PMs for demo simplicity unless matched
+                            btn = `<button class="btn btn-sm btn-success" style="background-color: #6f42c1; border:none" onclick="app.openAction(${p.id}, 'PM')">Kick-Off</button>`;
+                        }
+                    } else {
+                        btn = `<span class="text-success small fw-bold"><i class="fa fa-check-circle"></i> Running</span>`;
+                    }
+
+                    return {
+                        sla: sla,
+                        code: p.code,
+                        client: p.client,
+                        siteDetails: `${p.site} / ${p.machine}`,
+                        valDetails: `${p.val}<br><small class="text-muted">${p.terms}</small>`,
+                        statusHtml: statusHtml,
+                        ownerHtml: ownerHtml,
+                        actionHtml: btn,
+                        statusRaw: p.status, // for row coloring
+                        created: p.created
+                    };
+                });
+            },
+
+            reloadTable() {
+                if(this.table) {
+                    this.table.clear();
+                    this.table.rows.add(this.processDataForTable(this.data));
+                    this.table.draw();
+                }
+            },
+
+            handleSort(val) {
+                this.reloadTable();
+            },
+
+            // Role Management
+            switchRole(role) {
+                const map = {
+                    'SALES': 'Sashikanth Tripathi (Sales)',
+                    'DIRECTOR': 'Navneet Gill (Director)',
+                    'FINANCE': 'Anup Sharma (Finance)',
+                    'VP': 'Varun Jay Rana (COO)',
+                    'PM': 'Aditya Saini (PM)'
+                };
+                this.currentUser = { role: role, name: map[role].split(' (')[0] };
+                document.getElementById('engineerNameDisplay').innerText = map[role];
+                
+                // Show/Hide New Project Button
+                document.getElementById('btnNewProject').style.display = (role === 'SALES') ? 'block' : 'none';
+                
+                this.reloadTable(); // Refresh table to update Action buttons
+            },
+
+            // Action Modals
+            openAction(id, role) {
+                this.currentActionId = id;
+                const modalTitle = document.getElementById('actionModalTitle');
+                const modalBody = document.getElementById('actionModalBody');
+                const p = this.data.find(x => x.id === id);
+
+                if (role === 'DIRECTOR') {
+                    modalTitle.innerText = "Management Decision";
+                    modalBody.innerHTML = `
+                        <p class="small text-muted mb-2">Project: <strong>${p.code}</strong></p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="dec" id="d1" value="WITH_ADV" checked>
+                            <label class="form-check-label" for="d1">Approve <strong>WITH</strong> Advance</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="dec" id="d2" value="NO_ADV">
+                            <label class="form-check-label" for="d2">Approve <strong>WITHOUT</strong> Advance</label>
+                        </div>
+                    `;
+                }
+                if (role === 'FINANCE') {
+                    modalTitle.innerText = "Record Advance";
+                    modalBody.innerHTML = `
+                        <p class="small text-muted mb-2">Project: <strong>${p.code}</strong></p>
+                        <label class="form-label small">Receipt Date</label>
+                        <input type="date" class="form-control mb-2" id="actDate">
+                        <label class="form-label small">Proof</label>
+                        <input type="file" class="form-control">
+                    `;
+                }
+                if (role === 'VP') {
+                    modalTitle.innerText = "Assign Project Manager";
+                    modalBody.innerHTML = `
+                        <p class="small text-muted mb-2">Project: <strong>${p.code}</strong></p>
+                        <label class="form-label small">Select PM</label>
+                        <select class="form-select" id="actPM">
+                            <option>Aditya Saini</option>
+                            <option>Saurabh Jangra</option>
+                            <option>Mayank Bandha</option>
+                        </select>
+                    `;
+                }
+                if (role === 'PM') {
+                    modalTitle.innerText = "Complete Kick-Off";
+                    modalBody.innerHTML = `
+                         <p class="small text-muted mb-2">Project: <strong>${p.code}</strong></p>
+                         <div class="alert alert-light border small">Confirm internal kick-off meeting is complete.</div>
+                         <label class="form-label small">Upload MOM</label>
+                         <input type="file" class="form-control">
+                    `;
+                }
+
+                new bootstrap.Modal(document.getElementById('actionModal')).show();
+            },
+
+            executeAction() {
+                const id = this.currentActionId;
+                const idx = this.data.findIndex(x => x.id === id);
+                const p = this.data[idx];
+                const role = this.currentUser.role;
+                const now = new Date().toISOString();
+
+                if (role === 'DIRECTOR') {
+                    const dec = document.querySelector('input[name="dec"]:checked').value;
+                    if (dec === 'WITH_ADV') {
+                        p.status = CONSTANTS.STATUS.AWAITING_ADVANCE;
+                        p.owner = 'FINANCE';
+                    } else {
+                        p.status = CONSTANTS.STATUS.PENDING_PM;
+                        p.owner = 'VP';
+                        p.noAdv = true;
+                    }
+                }
+                if (role === 'FINANCE') {
+                    p.status = CONSTANTS.STATUS.PENDING_PM;
+                    p.owner = 'VP';
+                }
+                if (role === 'VP') {
+                    const pm = document.getElementById('actPM').value;
+                    p.status = CONSTANTS.STATUS.PENDING_KICKOFF;
+                    p.owner = pm;
+                }
+                if (role === 'PM') {
+                    p.status = CONSTANTS.STATUS.ACTIVE;
+                    p.owner = 'Operations';
+                }
+
+                p.stageDate = now; // Reset SLA timer
+                this.data[idx] = p;
+                this.saveData();
+                bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Updated', timer: 1000, showConfirmButton: false });
+            },
+
+            submitProject() {
+                const client = document.getElementById('inputClient').value;
+                const site = document.getElementById('inputLocation').value;
+                const machine = document.getElementById('inputMachine').value;
+                
+                const maxId = Math.max(...this.data.map(p => p.id), 2600);
+                const nextId = maxId + 1;
+                const code = `${nextId}-${client}-${machine}`.toUpperCase().replace(/\s/g, '');
+
+                const newP = {
+                    id: nextId,
+                    code: code,
+                    client: client,
+                    site: site,
+                    machine: machine,
+                    val: document.getElementById('inputValue').value,
+                    terms: document.getElementById('inputTerms').value,
+                    status: CONSTANTS.STATUS.PENDING_DECISION,
+                    created: new Date().toISOString(),
+                    stageDate: new Date().toISOString(),
+                    owner: 'DIRECTOR'
+                };
+
+                this.data.push(newP);
+                this.saveData();
+                bootstrap.Modal.getInstance(document.getElementById('createModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Initiated', text: 'Sent for Director Approval' });
+            },
+
+            exportPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape');
+                
+                // YD Header Color
+                doc.setFillColor(173, 40, 63); // #ad283f
+                doc.rect(0, 0, 297, 20, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(14);
+                doc.text('Project Kick-Off Panel Report', 14, 13);
+                
+                const rows = this.data.map(p => [
+                    p.code, 
+                    p.client, 
+                    p.site + ' (' + p.machine + ')', 
+                    p.status.replace(/_/g, ' '), 
+                    p.owner,
+                    this.getSLA(p).text
+                ]);
+
+                doc.autoTable({
+                    head: [['Code', 'Client', 'Location', 'Stage', 'Owner', 'SLA']],
+                    body: rows,
+                    startY: 25,
+                    headStyles: { fillColor: [42, 80, 113] }
+                });
+
+                doc.save('YD_Kickoff_Report.pdf');
+            },
+
+            renderUI() {
+                this.switchRole('SALES'); // Default
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+  </body>
+</html>

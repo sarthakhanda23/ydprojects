@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --accent-color: #0ea5e9; /* Sky Blue */
+            --highlight-color: #0284c7; /* Darker Blue for selection */
+            --ghost-color: #e5e7eb;
+            --border-color: #e5e5e5;
+            --pbi-green: #107c10;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-primary);
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 24px;
+            margin: 0;
+            color: #1e293b;
+        }
+
+        .reset-btn {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .reset-btn:hover {
+            background-color: #f0f9ff;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* KPI STRIP */
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid transparent;
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* ROW LAYOUTS */
+        .row {
+            display: grid;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .row-1 { grid-template-columns: 1fr 1fr 1fr; }
+        .row-2 { grid-template-columns: 1fr 1fr; }
+        .row-3 { grid-template-columns: 1fr; }
+
+        .chart-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+            height: 300px; /* Fixed height for rows 1 & 2 */
+            border: 1px solid transparent;
+            transition: border 0.3s ease;
+        }
+
+        .chart-card.active-filter {
+            border: 2px solid var(--pbi-green);
+        }
+        
+        .chart-card.wide {
+            height: 350px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #374151;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .chart-container {
+            position: relative;
+            height: calc(100% - 30px);
+            width: 100%;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+            .row-1 { grid-template-columns: 1fr 1fr; }
+            .row-2 { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .kpi-strip { grid-template-columns: 1fr 1fr; }
+            .row-1 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <header>
+        <h1>Production Analytics</h1>
+        <button class="reset-btn" onclick="resetDashboard()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Reset Filters
+        </button>
+    </header>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+        <div class="kpi-card" style="border-left-color: #3b82f6;">
+            <div class="kpi-value" id="kpi-coils">0</div>
+            <div class="kpi-label">Coils Rolled</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #ef4444;">
+            <div class="kpi-value" id="kpi-energy">0</div>
+            <div class="kpi-label">Avg Energy (KWh/ton)</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #10b981;">
+            <div class="kpi-value" id="kpi-prod">0</div>
+            <div class="kpi-label">Total Productivity (MT)</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #f59e0b;">
+            <div class="kpi-value" id="kpi-gauge">0</div>
+            <div class="kpi-label">Avg Output Gauge (mm)</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #8b5cf6;">
+            <div class="kpi-value" id="kpi-util">0%</div>
+            <div class="kpi-label">Time Utilization %</div>
+        </div>
+    </div>
+
+    <!-- ROW 1 -->
+    <div class="row row-1">
+        <div class="chart-card" id="card-energy">
+            <div class="chart-title">Average Energy (KWh/ton) by Date</div>
+            <div class="chart-container">
+                <canvas id="chartEnergy"></canvas>
+            </div>
+        </div>
+        <div class="chart-card" id="card-length">
+            <div class="chart-title">Rolled Length (MT) by Date</div>
+            <div class="chart-container">
+                <canvas id="chartLength"></canvas>
+            </div>
+        </div>
+        <div class="chart-card" id="card-prod">
+            <div class="chart-title">Productivity (MT/Day) by Date</div>
+            <div class="chart-container">
+                <canvas id="chartProd"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2 -->
+    <div class="row row-2">
+        <div class="chart-card" id="card-shift">
+            <div class="chart-title">Shift Energy Comparison</div>
+            <div class="chart-container">
+                <canvas id="chartShift"></canvas>
+            </div>
+        </div>
+        <div class="chart-card" id="card-util">
+            <div class="chart-title">Time Utilization</div>
+            <div class="chart-container">
+                <canvas id="chartUtil"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 3 -->
+    <div class="row row-3">
+        <div class="chart-card wide" id="card-op">
+            <div class="chart-title">Operator Efficiency</div>
+            <div class="chart-container">
+                <canvas id="chartOp"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // 1. DATA GENERATION ENGINE (Normalized)
+    // ==========================================
+    
+    const DATES = ['15', '16', '18', '21', '23', '24', '25'];
+    const SHIFTS = ['A', 'B'];
+    const STATUSES = ['Run', 'Idle', 'Feed'];
+    const OPERATORS = ['JALAL', 'RAGHVENDRA', 'VARDHAN', 'ADHIRAJ', 'VIJAY', 'AJAY', 'RANDHIR', 'RANVEER', 'HARTAJ', 'USMAN', 'HARSH', 'MANHAR', 'RAJ', 'SARTAJ', 'PRAVESH'];
+
+    // EXACT Targets
+    const TARGETS = {
+        energy: [74, 59, 63, 79, 77, 80, 76],
+        length: [175000, 145000, 170000, 98000, 105000, 138000, 180000],
+        prod: [713, 862, 772, 362, 350, 581, 676]
+    };
+
+    function generateData() {
+        let rows = [];
+        let idCounter = 1;
+
+        DATES.forEach((date, i) => {
+            const coilsCount = 30 + Math.floor(Math.random() * 10);
+            
+            for (let j = 0; j < coilsCount; j++) {
+                const shift = Math.random() > 0.45 ? 'A' : 'B';
+                const operator = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
+                
+                // Status distribution
+                const r = Math.random();
+                let status = 'Idle';
+                if (r < 0.2) status = 'Run';
+                else if (r > 0.9) status = 'Feed';
+
+                // Initial Random Values
+                const energy = 50 + Math.random() * 50;
+                const length = 1000 + Math.random() * 5000;
+                const productivity = 10 + Math.random() * 40;
+                const gauge = 0.3 + (Math.random() * 0.5);
+                const util = 50 + Math.random() * 50; // Realistic non-binary
+                const tonsPerHour = 600 + Math.random() * 400;
+
+                rows.push({
+                    id: idCounter++,
+                    date: date,
+                    shift: shift,
+                    operator: operator,
+                    status: status,
+                    energy: energy,
+                    length: length,
+                    productivity: productivity,
+                    gauge: gauge,
+                    utilization: util,
+                    tonsPerHour: tonsPerHour
+                });
+            }
+        });
+
+        // ==========================================
+        // NORMALIZATION PASS (Force Match Targets)
+        // ==========================================
+        DATES.forEach((date, i) => {
+            const dateRows = rows.filter(r => r.date === date);
+            
+            // 1. Normalize Energy (Average)
+            const currentAvgEn = dateRows.reduce((a,b) => a + b.energy, 0) / dateRows.length;
+            const ratioEn = TARGETS.energy[i] / currentAvgEn;
+            dateRows.forEach(r => r.energy *= ratioEn);
+
+            // 2. Normalize Length (Sum)
+            const currentSumLen = dateRows.reduce((a,b) => a + b.length, 0);
+            const ratioLen = TARGETS.length[i] / currentSumLen;
+            dateRows.forEach(r => r.length *= ratioLen);
+
+            // 3. Normalize Productivity (Sum)
+            const currentSumProd = dateRows.reduce((a,b) => a + b.productivity, 0);
+            const ratioProd = TARGETS.prod[i] / currentSumProd;
+            dateRows.forEach(r => r.productivity *= ratioProd);
+        });
+
+        return rows;
+    }
+
+    const rawData = generateData();
+
+    // ==========================================
+    // 2. MULTI-FILTER STATE ENGINE
+    // ==========================================
+
+    const appState = {
+        filters: {
+            date: null,
+            shift: null,
+            operator: null,
+            status: null
+        }
+    };
+
+    // Styling Constants
+    const COLORS = {
+        primary: 'rgba(14, 165, 233, 1)',   
+        ghost: '#e5e7eb',
+        run: '#10b981',
+        idle: '#ef4444',
+        feed: '#f59e0b',
+        opLine: '#0ea5e9',
+        opBar: 'rgba(16, 185, 129, 0.7)',
+        opBarGhost: 'rgba(16, 185, 129, 0.2)'
+    };
+
+    // DAX-Style Measures Layer
+    const Measures = {
+        Count: rows => rows.length,
+        AvgEnergy: rows => average(rows, 'energy'),
+        SumLength: rows => sum(rows, 'length'),
+        SumProd: rows => sum(rows, 'productivity'),
+        AvgGauge: rows => average(rows, 'gauge'),
+        AvgUtil: rows => average(rows, 'utilization'),
+        AvgTons: rows => average(rows, 'tonsPerHour')
+    };
+
+    // ==========================================
+    // 3. CORE ANALYTICS FUNCTIONS
+    // ==========================================
+
+    function getFilteredRows() {
+        return rawData.filter(row => {
+            if (appState.filters.date && row.date !== appState.filters.date) return false;
+            if (appState.filters.shift && row.shift !== appState.filters.shift) return false;
+            if (appState.filters.operator && row.operator !== appState.filters.operator) return false;
+            if (appState.filters.status && row.status !== appState.filters.status) return false;
+            return true;
+        });
+    }
+
+    function average(rows, key) {
+        if (rows.length === 0) return 0;
+        return rows.reduce((a, b) => a + b[key], 0) / rows.length;
+    }
+
+    function sum(rows, key) {
+        return rows.reduce((a, b) => a + b[key], 0);
+    }
+
+    function groupBy(rows, key, metrics) {
+        const groups = {};
+        rows.forEach(row => {
+            const val = row[key];
+            if (!groups[val]) {
+                groups[val] = { count: 0, ...metrics.reduce((acc, m) => ({...acc, [m]: 0}), {}) };
+            }
+            groups[val].count++;
+            metrics.forEach(m => groups[val][m] += row[m]);
+        });
+        return groups;
+    }
+
+    // ==========================================
+    // 4. CHART SETUP
+    // ==========================================
+
+    const charts = {};
+
+    function initCharts() {
+        Chart.defaults.font.family = "'Segoe UI', sans-serif";
+        Chart.defaults.color = '#666';
+        Chart.defaults.scale.grid.color = '#f0f0f0';
+
+        const baseConfig = (type, filterKey, labels) => ({
+            type: 'bar',
+            data: { labels: labels, datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (e, el) => handleChartClick(e, el, filterKey, labels),
+                scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        charts.energy = new Chart(document.getElementById('chartEnergy'), baseConfig('bar', 'date', DATES));
+        charts.length = new Chart(document.getElementById('chartLength'), baseConfig('bar', 'date', DATES));
+        charts.prod = new Chart(document.getElementById('chartProd'), baseConfig('bar', 'date', DATES));
+        
+        charts.shift = new Chart(document.getElementById('chartShift'), {
+            ...baseConfig('bar', 'shift', SHIFTS),
+            options: {
+                ...baseConfig('bar', 'shift', SHIFTS).options,
+                indexAxis: 'y'
+            }
+        });
+
+        charts.util = new Chart(document.getElementById('chartUtil'), {
+            type: 'doughnut',
+            data: { labels: STATUSES, datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                onClick: (e, el) => handleChartClick(e, el, 'status', STATUSES),
+                plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw.toFixed(1)}%` } } }
+            }
+        });
+
+        charts.op = new Chart(document.getElementById('chartOp'), {
+            type: 'bar',
+            data: { labels: OPERATORS, datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (e, el) => handleChartClick(e, el, 'operator', OPERATORS),
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { type: 'linear', position: 'left', title: { display: true, text: 'Util %' } },
+                    y1: { type: 'linear', position: 'right', grid: { display: false }, title: { display: true, text: 'Tons/Hr' } }
+                }
+            }
+        });
+    }
+
+    // ==========================================
+    // 5. UPDATE ENGINE (The "True BI" Logic)
+    // ==========================================
+
+    function updateDashboard() {
+        const globalRows = rawData;
+        const filteredRows = getFilteredRows();
+
+        // Update KPIs using Measures
+        document.getElementById('kpi-coils').innerText = Measures.Count(filteredRows).toLocaleString();
+        document.getElementById('kpi-energy').innerText = Measures.AvgEnergy(filteredRows).toFixed(2);
+        document.getElementById('kpi-prod').innerText = Math.round(Measures.SumProd(filteredRows)).toLocaleString();
+        document.getElementById('kpi-gauge').innerText = Measures.AvgGauge(filteredRows).toFixed(2);
+        document.getElementById('kpi-util').innerText = Measures.AvgUtil(filteredRows).toFixed(2) + '%';
+
+        // Update Border Highlights
+        document.querySelectorAll('.chart-card').forEach(c => c.classList.remove('active-filter'));
+        if(appState.filters.date) ['card-energy', 'card-length', 'card-prod'].forEach(id => document.getElementById(id).classList.add('active-filter'));
+        if(appState.filters.shift) document.getElementById('card-shift').classList.add('active-filter');
+        if(appState.filters.status) document.getElementById('card-util').classList.add('active-filter');
+        if(appState.filters.operator) document.getElementById('card-op').classList.add('active-filter');
+
+        // Update Charts
+        updateBarChart(charts.energy, globalRows, filteredRows, 'date', 'energy', 'avg', DATES);
+        updateBarChart(charts.length, globalRows, filteredRows, 'date', 'length', 'sum', DATES);
+        updateBarChart(charts.prod, globalRows, filteredRows, 'date', 'productivity', 'sum', DATES);
+        updateBarChart(charts.shift, globalRows, filteredRows, 'shift', 'energy', 'sum', SHIFTS);
+        
+        updateUtilChart(filteredRows);
+        updateOpChart(globalRows, filteredRows);
+    }
+
+    function updateBarChart(chart, allRows, filtRows, groupKey, metric, aggType, labels) {
+        // LOGIC BRANCH:
+        // Case A: This chart IS the active filter (or part of it).
+        //    -> We show total values for all bars.
+        //    -> We highlight the selected bar in Blue, others in Grey.
+        //    -> NO Stacking.
+        // Case B: This chart is NOT the active filter.
+        //    -> We show "Contribution" (Stacked).
+        //    -> Filtered portion (Blue) + Remainder portion (Grey).
+
+        const isFilterSource = appState.filters[groupKey] !== null;
+
+        if (isFilterSource) {
+            // Case A: Selection Mode
+            const allGrouped = groupBy(allRows, groupKey, [metric]);
+            const data = labels.map(label => {
+                const g = allGrouped[label];
+                if (!g) return 0;
+                return aggType === 'avg' ? (g[metric] / g.count) : g[metric];
+            });
+
+            const bgColors = labels.map(label => 
+                label === appState.filters[groupKey] ? COLORS.primary : COLORS.ghost
+            );
+
+            chart.data.datasets = [{
+                label: 'Value',
+                data: data,
+                backgroundColor: bgColors,
+                barPercentage: 0.6
+            }];
+
+        } else {
+            // Case B: Contribution Mode (Ghost Bars)
+            // If NO filters at all, filtered = total, remainder = 0.
+            
+            const allGrouped = groupBy(allRows, groupKey, [metric]);
+            const filtGrouped = groupBy(filtRows, groupKey, [metric]);
+
+            const filteredData = labels.map(label => {
+                const g = filtGrouped[label];
+                if (!g) return 0;
+                return aggType === 'avg' ? (g[metric] / g.count) : g[metric];
+            });
+
+            const remainderData = labels.map((label, i) => {
+                const gAll = allGrouped[label];
+                const totalVal = gAll ? (aggType === 'avg' ? (gAll[metric] / gAll.count) : gAll[metric]) : 0;
+                return Math.max(0, totalVal - filteredData[i]);
+            });
+
+            chart.data.datasets = [
+                {
+                    label: 'Filtered',
+                    data: filteredData,
+                    backgroundColor: COLORS.primary,
+                    barPercentage: 0.6
+                },
+                {
+                    label: 'Remainder',
+                    data: remainderData,
+                    backgroundColor: COLORS.ghost,
+                    barPercentage: 0.6
+                }
+            ];
+        }
+        chart.update();
+    }
+
+    function updateUtilChart(rows) {
+        // Percentage of Filtered Context
+        const total = rows.length;
+        if (total === 0) {
+            charts.util.data.datasets[0].data = [0,0,0];
+            charts.util.update();
+            return;
+        }
+
+        const counts = [0, 0, 0]; // Run, Idle, Feed
+        rows.forEach(r => {
+            if (r.status === 'Run') counts[0]++;
+            else if (r.status === 'Idle') counts[1]++;
+            else if (r.status === 'Feed') counts[2]++;
+        });
+
+        const percentages = counts.map(c => (c / total) * 100);
+
+        charts.util.data.datasets[0] = {
+            data: percentages,
+            backgroundColor: [COLORS.run, COLORS.idle, COLORS.feed],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+        };
+        
+        // If specific status filtered, grey out others
+        if (appState.filters.status) {
+            const bg = [COLORS.run, COLORS.idle, COLORS.feed];
+            charts.util.data.datasets[0].backgroundColor = bg.map((c, i) => 
+                STATUSES[i] === appState.filters.status ? c : '#f3f4f6'
+            );
+        }
+
+        charts.util.update();
+    }
+
+    function updateOpChart(allRows, filtRows) {
+        // Context-Aware Logic:
+        // If filtered by Operator -> Highlight selected operator bar, show avg for all.
+        // If filtered by Date/Shift -> Show values for that Date/Shift.
+
+        const isOpFilter = appState.filters.operator !== null;
+        
+        // Always aggregate based on CURRENT context (filtRows) unless we are selecting an operator, 
+        // in which case we usually want to compare the selected one against the REST of the context.
+        // But in standard BI, if I filter "Shift A", I see Shift A's operators.
+        
+        const sourceRows = isOpFilter ? allRows : filtRows; // If operator filter active, show all ops for context
+        // Wait, if I filter Operator JALAL, I still want to see JALAL compared to others? 
+        // Yes, usually.
+        // Simplification: Always use filteredRows, but if Operator filter is active, we need to dip back into 
+        // the "Parent Context" to show the other bars in grey.
+        
+        let displayRows = filtRows;
+        if (isOpFilter) {
+            // Construct a context that has the current filters EXCEPT operator
+            displayRows = rawData.filter(row => {
+                if (appState.filters.date && row.date !== appState.filters.date) return false;
+                if (appState.filters.shift && row.shift !== appState.filters.shift) return false;
+                if (appState.filters.status && row.status !== appState.filters.status) return false;
+                return true;
+            });
+        }
+
+        const grouped = groupBy(displayRows, 'operator', ['utilization', 'tonsPerHour']);
+        
+        const utilData = OPERATORS.map(op => {
+            const g = grouped[op];
+            return g ? (g.utilization / g.count) : 0;
+        });
+
+        const tonsData = OPERATORS.map(op => {
+            const g = grouped[op];
+            return g ? (g.tonsPerHour / g.count) : 0;
+        });
+
+        const barColors = OPERATORS.map(op => {
+            if (appState.filters.operator) {
+                return op === appState.filters.operator ? COLORS.opBar : COLORS.opBarGhost;
+            }
+            return COLORS.opBar;
+        });
+
+        charts.op.data.datasets = [
+            {
+                type: 'line',
+                label: 'Utilization %',
+                data: utilData,
+                borderColor: COLORS.opLine,
+                backgroundColor: COLORS.opLine,
+                yAxisID: 'y',
+                tension: 0.4
+            },
+            {
+                type: 'bar',
+                label: 'Tons/Hr',
+                data: tonsData,
+                backgroundColor: barColors,
+                yAxisID: 'y1'
+            }
+        ];
+        charts.op.update();
+    }
+
+    // ==========================================
+    // 6. INTERACTION HANDLERS
+    // ==========================================
+
+    function handleChartClick(event, elements, type, labels) {
+        if (!elements || elements.length === 0) return;
+        
+        const index = elements[0].index;
+        const label = labels[index];
+
+        // Multi-Filter Toggle Logic
+        // If clicking currently active filter -> Remove it.
+        // Else -> Set it (replacing any existing filter for that category).
+        
+        if (appState.filters[type] === label) {
+            appState.filters[type] = null;
+        } else {
+            appState.filters[type] = label;
+        }
+        
+        updateDashboard();
+    }
+
+    function resetDashboard() {
+        appState.filters = { date: null, shift: null, operator: null, status: null };
+        updateDashboard();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initCharts();
+        updateDashboard();
+    });
+
+</script>
+</body>
+</html>

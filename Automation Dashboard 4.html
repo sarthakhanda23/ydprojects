@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOGIJI DIGI | Operational Analytics</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <style>
+        /* Custom scrollbar for professional feel */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .chart-container {
+            position: relative;
+            height: 350px; /* Standard height */
+            width: 100%;
+        }
+        .chart-container-wide {
+            position: relative;
+            height: 400px; /* Taller for Thickness chart */
+            width: 100%;
+        }
+        .card {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-4">
+                    <div class="bg-red-800 text-white font-bold text-xl px-3 py-1 rounded">CRM</div>
+                    <h1 class="text-xl font-bold text-gray-900 tracking-tight">CRM Analytics Suite</h1>
+                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Connected: MongoDB</span>
+                </div>
+
+                <div class="flex space-x-4 bg-gray-100 p-1 rounded-lg">
+                    <button onclick="switchTab('explorer')" id="btn-explorer" class="px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700">
+                        Explorer
+                    </button>
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm bg-white text-gray-900 active">
+                        Dashboard
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-gray-500" id="dataset-name">Current: Rolling_Data_2025.csv</span>
+                    <button class="bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded text-sm font-medium transition">
+                        Upload CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <div id="view-explorer" class="hidden h-[80vh] flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
+            <div class="text-center">
+                <h3 class="text-lg font-medium text-gray-900">Explorer View</h3>
+                <p class="text-gray-500">Full ad-hoc analysis functionality preserved here.</p>
+            </div>
+        </div>
+
+        <div id="view-dashboard" class="space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">ENERGY CONSUMPTION</h3>
+                    <div class="chart-container">
+                        <canvas id="chartEnergy"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Sum of Max ISU vs Mill Power (KW)</h3>
+                    <div class="chart-container">
+                        <canvas id="chartPower"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">PRODUCTIVITY</h3>
+                    <div class="chart-container">
+                        <canvas id="chartProductivity"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">TIME BREAKDOWN</h3>
+                    <div class="chart-container">
+                        <canvas id="chartPie"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">PASS DISTRIBUTION & AVG REDUCTION</h3>
+                    <div class="chart-container">
+                        <canvas id="chartPasses"></canvas>
+                    </div>
+                </div>
+                <div class="hidden lg:block"></div> 
+            </div>
+
+            <div class="grid grid-cols-1 gap-6">
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">OUTPUT THICKNESS DISTRIBUTION</h3>
+                    <div class="chart-container-wide">
+                        <canvas id="chartThickness"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- 1. CONFIGURATION & STATE ---
+        Chart.register(ChartDataLabels); // Register plugin
+
+        const COLORS = {
+            red: 'rgba(169, 35, 47, 1)',      // #A9232F
+            redDim: 'rgba(169, 35, 47, 0.2)',
+            blue: 'rgba(40, 75, 111, 1)',     // #284B6F
+            blueDim: 'rgba(40, 75, 111, 0.2)',
+            grey: 'rgba(200, 200, 200, 0.5)'
+        };
+
+        // Current Filter State
+        let globalFilter = {
+            type: null, // 'date', 'pass', 'thickness'
+            value: null
+        };
+
+        // --- 2. DUMMY DATA GENERATION ---
+        // Generating 30 days of data
+        const labelsDays = Array.from({length: 30}, (_, i) => (i + 1).toString());
+        
+        const data = {
+            days: labelsDays,
+            energy: labelsDays.map(() => Math.floor(Math.random() * (60000 - 40000) + 40000)),
+            coilsPerDay: labelsDays.map(() => Math.floor(Math.random() * (40 - 15) + 15)),
+            isuPower: labelsDays.map(() => Math.random() * 0.2),
+            millPower: labelsDays.map(() => Math.random() * 0.22),
+            calcWeight: labelsDays.map(() => Math.floor(Math.random() * 800)),
+            avgMpm: labelsDays.map(() => (Math.random() * 100 + 600).toFixed(2)),
+            
+            passes: ['5', '6', '7'],
+            passCoils: [60, 150, 480],
+            passReduction: ['66.85%', '82.68%', '84.45%'],
+
+            timeLabels: ['IDLE TIME', 'RUN TIME', 'FEED+WARMUP TIME'],
+            timeValues: [30, 180, 45], // Degrees or hours
+
+            thickLabels: ['0.36', '0.53', '0.39', '0.40', '0.29', '0.33', '0.44', '0.58', '0.20', '0.24', '0.43', '0.26', '0.41', '0.40', '0.34', '0.40', '0.32', '0.33', '0.39', '0.35', '0.44', '0.29', '0.24', '1.17', '0.36', '0.44', '0.27', '0.41', '0.42'],
+            thickCoils: Array.from({length: 29}, (_, i) => Math.floor(i * 2.5) + 5), // Increasing trend
+            inputThick: Array.from({length: 29}, () => (Math.random() * 1 + 2).toFixed(2)) // 2.xx
+        };
+
+        // --- 3. CHART INSTANCES ---
+        let charts = {};
+
+        // --- 4. COLOR LOGIC (THE MAGIC HIGHLIGHT FUNCTION) ---
+        function getColor(context, type, baseColor, dimColor) {
+            // If no filter is active, return base color
+            if (!globalFilter.type) return baseColor;
+
+            const index = context.dataIndex;
+            
+            // LOGIC: Check if this data point matches the global filter
+            let isMatch = false;
+
+            if (globalFilter.type === 'date') {
+                // For charts using Day index
+                if (type === 'day' && index === globalFilter.value) isMatch = true;
+                // Pass/Thickness charts don't map 1:1 to date visually, so we dim them all 
+                // UNLESS we had complex mapping data. For this demo, we dim non-date charts.
+            } 
+            else if (globalFilter.type === 'pass') {
+                if (type === 'pass' && index === globalFilter.value) isMatch = true;
+            }
+            else if (globalFilter.type === 'thickness') {
+                if (type === 'thickness' && index === globalFilter.value) isMatch = true;
+            }
+
+            return isMatch ? baseColor : dimColor;
+        }
+
+        // --- 5. INTERACTION HANDLER ---
+        function handleChartClick(evt, elements, chartInstance, type) {
+            if (!elements || elements.length === 0) {
+                // If clicked on background, reset filter
+                globalFilter = { type: null, value: null };
+            } else {
+                const index = elements[0].index;
+                
+                // If clicking the same item, toggle off
+                if (globalFilter.type === type && globalFilter.value === index) {
+                    globalFilter = { type: null, value: null };
+                } else {
+                    globalFilter = { type, value: index };
+                }
+            }
+            updateAllCharts();
+        }
+
+        function updateAllCharts() {
+            Object.values(charts).forEach(chart => chart.update());
+        }
+
+        // --- 6. CHART CREATION FUNCTIONS ---
+
+        function initDashboard() {
+            
+            // 1. ENERGY CHART
+            const ctxEnergy = document.getElementById('chartEnergy').getContext('2d');
+            charts.energy = new Chart(ctxEnergy, {
+                type: 'bar',
+                data: {
+                    labels: data.days,
+                    datasets: [{
+                        label: 'Energy Consumption',
+                        data: data.energy,
+                        backgroundColor: (ctx) => getColor(ctx, 'date', COLORS.red, COLORS.redDim),
+                        barPercentage: 0.8,
+                        datalabels: {
+                            align: 'end',
+                            anchor: 'end',
+                            formatter: (val, ctx) => data.coilsPerDay[ctx.dataIndex], // Show Coils on top
+                            color: '#333',
+                            font: { weight: 'bold', size: 10 },
+                            offset: -20, // Put inside top
+                            color: 'white'
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, el) => handleChartClick(e, el, charts.energy, 'date'),
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 2. POWER CHART (Line)
+            const ctxPower = document.getElementById('chartPower').getContext('2d');
+            charts.power = new Chart(ctxPower, {
+                type: 'line',
+                data: {
+                    labels: data.days,
+                    datasets: [
+                        {
+                            label: 'Max ISU Power (KW)',
+                            data: data.isuPower,
+                            borderColor: COLORS.red,
+                            backgroundColor: COLORS.red,
+                            tension: 0.3,
+                            pointRadius: 2,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Max Mill Power (KW)',
+                            data: data.millPower,
+                            borderColor: COLORS.blue,
+                            backgroundColor: COLORS.blue,
+                            tension: 0.3,
+                            pointRadius: 2,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    // Line charts are tricky to segment-highlight, usually we filter data points
+                    // For now, we will just trigger the date filter on click
+                    onClick: (e, el) => handleChartClick(e, el, charts.power, 'date'),
+                    plugins: { datalabels: { display: false } }
+                }
+            });
+
+            // 3. PRODUCTIVITY CHART
+            const ctxProd = document.getElementById('chartProductivity').getContext('2d');
+            charts.productivity = new Chart(ctxProd, {
+                type: 'bar',
+                data: {
+                    labels: data.days,
+                    datasets: [{
+                        label: 'Calculated Wt',
+                        data: data.calcWeight,
+                        backgroundColor: (ctx) => getColor(ctx, 'date', COLORS.red, COLORS.redDim),
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top', // Above bar
+                            formatter: (val, ctx) => data.avgMpm[ctx.dataIndex],
+                            font: { size: 9 },
+                            rotation: -90,
+                            color: 'white',
+                            offset: -40
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, el) => handleChartClick(e, el, charts.productivity, 'date'),
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 4. PIE CHART
+            const ctxPie = document.getElementById('chartPie').getContext('2d');
+            charts.pie = new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: data.timeLabels,
+                    datasets: [{
+                        data: data.timeValues,
+                        backgroundColor: [COLORS.red, COLORS.blue, '#A9232F80'], // Hardcoded colors for segments
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        datalabels: { 
+                            color: 'white', 
+                            formatter: (val, ctx) => ctx.chart.data.labels[ctx.dataIndex]
+                        },
+                        legend: { position: 'bottom' } 
+                    }
+                }
+            });
+
+            // 5. PASS DISTRIBUTION
+            const ctxPass = document.getElementById('chartPasses').getContext('2d');
+            charts.pass = new Chart(ctxPass, {
+                type: 'bar',
+                data: {
+                    labels: data.passes,
+                    datasets: [{
+                        label: 'No. of Coils',
+                        data: data.passCoils,
+                        backgroundColor: (ctx) => getColor(ctx, 'pass', COLORS.red, COLORS.redDim),
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: (val, ctx) => data.passReduction[ctx.dataIndex]
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, el) => handleChartClick(e, el, charts.pass, 'pass'),
+                    scales: {
+                        x: { title: { display: true, text: 'NO. OF PASSES' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 6. OUTPUT THICKNESS (Wide Layout)
+            const ctxThick = document.getElementById('chartThickness').getContext('2d');
+            charts.thickness = new Chart(ctxThick, {
+                type: 'bar',
+                data: {
+                    labels: data.thickLabels,
+                    datasets: [{
+                        label: 'Coils',
+                        data: data.thickCoils,
+                        backgroundColor: (ctx) => getColor(ctx, 'thickness', COLORS.red, COLORS.redDim),
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: (val, ctx) => data.inputThick[ctx.dataIndex],
+                            font: { size: 10 },
+                            color: '#444'
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, el) => handleChartClick(e, el, charts.thickness, 'thickness'),
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'OUTPUT COIL THICKNESS (mm)' },
+                            ticks: { autoSkip: false, maxRotation: 0 } // Prevent overlapping by using full width
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // --- 7. VIEW SWITCHER ---
+        function switchTab(view) {
+            const explorer = document.getElementById('view-explorer');
+            const dashboard = document.getElementById('view-dashboard');
+            const btnExp = document.getElementById('btn-explorer');
+            const btnDash = document.getElementById('btn-dashboard');
+
+            if (view === 'explorer') {
+                explorer.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+                btnExp.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+                btnExp.classList.remove('text-gray-500');
+                btnDash.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+                btnDash.classList.add('text-gray-500');
+            } else {
+                explorer.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                btnDash.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+                btnDash.classList.remove('text-gray-500');
+                btnExp.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+                btnExp.classList.add('text-gray-500');
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', initDashboard);
+
+    </script>
+</body>
+</html>

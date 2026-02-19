@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yogiji Digi | HR-OS & Project Control1</title>
+    <style>
+        /* =========================================
+           1. DESIGN TOKENS (Yogiji Digi Palette)
+           ========================================= */
+        :root {
+            /* BRAND COLORS (Extracted from YDLOGO) */
+            --yd-red: #a81818;       /* The distinct Maroon/Red */
+            --yd-red-light: #fef2f2; /* Light wash for backgrounds */
+            --yd-red-hover: #8a1212;
+            
+            --yd-slate: #374151;     /* The text gray */
+            --yd-dark: #111827;      /* Sidebar background */
+            
+            /* NEUTRALS */
+            --bg-body: #f3f4f6;      /* Apple-style light gray bg */
+            --bg-surface: #ffffff;
+            --border: #e5e7eb;
+            --border-strong: #d1d5db;
+            
+            /* TEXT */
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --text-inverse: #ffffff;
+            
+            /* STATUS COLORS */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+
+            /* DIMENSIONS & SPACING */
+            --sidebar-width: 260px;
+            --header-height: 60px;
+            --radius: 6px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            
+            /* FONTS */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        
+        body {
+            margin: 0;
+            font-family: var(--font-sans);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* =========================================
+           2. LAYOUT STRUCTURE
+           ========================================= */
+        
+        /* SIDEBAR */
+        #app-sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--yd-dark);
+            color: #d1d5db;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .sidebar-brand {
+            height: 70px; /* Taller to accommodate logo */
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .sidebar-brand img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+            /* Filter to ensure it looks good on dark bg if transparency isn't perfect */
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); 
+        }
+
+        .nav-section { margin-top: 24px; }
+        .nav-label {
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 700;
+            color: #9ca3af;
+            padding: 0 24px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            color: #d1d5db;
+            font-weight: 500;
+        }
+        .nav-item:hover { background-color: rgba(255,255,255,0.05); color: #fff; }
+        .nav-item.active {
+            background-color: rgba(168, 24, 24, 0.15); /* YD Red Tint */
+            color: #ffffff;
+            border-left-color: var(--yd-red);
+        }
+        .nav-item svg { width: 18px; height: 18px; margin-right: 12px; stroke-width: 2; }
+
+        /* MAIN AREA */
+        #app-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* HEADER */
+        #app-header {
+            height: var(--header-height);
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .breadcrumbs { font-size: 14px; color: var(--text-muted); }
+        .breadcrumbs span { color: var(--text-main); font-weight: 600; }
+
+        .user-profile { display: flex; align-items: center; gap: 12px; }
+        .user-info { text-align: right; }
+        .user-name { display: block; font-size: 13px; font-weight: 600; color: var(--text-main); }
+        .user-role { display: block; font-size: 11px; color: var(--text-muted); }
+        .avatar { 
+            width: 36px; height: 36px; 
+            background: var(--yd-red); 
+            color: white; 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 14px; font-weight: 600; 
+            box-shadow: 0 2px 4px rgba(168, 24, 24, 0.3);
+        }
+
+        /* CONTENT CANVAS */
+        #content-canvas {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+        }
+
+        /* =========================================
+           3. COMPONENT LIBRARY
+           ========================================= */
+        
+        /* Cards */
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--shadow-md); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-size: 16px; font-weight: 700; margin: 0; color: var(--yd-dark); }
+
+        /* Grid Systems */
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px; }
+
+        /* KPI Widget */
+        .kpi-card { display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .kpi-card::after { content:''; position: absolute; top:0; left:0; width: 4px; height: 100%; background: var(--yd-red); }
+        .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 28px; font-weight: 700; margin: 8px 0; color: var(--yd-dark); }
+        .kpi-trend { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: var(--yd-red); color: white; box-shadow: 0 1px 2px rgba(168, 24, 24, 0.4); }
+        .btn-primary:hover { background: var(--yd-red-hover); }
+        .btn-outline { background: white; border-color: var(--border-strong); color: var(--text-main); }
+        .btn-outline:hover { background: #f9fafb; border-color: #9ca3af; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        /* Tables (Linear Style) */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border-strong); color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border); color: var(--text-main); font-size: 13px; vertical-align: middle; }
+        tr:hover td { background-color: #f9fafb; cursor: pointer; }
+        
+        /* Badges */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-neutral { background: #f3f4f6; color: #4b5563; }
+
+        /* Progress Bar */
+        .progress-track { width: 100%; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--yd-red); border-radius: 3px; transition: width 0.5s ease; }
+
+        /* =========================================
+           4. MODULE SPECIFIC: GANTT & CHARTS
+           ========================================= */
+        .gantt-container { display: flex; flex-direction: column; height: 500px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; overflow: hidden; }
+        .gantt-toolbar { padding: 12px; background: #f9fafb; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .gantt-scroll-area { flex: 1; overflow: auto; position: relative; }
+        
+        svg.chart { width: 100%; height: 100%; display: block; }
+
+        /* Loader */
+        #loader {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(2px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #loader.visible { opacity: 1; pointer-events: all; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #e5e7eb;
+            border-top-color: var(--yd-red);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <nav id="app-sidebar">
+        <div class="sidebar-brand">
+            <img src="YDLOGO.png" alt="Yogiji Digi" />
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-label">Executive Overview</div>
+            <div class="nav-item active" data-view="dashboard1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Dashboard1
+            </div>
+            <div class="nav-item" data-view="projects">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                Project Control1
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Execution & Analysis</div>
+            <div class="nav-item" data-view="timeline">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                Timeline (Gantt)
+            </div>
+            <div class="nav-item" data-view="financials1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                Financials1
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">System</div>
+            <div class="nav-item" data-view="settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                HR-OS Config
+            </div>
+        </div>
+    </nav>
+
+    <main id="app-main">
+        <header id="app-header">
+            <div class="breadcrumbs" id="breadcrumbs">Home / <span>Dashboard1</span></div>
+            
+            <div class="user-profile">
+                <div class="user-info">
+                    <span class="user-name">Harvey Reginald Specter</span>
+                    <span class="user-role">Senior Partner</span>
+                </div>
+                <div class="avatar">HS</div>
+            </div>
+        </header>
+
+        <div id="content-canvas">
+            </div>
+
+        <div id="loader"><div class="spinner"></div></div>
+    </main>
+
+    <script>
+    /**
+     * YOGIJI DIGI OS - SUPERCODE FRAMEWORK
+     * Synthesizing Apex Nexus Visuals + Streamliner Logic
+     */
+
+    const App = {
+        State: {
+            currentView: 'dashboard1',
+            isLoading: false
+        },
+
+        // --- MOCK DATA STORE ---
+        DB: {
+            projects: [],
+            
+            init() {
+                // Generate High-Fidelity Data
+                const depts = ['Engineering', 'R&D', 'IT Infrastructure', 'Marketing', 'Legal'];
+                const statuses = ['On Track', 'At Risk', 'Critical', 'Completed'];
+
+                for(let i=1; i<=12; i++) {
+                    const status = i === 2 ? 'Critical' : (i === 5 ? 'At Risk' : (i > 10 ? 'Completed' : 'On Track'));
+                    const budget = Math.floor(Math.random() * 5000000) + 500000;
+                    
+                    this.projects.push({
+                        id: i,
+                        code: `YD-${202600 + i}`,
+                        name: `Phase ${i} Expansion: ${['Alpha', 'Bravo', 'Charlie', 'Delta'][i%4]} Protocol`,
+                        dept: depts[i%5],
+                        manager: i%2===0 ? "Mike Ross" : "Donna Paulsen",
+                        status: status,
+                        progress: status === 'Completed' ? 100 : Math.floor(Math.random() * 85) + 10,
+                        budget: budget,
+                        actual: Math.floor(budget * (Math.random() * 0.4 + 0.5)), // 50-90% spend
+                        startDate: '2026-01-10',
+                        duration: 30 + Math.floor(Math.random() * 60)
+                    });
+                }
+            },
+
+            getTasks() {
+                // Generate Gantt tasks on the fly for the Timeline view
+                const tasks = [];
+                const baseDate = new Date('2026-02-01');
+                
+                ['Requirements', 'Design System', 'Frontend Dev', 'Backend Integ.', 'UAT Testing', 'Deployment'].forEach((stage, idx) => {
+                    tasks.push({
+                        id: idx,
+                        name: stage,
+                        startOffset: idx * 10,
+                        duration: 8 + Math.floor(Math.random() * 5),
+                        progress: idx < 2 ? 100 : (idx === 2 ? 65 : 0),
+                        status: idx < 2 ? 'Done' : (idx === 2 ? 'In Progress' : 'Pending')
+                    });
+                });
+                return tasks;
+            }
+        },
+
+        // --- VIEW RENDERERS ---
+        Views: {
+            dashboard1() {
+                const projects = App.DB.projects;
+                const totalBudget = projects.reduce((acc, p) => acc + p.budget, 0);
+                const activeCount = projects.filter(p => p.status !== 'Completed').length;
+                const criticalCount = projects.filter(p => p.status === 'Critical').length;
+                
+                const formatMoney = n => '$' + (n/1000000).toFixed(1) + 'M';
+
+                return `
+                    <div class="grid-4">
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Total Portfolio</span>
+                            <span class="kpi-value">${formatMoney(totalBudget)}</span>
+                            <span class="kpi-trend trend-up"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg> 12% vs LY</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Active Projects</span>
+                            <span class="kpi-value">${activeCount}</span>
+                            <span class="kpi-trend">Operating Capacity</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Resource Util.</span>
+                            <span class="kpi-value">94%</span>
+                            <span class="kpi-trend trend-up">Optimal Range</span>
+                        </div>
+                        <div class="card kpi-card" style="border-left: 4px solid var(--danger);">
+                            <span class="kpi-label">Critical Actions</span>
+                            <span class="kpi-value" style="color: var(--danger)">${criticalCount}</span>
+                            <span class="kpi-trend trend-down">Requires Attention</span>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title">Portfolio Health Distribution</h3></div>
+                            <div id="chart-health" style="height: 250px;"></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title">Budget Burn Rate</h3></div>
+                            <div id="chart-budget" style="height: 250px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">High Priority Watchlist</h3>
+                            <button class="btn btn-outline btn-sm" onclick="App.Router.go('projects')">View All</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr><th>Status</th><th>Code</th><th>Project Name</th><th>Manager</th><th>Completion</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${projects.slice(0, 5).map(p => App.Components.projectRow(p)).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+
+            projects() {
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Project Control1 Center</h3>
+                            <div style="display:flex; gap:10px">
+                                <button class="btn btn-outline">+ Filter</button>
+                                <button class="btn btn-primary">Create Project</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Project Code</th>
+                                        <th>Project Name</th>
+                                        <th>Department</th>
+                                        <th>Budget</th>
+                                        <th>Actual Spend</th>
+                                        <th>Progress</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${App.DB.projects.map(p => App.Components.projectRowFull(p)).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+
+            timeline() {
+                const tasks = App.DB.getTasks();
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Master Schedule (Gantt)</h3>
+                            <div>
+                                <span class="badge badge-neutral">Q1 2026</span>
+                            </div>
+                        </div>
+                        <div class="gantt-container">
+                            <div class="gantt-toolbar">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary">Month</button>
+                                    <button class="btn btn-sm btn-outline">Quarter</button>
+                                </div>
+                            </div>
+                            <div class="gantt-scroll-area" id="gantt-svg-container">
+                                </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            financials1() {
+                const projects = App.DB.projects;
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Financial Performance</h3>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Project</th>
+                                        <th>Approved Budget</th>
+                                        <th>Actual Cost</th>
+                                        <th>Variance ($)</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${projects.map(p => {
+                                        const variance = p.budget - p.actual;
+                                        const isOver = variance < 0;
+                                        return `
+                                        <tr>
+                                            <td style="font-weight:600; color:var(--yd-dark)">${p.name}</td>
+                                            <td>${App.Utils.currency(p.budget)}</td>
+                                            <td>${App.Utils.currency(p.actual)}</td>
+                                            <td style="color:${isOver ? 'var(--danger)' : 'var(--success)'}">
+                                                ${isOver ? '-' : '+'}${App.Utils.currency(Math.abs(variance))}
+                                            </td>
+                                            <td><span class="badge ${isOver ? 'badge-danger' : 'badge-success'}">${isOver ? 'Overrun' : 'Under'}</span></td>
+                                        </tr>
+                                        `
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+        },
+
+        // --- COMPONENTS ---
+        Components: {
+            projectRow(p) {
+                const badge = App.Utils.statusBadge(p.status);
+                return `
+                    <tr>
+                        <td><span class="badge ${badge}">${p.status}</span></td>
+                        <td style="font-family:monospace; color:var(--text-muted)">${p.code}</td>
+                        <td style="font-weight:600; color:var(--yd-slate)">${p.name}</td>
+                        <td>${p.manager}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div class="progress-track" style="width:80px">
+                                    <div class="progress-fill" style="width:${p.progress}%"></div>
+                                </div>
+                                <span style="font-size:11px">${p.progress}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            },
+            projectRowFull(p) {
+                const badge = App.Utils.statusBadge(p.status);
+                return `
+                    <tr>
+                        <td><span class="badge ${badge}">${p.status}</span></td>
+                        <td style="font-family:monospace; color:var(--text-muted)">${p.code}</td>
+                        <td style="font-weight:600; color:var(--yd-red)">${p.name}</td>
+                        <td>${p.dept}</td>
+                        <td>${App.Utils.currency(p.budget)}</td>
+                        <td>${App.Utils.currency(p.actual)}</td>
+                        <td>
+                            <div class="progress-track" style="width:100px">
+                                <div class="progress-fill" style="width:${p.progress}%; background-color: ${p.status === 'Critical' ? 'var(--danger)' : 'var(--yd-red)'}"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        },
+
+        // --- SVG CHARTS ---
+        Charts: {
+            renderDonut(id) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                
+                // Simple SVG Donut
+                const data = [
+                    { val: 65, color: '#10b981' }, // On Track
+                    { val: 25, color: '#f59e0b' }, // At Risk
+                    { val: 10, color: '#ef4444' }  // Critical
+                ];
+                
+                let svg = `<svg width="100%" height="100%" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#e5e7eb" stroke-width="20" />`;
+                
+                let offset = 25; // start at top
+                let total = 100;
+                
+                data.forEach(slice => {
+                    const dashArray = `${slice.val} ${total - slice.val}`;
+                    svg += `<circle cx="50" cy="50" r="40" fill="transparent" stroke="${slice.color}" stroke-width="20"
+                             stroke-dasharray="${dashArray}" stroke-dashoffset="${offset}" />`;
+                    offset -= slice.val;
+                });
+                
+                // Center Text
+                svg += `<text x="50" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151">94%</text>
+                        <text x="50" y="62" text-anchor="middle" font-size="5" fill="#9ca3af">UTILIZATION</text>
+                        </svg>`;
+                
+                el.innerHTML = svg;
+            },
+
+            renderBar(id) {
+                 const el = document.getElementById(id);
+                 if(!el) return;
+                 // Simple Bar Chart
+                 const h = 200, w = 400;
+                 let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}">`;
+                 const vals = [80, 95, 40, 60, 90];
+                 const barW = 40;
+                 const gap = 30;
+                 
+                 vals.forEach((v, i) => {
+                     const bh = (v/100) * 150;
+                     const x = 50 + i * (barW + gap);
+                     const y = h - bh - 20;
+                     const color = v > 90 ? '#ef4444' : '#a81818';
+                     svg += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${color}" rx="4"></rect>`;
+                     svg += `<text x="${x + barW/2}" y="${h-5}" text-anchor="middle" font-size="12" fill="#6b7280">Q${i+1}</text>`;
+                 });
+                 svg += `</svg>`;
+                 el.innerHTML = svg;
+            },
+
+            renderGantt(id) {
+                const el = document.getElementById(id);
+                if(!el) return;
+
+                const tasks = App.DB.getTasks();
+                const rowH = 50;
+                const dayW = 15;
+                const headerH = 40;
+                const w = 800;
+                const h = headerH + (tasks.length * rowH);
+
+                let svg = `<svg width="${w}" height="${h}" style="min-width:100%">`;
+                
+                // Grid Background
+                for(let i=0; i<30; i++) {
+                    svg += `<line x1="${i*50}" y1="0" x2="${i*50}" y2="${h}" stroke="#f3f4f6" />`;
+                }
+
+                // Header
+                svg += `<rect x="0" y="0" width="${w}" height="${headerH}" fill="#f9fafb" />`;
+                for(let i=1; i<10; i++) {
+                     svg += `<text x="${i*100}" y="25" font-size="10" fill="#6b7280">WEEK ${i}</text>`;
+                }
+
+                // Tasks
+                tasks.forEach((t, i) => {
+                    const y = headerH + (i * rowH);
+                    const barX = 150 + (t.startOffset * 5); // offset for label
+                    const barW = t.duration * 10;
+                    
+                    // Row line
+                    svg += `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="#e5e7eb" />`;
+                    
+                    // Label
+                    svg += `<text x="10" y="${y + 30}" font-size="12" font-weight="600" fill="#374151">${t.name}</text>`;
+                    
+                    // Bar
+                    const color = t.status === 'Done' ? '#10b981' : (t.status === 'In Progress' ? '#a81818' : '#d1d5db');
+                    svg += `<rect x="${barX}" y="${y+15}" width="${barW}" height="20" fill="${color}" rx="4" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.1))" />`;
+                    
+                    // Progress
+                    if(t.progress > 0) {
+                         svg += `<text x="${barX + barW + 10}" y="${y+30}" font-size="10" fill="#6b7280">${t.progress}%</text>`;
+                    }
+                });
+
+                svg += `</svg>`;
+                el.innerHTML = svg;
+            }
+        },
+
+        // --- UTILS ---
+        Utils: {
+            currency: n => '$' + n.toLocaleString(),
+            statusBadge: s => {
+                if(s==='Critical') return 'badge-danger';
+                if(s==='At Risk') return 'badge-warning';
+                if(s==='Completed') return 'badge-success';
+                return 'badge-success'; // Default On Track
+            }
+        },
+
+        // --- ROUTER ---
+        Router: {
+            go(view) {
+                App.State.isLoading = true;
+                App.UI.toggleLoader(true);
+                
+                // Nav State
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                const activeEl = document.querySelector(`.nav-item[data-view="${view}"]`);
+                if(activeEl) activeEl.classList.add('active');
+
+                // Breadcrumb
+                document.getElementById('breadcrumbs').innerHTML = `Home / <span>${view.charAt(0).toUpperCase() + view.slice(1)}</span>`;
+
+                setTimeout(() => {
+                    const canvas = document.getElementById('content-canvas');
+                    
+                    if(view === 'dashboard1') {
+                        canvas.innerHTML = App.Views.dashboard1();
+                        App.Charts.renderDonut('chart-health');
+                        App.Charts.renderBar('chart-budget');
+                    }
+                    else if(view === 'projects') {
+                        canvas.innerHTML = App.Views.projects();
+                    }
+                    else if(view === 'timeline') {
+                        canvas.innerHTML = App.Views.timeline();
+                        App.Charts.renderGantt('gantt-svg-container');
+                    }
+                    else if(view === 'financials1') {
+                        canvas.innerHTML = App.Views.financials1();
+                    }
+                    else {
+                        canvas.innerHTML = `<div style="text-align:center; padding:50px; color:#9ca3af">Module Under Construction</div>`;
+                    }
+
+                    App.UI.toggleLoader(false);
+                    App.State.isLoading = false;
+                }, 400); // Simulate smooth network transition
+            }
+        },
+
+        // --- UI HELPERS ---
+        UI: {
+            toggleLoader(show) {
+                const l = document.getElementById('loader');
+                if(show) l.classList.add('visible');
+                else l.classList.remove('visible');
+            }
+        },
+
+        init() {
+            this.DB.init();
+            
+            // Event Listeners for Nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const view = e.currentTarget.getAttribute('data-view');
+                    App.Router.go(view);
+                });
+            });
+
+            // Initial Load
+            App.Router.go('dashboard1');
+        }
+    };
+
+    // Boot the System
+    document.addEventListener('DOMContentLoaded', () => App.init());
+
+    </script>
+</body>
+</html>

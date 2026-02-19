@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streamliner Execution System | YD Projects</title>
+<style>
+/* -------------------------------------------------------------------------- */
+/* PART 1: CSS RESET & VARIABLES                                              */
+/* -------------------------------------------------------------------------- */
+:root {
+    --primary-color: #0f172a;       /* Dark Slate */
+    --secondary-color: #334155;     /* Slate */
+    --accent-color: #0ea5e9;        /* Sky Blue */
+    --accent-hover: #0284c7;
+    --success-color: #10b981;       /* Emerald */
+    --warning-color: #f59e0b;       /* Amber */
+    --danger-color: #ef4444;        /* Red */
+    --neutral-bg: #f8fafc;          /* Light Gray Background */
+    --card-bg: #ffffff;             /* White */
+    --border-color: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --header-height: 60px;
+    --sidebar-width: 260px;
+    --transition-speed: 0.2s;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--neutral-bg);
+    color: var(--text-primary);
+    line-height: 1.5;
+    font-size: 14px;
+    overflow: hidden; /* App-like feel */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a { text-decoration: none; color: inherit; cursor: pointer; }
+ul { list-style: none; }
+
+/* -------------------------------------------------------------------------- */
+/* PART 2: LAYOUT COMPONENTS                                                  */
+/* -------------------------------------------------------------------------- */
+
+/* Header */
+header {
+    height: var(--header-height);
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.brand-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: var(--sidebar-width);
+}
+
+.brand-logo {
+    height: 32px;
+    width: auto;
+}
+
+.brand-name {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--primary-color);
+    letter-spacing: -0.5px;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px;
+    background: var(--neutral-bg);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    background-color: var(--accent-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--secondary-color);
+}
+
+/* Sidebar */
+aside {
+    width: var(--sidebar-width);
+    background-color: var(--primary-color);
+    color: #cbd5e1;
+    position: fixed;
+    top: var(--header-height);
+    bottom: 0;
+    left: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding-top: 20px;
+    transition: width var(--transition-speed);
+}
+
+.nav-group {
+    margin-bottom: 25px;
+}
+
+.nav-header {
+    padding: 0 25px;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 10px;
+}
+
+.nav-item {
+    padding: 10px 25px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+    background-color: rgba(255,255,255,0.05);
+    color: #fff;
+}
+
+.nav-item.active {
+    background-color: rgba(14, 165, 233, 0.1);
+    color: var(--accent-color);
+    border-left-color: var(--accent-color);
+}
+
+.nav-icon {
+    width: 18px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* Main Content Area */
+main {
+    margin-top: var(--header-height);
+    margin-left: var(--sidebar-width);
+    padding: 30px;
+    flex: 1;
+    overflow-y: auto;
+    height: calc(100vh - var(--header-height));
+    background-color: var(--neutral-bg);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.panel-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.panel-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+.panel-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* PART 3: UI ELEMENTS (Buttons, Cards, Tables, Badges)                       */
+/* -------------------------------------------------------------------------- */
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    color: white;
+}
+.btn-primary:hover { background-color: var(--accent-hover); }
+
+.btn-secondary {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    color: var(--secondary-color);
+}
+.btn-secondary:hover { background-color: #f1f5f9; }
+
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+/* Cards */
+.card {
+    background: var(--card-bg);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Grid Layouts */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+/* Stats Tiles */
+.stat-tile {
+    display: flex;
+    flex-direction: column;
+}
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 5px 0;
+}
+.stat-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+.stat-trend {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+}
+.trend-up { color: var(--success-color); }
+.trend-down { color: var(--danger-color); }
+
+/* Tables */
+.data-table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    white-space: nowrap;
+}
+table.data-table th {
+    background-color: #f8fafc;
+    color: var(--secondary-color);
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+table.data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+table.data-table tr:last-child td { border-bottom: none; }
+table.data-table tr:hover { background-color: #f1f5f9; cursor: default; }
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.badge-success { background-color: #d1fae5; color: #047857; }
+.badge-warning { background-color: #fef3c7; color: #b45309; }
+.badge-danger { background-color: #fee2e2; color: #b91c1c; }
+.badge-info { background-color: #e0f2fe; color: #0369a1; }
+.badge-neutral { background-color: #f1f5f9; color: #475569; }
+
+/* Progress Bars */
+.progress-wrapper {
+    width: 100%;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+.bg-green { background-color: var(--success-color); }
+.bg-yellow { background-color: var(--warning-color); }
+.bg-red { background-color: var(--danger-color); }
+.bg-blue { background-color: var(--accent-color); }
+
+/* Tree View for Projects */
+.tree-node {
+    margin-left: 20px;
+    border-left: 1px solid var(--border-color);
+    padding-left: 10px;
+    position: relative;
+}
+.tree-header {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: white;
+    border: 1px solid var(--border-color);
+    margin-bottom: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.tree-header:hover { background: #f8fafc; }
+.tree-expander {
+    margin-right: 10px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+}
+
+/* Inputs */
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    transition: border-color 0.2s;
+}
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-content {
+    background: white;
+    width: 600px;
+    max-width: 90%;
+    border-radius: 6px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Full Kit Flag */
+.full-kit-flag {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+.fk-yes { background-color: var(--success-color); }
+.fk-no { background-color: var(--danger-color); }
+
+/* Critical Chain Buffer Visuals */
+.buffer-zone {
+    height: 20px;
+    display: flex;
+    margin-top: 5px;
+    border-radius: 3px;
+    overflow: hidden;
+    font-size: 10px;
+    color: white;
+    text-align: center;
+    line-height: 20px;
+}
+.zone-green { background: #10b981; width: 33%; }
+.zone-yellow { background: #f59e0b; width: 33%; }
+.zone-red { background: #ef4444; width: 34%; }
+.consumption-marker {
+    height: 4px;
+    background: #1e293b;
+    margin-top: 2px;
+    position: relative;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="brand-area">
+        <img src="YDLOGO.png" alt="YD Logo" class="brand-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjMGUhNzk5Ij48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIi8+PHRleHQgeD0iNTAiIHk9IjY1IiBmb250LXNpemU9IjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPllEPC90ZXh0Pjwvc3ZnPg=='">
+        <span class="brand-name"></span>
+    </div>
+    <div class="header-controls">
+        <div class="badge badge-info" id="system-time">System Time: Loading...</div>
+        <button class="btn btn-sm btn-secondary">Help</button>
+        <button class="btn btn-sm btn-secondary">Notifications <span class="badge badge-danger" style="margin-left:5px">3</span></button>
+        <div class="user-profile">
+            <div class="user-avatar">PM</div>
+            <span class="user-name">Proj. Manager</span>
+        </div>
+    </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside>
+    <div class="nav-group">
+        <div class="nav-header">Overview</div>
+        <div class="nav-item active" onclick="app.router('dashboard3')">
+            <span class="nav-icon">📊</span> Dashboard3
+        </div>
+        <div class="nav-item" onclick="app.router('myview')">
+            <span class="nav-icon">👤</span> My View
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-header">Execution</div>
+        <div class="nav-item" onclick="app.router('manageProjects')">
+            <span class="nav-icon">🏗️</span> Manage Projects
+        </div>
+        <div class="nav-item" onclick="app.router('projectControl')">
+            <span class="nav-icon">🕹️</span> Project Control2
+        </div>
+        <div class="nav-item" onclick="app.router('planning')">
+            <span class="nav-icon">📅</span> Project Planning
+        </div>
+        <div class="nav-item" onclick="app.router('detailing')">
+            <span class="nav-icon">🔍</span> Plan Detailing
+        </div>
+        <div class="nav-item" onclick="app.router('tasks')">
+            <span class="nav-icon">✅</span> Task Management
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <div class="nav-header">Support</div>
+        <div class="nav-item" onclick="app.router('fullkit')">
+            <span class="nav-icon">📦</span> Full-Kit Mgmt
+        </div>
+        <div class="nav-item" onclick="app.router('issues')">
+            <span class="nav-icon">⚠️</span> Issue Management
+        </div>
+        <div class="nav-item" onclick="app.router('actions')">
+            <span class="nav-icon">📝</span> Action Items
+        </div>
+        <div class="nav-item" onclick="app.router('files')">
+            <span class="nav-icon">📁</span> File Management
+        </div>
+        <div class="nav-item" onclick="app.router('reports')">
+            <span class="nav-icon">📈</span> Reports
+        </div>
+    </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main id="app-content">
+    <!-- Content injected via JS -->
+</main>
+
+<script>
+/**
+ * --------------------------------------------------------------------------
+ * PART 4: DATA MODEL (MOCK DATABASE)
+ * --------------------------------------------------------------------------
+ * This section simulates the backend database with deterministic, hardcoded data.
+ */
+
+// 1. Projects
+const PROJECTS = [
+    {
+        id: 'P001',
+        code: 'PROJ-NTPC-04',
+        name: 'NTPC Line 4 Expansion - Coal Handling',
+        client: 'NTPC',
+        start: '2025-01-10',
+        finish: '2025-11-30',
+        buffer: 45, // days
+        status: 'In Progress',
+        pm: 'Proj. Manager'
+    },
+    {
+        id: 'P002',
+        code: 'PROJ-LNT-HF',
+        name: 'L&T Heavy Forge Upgrade',
+        client: 'L&T',
+        start: '2025-02-15',
+        finish: '2025-12-20',
+        buffer: 30, // days
+        status: 'Planning',
+        pm: 'Proj. Manager'
+    }
+];
+
+// 2. Assemblies (Equipments)
+// Generating realistic industrial equipment names
+const ASSEMBLIES = [
+    // Project 1 Assemblies
+    { id: 'A101', projectId: 'P001', name: 'Coil Car Assembly', code: 'CC-01', start: '2025-01-15', finish: '2025-04-15', status: 'In Progress' },
+    { id: 'A102', projectId: 'P001', name: 'Drag Chain Mechanism', code: 'DC-04', start: '2025-01-20', finish: '2025-03-30', status: 'Delayed' },
+    { id: 'A103', projectId: 'P001', name: 'Coil Pit Cover', code: 'CPC-02', start: '2025-02-01', finish: '2025-05-01', status: 'Not Started' },
+    { id: 'A104', projectId: 'P001', name: 'Mandrel Shaft Assy', code: 'MS-11', start: '2025-02-10', finish: '2025-06-10', status: 'Not Started' },
+    { id: 'A105', projectId: 'P001', name: 'Hydraulic Power Pack', code: 'HPP-01', start: '2025-01-15', finish: '2025-03-15', status: 'In Progress' },
+    { id: 'A106', projectId: 'P001', name: 'Main Frame Structure', code: 'MFS-99', start: '2025-01-10', finish: '2025-04-01', status: 'Completed' },
+    { id: 'A107', projectId: 'P001', name: 'Gearbox Mounting Base', code: 'GMB-03', start: '2025-03-01', finish: '2025-05-15', status: 'Not Started' },
+    { id: 'A108', projectId: 'P001', name: 'Recoiler Assembly', code: 'RC-05', start: '2025-02-20', finish: '2025-07-20', status: 'Planning' },
+    { id: 'A109', projectId: 'P001', name: 'Uncoiler Assembly', code: 'UC-05', start: '2025-02-20', finish: '2025-07-20', status: 'Planning' },
+    { id: 'A110', projectId: 'P001', name: 'Pinch Roll Stand', code: 'PRS-02', start: '2025-04-01', finish: '2025-08-01', status: 'Planning' },
+
+    // Project 2 Assemblies
+    { id: 'A201', projectId: 'P002', name: 'Furnace Door Assy', code: 'FD-88', start: '2025-02-20', finish: '2025-05-20', status: 'Planning' },
+    { id: 'A202', projectId: 'P002', name: 'Cooling Bed System', code: 'CB-22', start: '2025-03-01', finish: '2025-09-01', status: 'Planning' },
+    { id: 'A203', projectId: 'P002', name: 'Roller Table Section A', code: 'RT-A', start: '2025-03-15', finish: '2025-06-15', status: 'Planning' },
+    { id: 'A204', projectId: 'P002', name: 'Roller Table Section B', code: 'RT-B', start: '2025-03-15', finish: '2025-06-15', status: 'Planning' },
+    { id: 'A205', projectId: 'P002', name: 'Hydraulic Cylinder 500T', code: 'HC-500', start: '2025-02-25', finish: '2025-05-25', status: 'Planning' },
+    { id: 'A206', projectId: 'P002', name: 'Accumulator Station', code: 'AS-01', start: '2025-04-01', finish: '2025-06-01', status: 'Planning' },
+    { id: 'A207', projectId: 'P002', name: 'Control Pulpit', code: 'CP-01', start: '2025-05-01', finish: '2025-08-01', status: 'Planning' },
+    { id: 'A208', projectId: 'P002', name: 'Lubrication System', code: 'LS-01', start: '2025-03-10', finish: '2025-05-10', status: 'Planning' },
+    { id: 'A209', projectId: 'P002', name: 'Walking Beam', code: 'WB-01', start: '2025-04-15', finish: '2025-10-15', status: 'Planning' },
+    { id: 'A210', projectId: 'P002', name: 'Discharge Machine', code: 'DM-01', start: '2025-04-15', finish: '2025-10-15', status: 'Planning' }
+];
+
+// 3. Sub-Assemblies
+// To reduce code size, we generate these programmatically for the mock data,
+// but they represent hardcoded relationships in a real DB.
+const SUB_ASSEMBLIES = [];
+const SUB_ASSEMBLY_NAMES = [
+    'Main Housing', 'Base Frame', 'Drive Shaft Unit', 'Bearing Housing Left',
+    'Bearing Housing Right', 'Hydraulic Manifold', 'Electrical Junction Box',
+    'Safety Guarding', 'Limit Switch Bracket', 'Lifting Lug Set',
+    'Lubrication Piping', 'Anchor Bolt Set', 'Motor Mount Plate', 'Coupling Guard'
+];
+
+ASSEMBLIES.forEach(assy => {
+    // create 8-12 sub-assemblies per assembly
+    const count = 8 + Math.floor(Math.random() * 5);
+    for(let i=0; i<count; i++) {
+        SUB_ASSEMBLIES.push({
+            id: `SA-${assy.id}-${i}`,
+            assemblyId: assy.id,
+            name: `${SUB_ASSEMBLY_NAMES[i]} (${assy.code})`,
+            start: assy.start,
+            finish: assy.finish,
+            status: Math.random() > 0.7 ? 'Completed' : (Math.random() > 0.4 ? 'In Progress' : 'Pending'),
+            responsible: ['Design', 'Purchase', 'Manufacturing'][Math.floor(Math.random()*3)],
+            bufferConsumed: Math.floor(Math.random() * 100) // %
+        });
+    }
+});
+
+// 4. BOM Items & Tasks
+// We will generate these on the fly when viewing details to save memory/DOM load for the SPA,
+// but we store them in a "DB" object.
+const BOMS = [];
+const TASKS = [];
+
+// Helper to generate BOMs for a specific sub-assembly if not exists
+function ensureBOM(subAssyId) {
+    if (BOMS.some(b => b.subAssemblyId === subAssyId)) return;
+
+    const materials = ['Mild Steel Plate 10mm', 'IS 2062 Gr.B Plate', 'EN8 Shaft round 50mm', 'Hex Bolt M16x50 8.8', 'Spherical Roller Bearing', 'Hydraulic Seal Kit', 'Seamless Pipe SCH40', 'Checkered Plate 6mm', 'Angle Iron 50x50x6'];
+    const vendors = ['Tata Steel', 'SKF Bearings', 'Local Fasteners Inc', 'Parker Hydraulics', 'Jindal Steel', 'Essar Steel'];
+
+    for(let i=0; i < 45; i++) { // 45 items per sub-assembly
+        BOMS.push({
+            id: `BOM-${subAssyId}-${i}`,
+            subAssemblyId: subAssyId,
+            dwgNo: `YD-${subAssyId.split('-')[1]}-${100+i}`,
+            description: materials[Math.floor(Math.random() * materials.length)],
+            qty: Math.floor(Math.random() * 20) + 1,
+            weight: (Math.random() * 10).toFixed(2),
+            vendor: vendors[Math.floor(Math.random() * vendors.length)],
+            po: Math.random() > 0.5 ? `PO-${2000+i}` : '',
+            status: Math.random() > 0.8 ? 'Received' : (Math.random() > 0.5 ? 'Ordered' : 'Draft')
+        });
+    }
+}
+
+// Helper to generate Tasks
+function ensureTasks(subAssyId) {
+    if (TASKS.some(t => t.subAssemblyId === subAssyId)) return;
+
+    const phases = ['Design', 'Purchase', 'Fabrication', 'Assembly', 'Dispatch'];
+    let dayOffset = 0;
+
+    phases.forEach((phase, idx) => {
+        const duration = Math.floor(Math.random() * 5) + 2;
+        TASKS.push({
+            id: `TSK-${subAssyId}-${idx}`,
+            subAssemblyId: subAssyId,
+            name: `${phase} - ${subAssyId}`,
+            type: phase,
+            start: `Day ${dayOffset}`,
+            duration: duration,
+            owner: idx === 0 ? 'Eng. Team' : (idx === 1 ? 'Purchase Dept' : 'Shop Floor'),
+            status: Math.random() > 0.5 ? 'Completed' : 'Pending',
+            dependency: idx > 0 ? `TSK-${subAssyId}-${idx-1}` : '-'
+        });
+        dayOffset += duration;
+    });
+}
+
+// Pre-populate BOMs and Tasks for the first project's first few assemblies for instant demo
+SUB_ASSEMBLIES.filter(sa => sa.id.includes('A101')).forEach(sa => {
+    ensureBOM(sa.id);
+    ensureTasks(sa.id);
+});
+
+// 5. Issues & Action Items
+const ISSUES = [
+    { id: 'ISS-01', title: 'Material shortage for Housing', severity: 'High', owner: 'Purchase', status: 'Open', linkedTo: 'A101' },
+    { id: 'ISS-02', title: 'Drawing revision required for Shaft', severity: 'Medium', owner: 'Design', status: 'In Progress', linkedTo: 'A102' },
+    { id: 'ISS-03', title: 'Vendor delayed delivery', severity: 'High', owner: 'Purchase', status: 'Open', linkedTo: 'A105' }
+];
+
+const ACTIONS = [
+    { id: 'ACT-01', task: 'Review Shaft Drawings', owner: 'Design Lead', due: '2025-01-25', status: 'Pending' },
+    { id: 'ACT-02', task: 'Expedite Bearing PO', owner: 'Purchase Mgr', due: '2025-01-26', status: 'Done' }
+];
+
+const FILES = [
+    { name: 'General_Arrangement_A101.pdf', type: 'Drawing', date: '2025-01-10', size: '2.4 MB' },
+    { name: 'BOM_A101_Rev0.xlsx', type: 'BOM', date: '2025-01-12', size: '45 KB' },
+    { name: 'QAP_Standard.pdf', type: 'Quality', date: '2024-12-01', size: '1.1 MB' }
+];
+
+
+/**
+ * --------------------------------------------------------------------------
+ * PART 5: APPLICATION LOGIC (CONTROLLER)
+ * --------------------------------------------------------------------------
+ */
+
+const app = {
+    state: {
+        currentRoute: 'dashboard3',
+        selectedProject: 'P001',
+        selectedAssembly: null,
+        currentUser: 'Proj. Manager'
+    },
+
+    init: function() {
+        this.updateTime();
+        setInterval(this.updateTime, 60000);
+        this.router('dashboard3');
+    },
+
+    updateTime: function() {
+        const now = new Date();
+        document.getElementById('system-time').innerText = now.toLocaleString();
+    },
+
+    router: function(route) {
+        this.state.currentRoute = route;
+        
+        // Update Sidebar UI
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const navItem = document.querySelector(`.nav-item[onclick="app.router('${route}')"]`);
+        if(navItem) navItem.classList.add('active');
+
+        // Render Content
+        const main = document.getElementById('app-content');
+        main.innerHTML = ''; // Clear
+
+        switch(route) {
+            case 'dashboard3': this.renderDashboard3(main); break;
+            case 'manageProjects': this.renderManageProjects(main); break;
+            case 'projectControl': this.renderProjectControl(main); break;
+            case 'planning': this.renderPlanning(main); break;
+            case 'detailing': this.renderDetailing(main); break;
+            case 'tasks': this.renderTasks(main); break;
+            case 'fullkit': this.renderFullKit(main); break;
+            case 'myview': this.renderMyView(main); break;
+            case 'issues': this.renderIssues(main); break;
+            case 'files': this.renderFiles(main); break;
+            case 'actions': this.renderActions(main); break;
+            case 'reports': main.innerHTML = '<div class="panel-header"><div class="panel-title">Reports</div></div><div class="card"><p>Report module loaded.</p></div>'; break;
+            default: main.innerHTML = '<h1>Module Under Construction</h1>';
+        }
+    },
+
+    /* --- RENDERERS --- */
+
+    renderDashboard3: function(container) {
+        // Calculations
+        const totalProjects = PROJECTS.length;
+        const totalAssemblies = ASSEMBLIES.length;
+        const delayedAssemblies = ASSEMBLIES.filter(a => a.status === 'Delayed').length;
+        const openIssues = ISSUES.filter(i => i.status !== 'Closed').length;
+
+        const html = `
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">Portfolio Dashboard3</div>
+                    <div class="panel-subtitle">Executive Summary & Health Check</div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn btn-primary" onclick="alert('Report Generated')">Export Report</button>
+                </div>
+            </div>
+
+            <div class="grid-4">
+                <div class="card stat-tile">
+                    <span class="stat-label">Active Projects</span>
+                    <span class="stat-value">${totalProjects}</span>
+                    <span class="stat-trend trend-up">▲ On Track</span>
+                </div>
+                <div class="card stat-tile">
+                    <span class="stat-label">Total Assemblies</span>
+                    <span class="stat-value">${totalAssemblies}</span>
+                    <span class="stat-trend trend-up">In Pipeline</span>
+                </div>
+                <div class="card stat-tile">
+                    <span class="stat-label">Critical Delays</span>
+                    <span class="stat-value" style="color:var(--danger-color)">${delayedAssemblies}</span>
+                    <span class="stat-trend trend-down">▼ Action Required</span>
+                </div>
+                <div class="card stat-tile">
+                    <span class="stat-label">Open Issues</span>
+                    <span class="stat-value">${openIssues}</span>
+                    <span class="stat-trend">Needs Resolution</span>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">Project Health (Critical Chain Buffer)</div>
+                    ${PROJECTS.map(p => `
+                        <div style="margin-bottom: 15px;">
+                            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+                                <strong>${p.name}</strong>
+                                <span>${p.status}</span>
+                            </div>
+                            <div class="buffer-zone">
+                                <div class="zone-green">Safe</div>
+                                <div class="zone-yellow">Warning</div>
+                                <div class="zone-red">Critical</div>
+                            </div>
+                            <div class="consumption-marker" style="width: ${Math.floor(Math.random() * 90)}%; margin-left: ${Math.floor(Math.random() * 10)}%">
+                                <div style="position:absolute; right:0; top:-15px; font-size:10px; color:#333;">▼ Today</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Recent Activity Log</div>
+                    <ul style="font-size:13px;">
+                        <li style="padding:8px 0; border-bottom:1px solid #eee;">
+                            <span class="badge badge-success">Completed</span> <strong>Main Frame Structure</strong> (P001) marked complete by Shop Floor.
+                        </li>
+                        <li style="padding:8px 0; border-bottom:1px solid #eee;">
+                            <span class="badge badge-warning">Issue</span> New material shortage reported for <strong>Coil Car</strong>.
+                        </li>
+                        <li style="padding:8px 0; border-bottom:1px solid #eee;">
+                            <span class="badge badge-info">Update</span> BOM for <strong>Drag Chain</strong> released by Design.
+                        </li>
+                        <li style="padding:8px 0; border-bottom:1px solid #eee;">
+                            <span class="badge badge-neutral">System</span> Weekly backup completed successfully.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    },
+
+    renderManageProjects: function(container) {
+        let treeHtml = '';
+        PROJECTS.forEach(proj => {
+            const projAssemblies = ASSEMBLIES.filter(a => a.projectId === proj.id);
+            treeHtml += `
+                <div class="card" style="margin-bottom:10px;">
+                    <div class="tree-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                        <div class="tree-expander">▼</div>
+                        <div style="flex:1">
+                            <strong>${proj.name}</strong> (${proj.code})
+                        </div>
+                        <span class="badge badge-info">${projAssemblies.length} Assemblies</span>
+                    </div>
+                    <div style="padding: 10px 20px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Assembly Name</th>
+                                    <th>Code</th>
+                                    <th>Start</th>
+                                    <th>Finish</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${projAssemblies.map(a => `
+                                    <tr>
+                                        <td>${a.name}</td>
+                                        <td>${a.code}</td>
+                                        <td>${a.start}</td>
+                                        <td>${a.finish}</td>
+                                        <td><span class="badge badge-${a.status === 'Completed' ? 'success' : (a.status === 'Delayed' ? 'danger' : 'neutral')}">${a.status}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = `
+            <div class="panel-header">
+                <div class="panel-title">Manage Projects</div>
+                <button class="btn btn-primary">+ New Project</button>
+            </div>
+            ${treeHtml}
+        `;
+    },
+
+    renderPlanning: function(container) {
+        // High level PERT/Gantt Table
+        const proj = PROJECTS.find(p => p.id === this.state.selectedProject);
+        const assemblies = ASSEMBLIES.filter(a => a.projectId === proj.id);
+
+        container.innerHTML = `
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">Project Planning</div>
+                    <div class="panel-subtitle">Phase Scheduling for ${proj.name}</div>
+                </div>
+                <select class="form-control" style="width:200px" onchange="app.state.selectedProject=this.value; app.router('planning')">
+                    ${PROJECTS.map(p => `<option value="${p.id}" ${p.id === app.state.selectedProject ? 'selected' : ''}>${p.code}</option>`).join('')}
+                </select>
+            </div>
+
+            <div class="card data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Assembly Name</th>
+                            <th>Engineering End</th>
+                            <th>Procurement End</th>
+                            <th>Manufacturing End</th>
+                            <th>Assembly End</th>
+                            <th>Dispatch</th>
+                            <th>Total Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${assemblies.map(a => {
+                            // Mocking phase dates based on overall start/finish
+                            return `
+                                <tr>
+                                    <td><strong>${a.name}</strong></td>
+                                    <td>${a.start}</td>
+                                    <td>2025-02-15</td>
+                                    <td>2025-03-20</td>
+                                    <td>2025-04-10</td>
+                                    <td>${a.finish}</td>
+                                    <td>90 Days</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    renderDetailing: function(container) {
+        const proj = PROJECTS.find(p => p.id === this.state.selectedProject);
+        const assemblies = ASSEMBLIES.filter(a => a.projectId === proj.id);
+        
+        // If no assembly selected, show list
+        if(!this.state.selectedAssembly) {
+            container.innerHTML = `
+                <div class="panel-header">
+                    <div class="panel-title">Plan Detailing</div>
+                    <div class="panel-subtitle">Select an assembly to view BOM and Sub-assemblies</div>
+                </div>
+                 <div class="grid-3">
+                    ${assemblies.map(a => `
+                        <div class="card" style="cursor:pointer; border-left: 4px solid var(--accent-color)" onclick="app.state.selectedAssembly='${a.id}'; app.router('detailing')">
+                            <div class="card-title">${a.name}</div>
+                            <div style="font-size:12px; color:gray;">${a.code}</div>
+                            <div style="margin-top:10px;"><span class="badge badge-neutral">Click to Detail</span></div>
+                        </div>
+                    `).join('')}
+                 </div>
+            `;
+            return;
+        }
+
+        // Assembly Selected -> Show Sub Assemblies and BOM
+        const assy = assemblies.find(a => a.id === this.state.selectedAssembly);
+        const subAssys = SUB_ASSEMBLIES.filter(sa => sa.assemblyId === assy.id);
+
+        container.innerHTML = `
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">Detailing: ${assy.name}</div>
+                    <div class="panel-subtitle">Manage Sub-assemblies and Bill of Materials</div>
+                </div>
+                <button class="btn btn-secondary" onclick="app.state.selectedAssembly=null; app.router('detailing')">← Back to Assembly List</button>
+            </div>
+
+            ${subAssys.map(sa => {
+                // Ensure BOM exists for display
+                ensureBOM(sa.id);
+                const boms = BOMS.filter(b => b.subAssemblyId === sa.id);
+                
+                return `
+                <div class="card">
+                    <div class="card-title">
+                        <span>${sa.name} <span class="badge badge-${sa.status === 'Completed' ? 'success' : 'warning'}">${sa.status}</span></span>
+                        <button class="btn btn-sm btn-primary" onclick="document.getElementById('bom-${sa.id}').style.display = document.getElementById('bom-${sa.id}').style.display === 'none' ? 'block' : 'none'">Toggle BOM (${boms.length})</button>
+                    </div>
+                    
+                    <div id="bom-${sa.id}" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:15px;">
+                        <h4 style="margin-bottom:10px;">Bill of Materials</h4>
+                        <div class="data-table-container" style="max-height: 300px; overflow-y:auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Dwg No.</th>
+                                        <th>Description</th>
+                                        <th>Qty</th>
+                                        <th>Weight (kg)</th>
+                                        <th>Vendor</th>
+                                        <th>PO Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${boms.map(b => `
+                                        <tr>
+                                            <td>${b.dwgNo}</td>
+                                            <td>${b.description}</td>
+                                            <td>${b.qty}</td>
+                                            <td>${b.weight}</td>
+                                            <td>${b.vendor}</td>
+                                            <td><span class="badge badge-${b.status === 'Received' ? 'success' : (b.status === 'Ordered' ? 'info' : 'neutral')}">${b.status}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('')}
+        `;
+    },
+
+    renderTasks: function(container) {
+        // Collect all tasks for the selected project
+        const proj = PROJECTS.find(p => p.id === this.state.selectedProject);
+        const assemblies = ASSEMBLIES.filter(a => a.projectId === proj.id);
+        const assemblyIds = assemblies.map(a => a.id);
+        const subAssys = SUB_ASSEMBLIES.filter(sa => assemblyIds.includes(sa.assemblyId));
+        
+        // Generate tasks for these sub-assemblies on the fly if needed
+        subAssys.forEach(sa => ensureTasks(sa.id));
+        
+        const subAssyIds = subAssys.map(sa => sa.id);
+        const allTasks = TASKS.filter(t => subAssyIds.includes(t.subAssemblyId));
+
+        container.innerHTML = `
+             <div class="panel-header">
+                <div class="panel-title">Task Management</div>
+                <div class="panel-actions">
+                     <span class="badge badge-info">${allTasks.length} Tasks Total</span>
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Task Name</th>
+                            <th>Parent Sub-Assy</th>
+                            <th>Type</th>
+                            <th>Duration</th>
+                            <th>Owner</th>
+                            <th>Dependency</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allTasks.map(t => `
+                            <tr>
+                                <td style="padding-left: ${t.type === 'Design' ? '10px' : (t.type === 'Purchase' ? '20px' : '30px')}">
+                                    ${t.dependency !== '-' ? '↳ ' : ''}${t.name}
+                                </td>
+                                <td>${t.subAssemblyId}</td>
+                                <td>${t.type}</td>
+                                <td>${t.duration} Days</td>
+                                <td>${t.owner}</td>
+                                <td>${t.dependency}</td>
+                                <td><span class="badge badge-${t.status === 'Completed' ? 'success' : 'warning'}">${t.status}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    renderFullKit: function(container) {
+        // Full Kit logic: Drawings && BOM && PO && Materials
+        const proj = PROJECTS.find(p => p.id === this.state.selectedProject);
+        const assemblies = ASSEMBLIES.filter(a => a.projectId === proj.id);
+        
+        let htmlRows = '';
+        
+        assemblies.forEach(a => {
+            const subAssys = SUB_ASSEMBLIES.filter(sa => sa.assemblyId === a.id);
+            subAssys.forEach(sa => {
+                ensureBOM(sa.id);
+                const boms = BOMS.filter(b => b.subAssemblyId === sa.id);
+                
+                // Logic
+                const drawingsDone = Math.random() > 0.3;
+                const bomDone = boms.length > 0;
+                const matOrdered = boms.every(b => b.status !== 'Draft');
+                const matReceived = boms.every(b => b.status === 'Received');
+                
+                const isFullKit = drawingsDone && bomDone && matOrdered && matReceived;
+
+                htmlRows += `
+                    <tr>
+                        <td>${a.name}</td>
+                        <td>${sa.name}</td>
+                        <td style="text-align:center"><span class="full-kit-flag fk-${drawingsDone?'yes':'no'}"></span></td>
+                        <td style="text-align:center"><span class="full-kit-flag fk-${bomDone?'yes':'no'}"></span></td>
+                        <td style="text-align:center"><span class="full-kit-flag fk-${matOrdered?'yes':'no'}"></span></td>
+                        <td style="text-align:center"><span class="full-kit-flag fk-${matReceived?'yes':'no'}"></span></td>
+                        <td>
+                            <span class="badge badge-${isFullKit ? 'success' : 'danger'}">
+                                ${isFullKit ? 'READY' : 'BLOCKED'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+
+        container.innerHTML = `
+            <div class="panel-header">
+                <div class="panel-title">Full-Kit Management</div>
+                <div class="panel-subtitle">Ensuring pre-requisites before manufacturing start</div>
+            </div>
+            
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Assembly</th>
+                            <th>Sub-Assembly</th>
+                            <th style="text-align:center">Drawings</th>
+                            <th style="text-align:center">BOM Released</th>
+                            <th style="text-align:center">Mat. Ordered</th>
+                            <th style="text-align:center">Mat. Received</th>
+                            <th>Start Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${htmlRows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    renderMyView: function(container) {
+        // Filter tasks assigned to "Eng. Team" or "Purchase Dept" arbitrarily for demo
+        // In real app, match app.state.currentUser
+        const myTasks = TASKS.slice(0, 15); // Just taking first 15 as a simulation
+
+        container.innerHTML = `
+            <div class="panel-header">
+                <div class="panel-title">My View</div>
+                <div class="panel-subtitle">Tasks assigned to ${this.state.currentUser}</div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">Pending Tasks</div>
+                    <table class="data-table">
+                        <tbody>
+                            ${myTasks.filter(t => t.status === 'Pending').map(t => `
+                                <tr>
+                                    <td>
+                                        <div style="font-weight:600">${t.name}</div>
+                                        <div style="font-size:11px; color:gray">${t.id}</div>
+                                    </td>
+                                    <td><button class="btn btn-sm btn-primary">Update</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                 <div class="card">
+                    <div class="card-title">My Action Items</div>
+                    <table class="data-table">
+                        <tbody>
+                            ${ACTIONS.map(a => `
+                                <tr>
+                                    <td>${a.task}</td>
+                                    <td>${a.due}</td>
+                                    <td><span class="badge badge-${a.status==='Done'?'success':'warning'}">${a.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    },
+
+    renderIssues: function(container) {
+        container.innerHTML = `
+            <div class="panel-header">
+                <div class="panel-title">Issue Management</div>
+                <button class="btn btn-danger">+ Report Issue</button>
+            </div>
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Issue Title</th>
+                            <th>Severity</th>
+                            <th>Owner</th>
+                            <th>Linked To</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${ISSUES.map(i => `
+                            <tr>
+                                <td>${i.id}</td>
+                                <td>${i.title}</td>
+                                <td><span class="badge badge-${i.severity==='High'?'danger':'warning'}">${i.severity}</span></td>
+                                <td>${i.owner}</td>
+                                <td>${i.linkedTo}</td>
+                                <td>${i.status}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    renderFiles: function(container) {
+        container.innerHTML = `
+            <div class="panel-header">
+                <div class="panel-title">File Management</div>
+            </div>
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Type</th>
+                            <th>Date Uploaded</th>
+                            <th>Size</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${FILES.map(f => `
+                            <tr>
+                                <td><span style="margin-right:10px">📄</span>${f.name}</td>
+                                <td>${f.type}</td>
+                                <td>${f.date}</td>
+                                <td>${f.size}</td>
+                                <td><button class="btn btn-sm btn-secondary">Download</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+    
+    renderProjectControl: function(container) {
+        // PERT Chart Simulation using CSS Grid/Flex
+        container.innerHTML = `
+             <div class="panel-header">
+                <div class="panel-title">Project Control2 Room</div>
+                <div class="panel-subtitle">Visual Execution Flow</div>
+            </div>
+            <div class="card" style="overflow-x:auto; white-space:nowrap; padding: 50px;">
+                <div style="display:flex; align-items:center; gap: 40px;">
+                    <!-- Start Node -->
+                    <div style="border:2px solid #333; padding:10px; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; background:#fff; z-index:2;">START</div>
+                    
+                    <!-- Arrow -->
+                    <div style="height:2px; background:#333; width:50px;"></div>
+
+                    <!-- Phase 1 -->
+                    <div style="border:1px solid #ccc; padding:15px; background:#e0f2fe; border-radius:8px; width:150px; text-align:center;">
+                        <strong>Engineering</strong>
+                        <div style="font-size:11px; margin-top:5px;">Buffer: 10 Days</div>
+                        <div class="progress-wrapper" style="margin-top:5px; height:5px;"><div class="progress-bar bg-green" style="width:80%"></div></div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div style="height:2px; background:#333; width:50px;"></div>
+
+                    <!-- Phase 2 -->
+                    <div style="border:1px solid #ccc; padding:15px; background:#fef3c7; border-radius:8px; width:150px; text-align:center;">
+                        <strong>Procurement</strong>
+                        <div style="font-size:11px; margin-top:5px;">Buffer: 15 Days</div>
+                        <div class="progress-wrapper" style="margin-top:5px; height:5px;"><div class="progress-bar bg-yellow" style="width:40%"></div></div>
+                    </div>
+
+                     <!-- Arrow -->
+                    <div style="height:2px; background:#333; width:50px;"></div>
+
+                    <!-- Phase 3 -->
+                    <div style="border:1px solid #ccc; padding:15px; background:#fee2e2; border-radius:8px; width:150px; text-align:center;">
+                        <strong>Manufacturing</strong>
+                        <div style="font-size:11px; margin-top:5px;">Buffer: 20 Days</div>
+                        <div class="progress-wrapper" style="margin-top:5px; height:5px;"><div class="progress-bar bg-red" style="width:10%"></div></div>
+                    </div>
+
+                     <!-- Arrow -->
+                    <div style="height:2px; background:#333; width:50px;"></div>
+
+                    <!-- End Node -->
+                     <div style="border:2px solid #333; padding:10px; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; background:#fff; z-index:2;">END</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Execution Bottlenecks</div>
+                <p>System has identified <strong>2</strong> resource contentions in the Fabrication Bay.</p>
+            </div>
+        `;
+    },
+    
+    renderActions: function(container) {
+         container.innerHTML = `
+            <div class="panel-header">
+                <div class="panel-title">Action Items & Meetings</div>
+            </div>
+            <div class="card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Action ID</th>
+                            <th>Description</th>
+                            <th>Owner</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${ACTIONS.map(a => `
+                            <tr>
+                                <td>${a.id}</td>
+                                <td>${a.task}</td>
+                                <td>${a.owner}</td>
+                                <td>${a.due}</td>
+                                <td><span class="badge badge-${a.status === 'Done' ? 'success' : 'warning'}">${a.status}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+};
+
+// Initialize App
+window.addEventListener('DOMContentLoaded', () => {
+    app.init();
+});
+
+</script>
+</body>
+</html>

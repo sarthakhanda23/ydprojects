@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOGIJI DIGI - Strategic Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root { --brand-red: #a81818; --brand-pink: #fca5a5; --brand-dark: #1f2937; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
+        /* Interactive Elements */
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); transition: all 0.2s; }
+        .tab-btn.active { border-bottom-color: var(--brand-red); color: var(--brand-red); font-weight: 700; }
+        
+        /* Table Animation */
+        .expand-row { animation: slideDown 0.3s ease-out forwards; transform-origin: top; overflow: hidden; }
+        @keyframes slideDown { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 500px; } }
+        
+        /* Custom Scroll */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+    </style>
+    
+    <script>
+        tailwind.config = { theme: { extend: { colors: { yogi: { red: '#a81818', pink: '#fca5a5' } } } } }
+    </script>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="h-9 w-9 bg-yogi-red flex items-center justify-center rounded text-white font-bold">V</div>
+                <span class="font-bold text-xl tracking-tight">YOGIJI DIGI <span class="text-xs text-yogi-red font-normal uppercase ml-1">Performance Engine</span></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold bg-green-100 text-green-800 px-2 py-1 rounded">Live Data</span>
+                <button id="btn-reset" class="text-xs font-bold text-gray-500 hover:text-yogi-red uppercase">Reset Filters ↻</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Billing Performance</h1>
+                <div class="flex gap-4 mt-2 border-b border-gray-200" id="page-tabs">
+                    <button data-page="forecast" class="tab-btn pb-2 text-sm text-gray-500 hover:text-gray-900 active">Forecast (TQ3)</button>
+                    <button data-page="actuals" class="tab-btn pb-2 text-sm text-gray-500 hover:text-gray-900">Actuals (TQ1/TQ2)</button>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <select id="slicer-status" class="bg-white border border-gray-300 text-sm rounded p-2 w-32 focus:border-yogi-red outline-none"><option value="all">All Status</option></select>
+                <select id="slicer-month" class="bg-white border border-gray-300 text-sm rounded p-2 w-32 focus:border-yogi-red outline-none"><option value="all">All Months</option></select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="kpi-card bg-white p-4 rounded border-l-4 border-yogi-red shadow-sm">
+                <div class="text-xs text-gray-400 uppercase font-bold">Total Projects</div>
+                <div id="kpi-projects" class="text-2xl font-bold mt-1">-</div>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded border-l-4 border-yogi-red shadow-sm">
+                <div class="text-xs text-gray-400 uppercase font-bold">Revenue (Cr)</div>
+                <div id="kpi-revenue" class="text-2xl font-bold mt-1">-</div>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded border-l-4 border-yogi-red shadow-sm">
+                <div class="text-xs text-gray-400 uppercase font-bold">Assemblies</div>
+                <div id="kpi-assemblies" class="text-2xl font-bold mt-1">-</div>
+            </div>
+            <div class="kpi-card bg-white p-4 rounded border-l-4 border-yogi-red shadow-sm">
+                <div class="text-xs text-gray-400 uppercase font-bold">Avg Ticket (Cr)</div>
+                <div id="kpi-avg" class="text-2xl font-bold mt-1">-</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            <div class="bg-white p-4 rounded shadow-sm lg:col-span-5 border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-2">Billing by Manager <span class="text-[10px] font-normal text-gray-400 ml-2">(Click to Highlight)</span></h3>
+                <div class="h-60 relative w-full"><canvas id="barChart"></canvas></div>
+            </div>
+
+            <div class="bg-white p-4 rounded shadow-sm lg:col-span-3 border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-2">Product Mix</h3>
+                <div class="h-60 relative w-full flex justify-center"><canvas id="pieChart"></canvas></div>
+            </div>
+
+            <div class="bg-white p-4 rounded shadow-sm lg:col-span-4 border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-2">Monthly Trend (Area)</h3>
+                <div class="h-60 relative w-full"><canvas id="lineChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-sm">Project Matrix & Assemblies</h3>
+                <span id="table-count" class="text-xs bg-red-50 text-yogi-red px-2 py-1 rounded font-bold">Loading...</span>
+            </div>
+            <div class="overflow-x-auto max-h-[500px] custom-scroll">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-100 text-xs uppercase text-gray-500 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-6 py-3 w-10"></th>
+                            <th class="px-6 py-3">Project</th>
+                            <th class="px-6 py-3">Manager</th>
+                            <th class="px-6 py-3">Product</th>
+                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3 text-right">Value (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        /**
+         * 1. DATA LAYER (Simulating Excel Ingestion)
+         * In a real scenario, fetch('/api/excel-data') replaces rawData
+         */
+        const rawData = [
+            { id: 101, name: "2231-SHYAM-6HI CRM", pm: "Saurabh", product: "CRM", month: "Oct", status: "Not Dispatched", val: 48500000 },
+            { id: 102, name: "2403-GOPANI-4HI CRM", pm: "Mayank", product: "CRM", month: "Nov", status: "Dispatched", val: 10000000 },
+            { id: 103, name: "2412-HI TECH-SPARE", pm: "Mayank", product: "SPARE", month: "Dec", status: "Hold", val: 10000000 },
+            { id: 104, name: "2405-JSPL-TRIMMING", pm: "Saurabh", product: "TRIMMING", month: "Oct", status: "Not Dispatched", val: 37650000 },
+            { id: 105, name: "2305-APL-CGL", pm: "Saurabh", product: "CGL", month: "Jan", status: "Not Dispatched", val: 139000000 },
+            { id: 106, name: "2404-GOPANI-4HI SPM", pm: "Aditya Sharma", product: "SPM", month: "Oct", status: "Dispatched", val: 15900000 },
+            { id: 107, name: "2502-AL SHAKER-PICKLING", pm: "Aditya Saini", product: "PICKLING", month: "Nov", status: "Not Dispatched", val: 110880000 },
+            { id: 108, name: "2521-BMWIL-6HI CRM", pm: "Mayank", product: "CRM", month: "Dec", status: "Not Dispatched", val: 357500000 },
+            { id: 109, name: "2527-AECPL-GI/GL LINE", pm: "Saurabh", product: "CGL", month: "Jan", status: "Dispatched", val: 413125000 },
+            { id: 110, name: "2506-JSW-APL", pm: "Aditya Sharma", product: "APL", month: "Feb", status: "Not Dispatched", val: 436474820 },
+            { id: 111, name: "2420-INDIA STEEL-CCL", pm: "Saurabh", product: "CCL", month: "Nov", status: "Dispatched", val: 49092705 },
+            { id: 112, name: "2522-APL-SPM", pm: "Aditya Saini", product: "SPM", month: "Dec", status: "Not Dispatched", val: 51000000 },
+            { id: 113, name: "2425-MMI-6HI CRM", pm: "Mayank", product: "CRM", month: "Oct", status: "Dispatched", val: 85286000 },
+            { id: 114, name: "2511-GAURANG-6HI", pm: "Aditya Sharma", product: "CRM", month: "Jan", status: "Not Dispatched", val: 107254700 },
+            { id: 115, name: "2427-PROMPT-6HI CRM", pm: "Mayank", product: "CRM", month: "Feb", status: "Hold", val: 112028000 }
+        ];
+
+        class DataModel {
+            constructor(data) {
+                this.data = this._process(data);
+                this.indices = this._index(this.data);
+            }
+
+            _process(data) {
+                // Generates random sub-assemblies for the matrix demo
+                return data.map(d => ({
+                    ...d,
+                    context: (d.month === 'Oct' || d.month === 'Nov') ? 'actuals' : 'forecast',
+                    assemblies: [
+                        { name: "Housing Frame", val: Math.floor(d.val * 0.4) },
+                        { name: "Hydraulic Pack", val: Math.floor(d.val * 0.3) },
+                        { name: "Automation/Elec", val: Math.floor(d.val * 0.3) }
+                    ]
+                }));
+            }
+
+            _index(data) {
+                const unique = (k) => [...new Set(data.map(r => r[k]))].sort();
+                return {
+                    status: unique('status'),
+                    month: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'], // Custom Sort
+                    pm: unique('pm'),
+                    product: unique('product')
+                };
+            }
+
+            // The Engine: Filters data based on state
+            query(state) {
+                return this.data.filter(row => {
+                    if (row.context !== state.page) return false;
+                    if (state.filters.status && row.status !== state.filters.status) return false;
+                    if (state.filters.month && row.month !== state.filters.month) return false;
+                    // Standard filtering for Product (Donut click)
+                    if (state.filters.product && row.product !== state.filters.product) return false;
+                    // Standard filtering for PM (Bar click) - Only if strict mode, but we use highlight mode usually
+                    if (state.filters.pm && row.pm !== state.filters.pm) return false;
+                    return true;
+                });
+            }
+
+            // Special Query for Bar Chart (Cross-Highlighting Support)
+            // Returns data filtered by everything EXCEPT the PM itself
+            queryForBarChart(state) {
+                return this.data.filter(row => {
+                    if (row.context !== state.page) return false;
+                    if (state.filters.status && row.status !== state.filters.status) return false;
+                    if (state.filters.month && row.month !== state.filters.month) return false;
+                    if (state.filters.product && row.product !== state.filters.product) return false;
+                    return true;
+                });
+            }
+        }
+
+        /**
+         * 2. STATE & CONTROLLER
+         */
+        const AppState = {
+            page: 'forecast',
+            filters: { pm: null, product: null, status: null, month: null },
+            expandedRows: []
+        };
+
+        class DashboardController {
+            constructor(model) {
+                this.model = model;
+                this.state = { ...AppState };
+                this.charts = {};
+                this.init();
+            }
+
+            init() {
+                this.initCharts();
+                this.setupControls();
+                this.populateSlicers();
+                this.update();
+            }
+
+            dispatch(action, payload) {
+                if (action === 'SET_PAGE') this.state.page = payload;
+                if (action === 'FILTER') {
+                    // Toggle logic: If clicking same filter, turn it off
+                    const current = this.state.filters[payload.key];
+                    this.state.filters[payload.key] = (current === payload.value) ? null : payload.value;
+                }
+                if (action === 'RESET') this.state.filters = { pm: null, product: null, status: null, month: null };
+                if (action === 'TOGGLE_ROW') {
+                    const idx = this.state.expandedRows.indexOf(payload);
+                    if (idx > -1) this.state.expandedRows.splice(idx, 1);
+                    else this.state.expandedRows.push(payload);
+                }
+                this.update();
+            }
+
+            // --- THE CORE RENDER LOGIC ---
+            update() {
+                // 1. Get Datasets
+                const globalData = this.model.query(this.state); // Fully filtered
+                const barSourceData = this.model.queryForBarChart(this.state); // Filtered by all EXCEPT PM
+
+                // 2. Update UI
+                this.renderKPIs(globalData);
+                this.renderTable(globalData);
+                
+                // 3. Update Charts
+                this.updateBarChart(barSourceData); // Uses special source for highlighting
+                this.updatePieChart(globalData);    // Uses standard filtered data
+                this.updateLineChart(globalData);   // Uses standard filtered data
+
+                // 4. Update Tabs
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.page === this.state.page);
+                });
+            }
+
+            // --- CHART UPDATES ---
+            
+            updateBarChart(data) {
+                // Aggregate by PM
+                const grouped = data.reduce((acc, r) => { acc[r.pm] = (acc[r.pm] || 0) + r.val; return acc; }, {});
+                
+                // SORT: Ascending by Value (Lowest Left -> Highest Right)
+                const sortedKeys = Object.keys(grouped).sort((a, b) => grouped[a] - grouped[b]);
+                
+                // COLOR LOGIC: Highlighting
+                const activePM = this.state.filters.pm;
+                const colors = sortedKeys.map(pm => {
+                    if (!activePM) return '#a81818'; // Default Brand Red
+                    return (pm === activePM) ? '#a81818' : '#fca5a5'; // Selected = Red, Others = Pink
+                });
+
+                this.charts.bar.data.labels = sortedKeys;
+                this.charts.bar.data.datasets[0].data = sortedKeys.map(k => grouped[k] / 10000000); // In Cr
+                this.charts.bar.data.datasets[0].backgroundColor = colors;
+                this.charts.bar.data.datasets[0].hoverBackgroundColor = '#a81818';
+                this.charts.bar.update();
+            }
+
+            updatePieChart(data) {
+                const grouped = data.reduce((acc, r) => { acc[r.product] = (acc[r.product] || 0) + r.val; return acc; }, {});
+                this.charts.pie.data.labels = Object.keys(grouped);
+                this.charts.pie.data.datasets[0].data = Object.values(grouped).map(v => v / 10000000);
+                this.charts.pie.update();
+            }
+
+            updateLineChart(data) {
+                const grouped = data.reduce((acc, r) => { acc[r.month] = (acc[r.month] || 0) + r.val; return acc; }, {});
+                // Ensure Sort Order
+                const labels = this.model.indices.month.filter(m => Object.keys(grouped).includes(m));
+                
+                this.charts.line.data.labels = labels;
+                this.charts.line.data.datasets[0].data = labels.map(m => grouped[m] / 10000000);
+                this.charts.line.update();
+            }
+
+            // --- RENDER HELPERS ---
+
+            renderKPIs(data) {
+                const total = data.reduce((s, r) => s + r.val, 0);
+                document.getElementById('kpi-projects').innerText = data.length;
+                document.getElementById('kpi-revenue').innerText = (total / 10000000).toFixed(2);
+                document.getElementById('kpi-assemblies').innerText = data.reduce((s, r) => s + r.assemblies.length, 0);
+                document.getElementById('kpi-avg').innerText = data.length ? (total / data.length / 10000000).toFixed(2) : "0.00";
+            }
+
+            renderTable(data) {
+                const tbody = document.getElementById('table-body');
+                tbody.innerHTML = '';
+                document.getElementById('table-count').innerText = `${data.length} Projects`;
+
+                if(data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">No Data Matches Filters</td></tr>`;
+                    return;
+                }
+
+                data.forEach(row => {
+                    const isExpanded = this.state.expandedRows.includes(row.id);
+                    const statusColor = row.status === 'Dispatched' ? 'text-green-700 bg-green-50' : row.status === 'Hold' ? 'text-yellow-700 bg-yellow-50' : 'text-red-700 bg-red-50';
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = `border-b border-gray-100 hover:bg-gray-50 transition ${isExpanded ? 'bg-gray-50' : ''}`;
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 cursor-pointer text-center" onclick="app.dispatch('TOGGLE_ROW', ${row.id})">
+                            <span class="font-bold text-gray-400 hover:text-yogi-red">${isExpanded ? '−' : '+'}</span>
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-900">${row.name}</td>
+                        <td class="px-6 py-4 text-gray-500">${row.pm}</td>
+                        <td class="px-6 py-4 text-xs"><span class="bg-gray-200 px-2 py-1 rounded">${row.product}</span></td>
+                        <td class="px-6 py-4 text-xs"><span class="${statusColor} px-2 py-1 rounded font-bold">${row.status}</span></td>
+                        <td class="px-6 py-4 text-right font-bold">₹${row.val.toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    if(isExpanded) {
+                        const subTr = document.createElement('tr');
+                        subTr.innerHTML = `
+                            <td colspan="6" class="bg-gray-50 p-0 border-b border-gray-200">
+                                <div class="expand-row px-14 py-4">
+                                    <table class="w-full text-xs">
+                                        ${row.assemblies.map(a => `
+                                            <tr class="border-b border-gray-200 last:border-0">
+                                                <td class="py-2 text-gray-500 w-1/2">${a.name}</td>
+                                                <td class="py-2 text-right font-medium">₹${a.val.toLocaleString()}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </table>
+                                </div>
+                            </td>`;
+                        tbody.appendChild(subTr);
+                    }
+                });
+            }
+
+            // --- SETUP ---
+            initCharts() {
+                const common = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+                
+                // 1. BAR CHART
+                this.charts.bar = new Chart(document.getElementById('barChart'), {
+                    type: 'bar',
+                    data: { labels: [], datasets: [{ data: [], borderRadius: 4 }] },
+                    options: {
+                        ...common,
+                        onClick: (e, el) => {
+                            if (!el.length) return;
+                            const idx = el[0].index;
+                            const label = this.charts.bar.data.labels[idx];
+                            this.dispatch('FILTER', { key: 'pm', value: label });
+                        },
+                        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+                    }
+                });
+
+                // 2. PIE CHART (Donut)
+                this.charts.pie = new Chart(document.getElementById('pieChart'), {
+                    type: 'doughnut',
+                    data: { labels: [], datasets: [{ data: [], backgroundColor: ['#a81818', '#1f2937', '#6b7280', '#9ca3af', '#e5e7eb'], borderWidth: 0 }] },
+                    options: {
+                        ...common, cutout: '70%', plugins: { legend: { position: 'right' } },
+                        onClick: (e, el) => {
+                            if (!el.length) return;
+                            const label = this.charts.pie.data.labels[el[0].index];
+                            this.dispatch('FILTER', { key: 'product', value: label });
+                        }
+                    }
+                });
+
+                // 3. AREA CHART (Filled Line)
+                this.charts.line = new Chart(document.getElementById('lineChart'), {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ 
+                        data: [], 
+                        borderColor: '#a81818', 
+                        backgroundColor: 'rgba(168, 24, 24, 0.1)', // Light Red Shade
+                        fill: true, // AREA CHART EFFECT
+                        tension: 0.3 
+                    }] },
+                    options: { ...common, scales: { y: { display: false }, x: { grid: { display: false } } } }
+                });
+            }
+
+            setupControls() {
+                document.querySelectorAll('.tab-btn').forEach(b => 
+                    b.addEventListener('click', () => this.dispatch('SET_PAGE', b.dataset.page)));
+                
+                document.getElementById('btn-reset').addEventListener('click', () => this.dispatch('RESET'));
+                
+                document.getElementById('slicer-status').addEventListener('change', (e) => 
+                    this.dispatch('FILTER', { key: 'status', value: e.target.value === 'all' ? null : e.target.value }));
+                
+                document.getElementById('slicer-month').addEventListener('change', (e) => 
+                    this.dispatch('FILTER', { key: 'month', value: e.target.value === 'all' ? null : e.target.value }));
+            }
+
+            populateSlicers() {
+                const addOpts = (id, opts) => {
+                    const sel = document.getElementById(id);
+                    opts.forEach(o => { const el = document.createElement('option'); el.value = o; el.innerText = o; sel.appendChild(el); });
+                };
+                addOpts('slicer-status', this.model.indices.status);
+                addOpts('slicer-month', this.model.indices.month);
+            }
+        }
+
+        // --- LAUNCH ---
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new DashboardController(new DataModel(rawData));
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOGIJI DIGI | Master Execution OS</title>
+    <style>
+        /* -----------------------------------------------------------------------------
+           MASTER SHELL STYLES
+           ----------------------------------------------------------------------------- */
+        :root {
+            --yd-red: #a81818;
+            --yd-dark: #0f172a;
+            --bg-body: #f1f5f9;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --master-nav-width: 60px;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        body { margin: 0; padding: 0; font-family: var(--font-sans); background: var(--bg-body); height: 100vh; display: flex; overflow: hidden; }
+
+        /* MASTER NAVIGATION (Left Rail) */
+        #master-nav {
+            width: var(--master-nav-width); background: #000; display: flex; flex-direction: column; align-items: center; padding-top: 15px; z-index: 10000;
+        }
+        .master-tab {
+            width: 40px; height: 40px; border-radius: 8px; margin-bottom: 15px;
+            display: flex; align-items: center; justify-content: center;
+            color: #666; cursor: pointer; font-weight: 800; font-size: 14px; transition: 0.2s; border: 1px solid transparent;
+        }
+        .master-tab:hover { background: #222; color: #fff; }
+        .master-tab.active { background: var(--yd-red); color: white; box-shadow: 0 0 10px rgba(168, 24, 24, 0.5); }
+
+        /* MODULE STAGE */
+        #master-stage { flex: 1; position: relative; background: var(--bg-body); overflow: hidden; }
+        .module-view { position: absolute; inset: 0; display: none; flex-direction: column; background: var(--bg-body); overflow: hidden; }
+        .module-view.active { display: flex; }
+
+        /* SHARED UTILITIES */
+        .hidden { display: none !important; }
+        .w-full { width: 100%; } .h-full { height: 100%; }
+        .flex { display: flex; } .flex-col { flex-direction: column; }
+        
+        /* SCROLLBARS */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        /* LOADER */
+        #master-loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 20000; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; pointer-events: none; opacity: 0; }
+        #master-loader.visible { opacity: 1; pointer-events: all; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--yd-red); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="master-loader"><div class="spinner"></div></div>
+
+    <nav id="master-nav">
+        <div class="master-tab active" onclick="Master.switch('r1')" title="Realisation 1">R1</div>
+        <div class="master-tab" onclick="Master.switch('r2')" title="Realisation 2">R2</div>
+        <div class="master-tab" onclick="Master.switch('r3')" title="Realisation 3">R3</div>
+        <div class="master-tab" onclick="Master.switch('r4')" title="Realisation 4">R4</div>
+        <div class="master-tab" onclick="Master.switch('r5')" title="Realisation 5">R5</div>
+        <div class="master-tab" onclick="Master.switch('r6')" title="Realisation 6">R6</div>
+        <div class="master-tab" onclick="Master.switch('r7')" title="Realisation 7">R7</div>
+    </nav>
+
+    <div id="master-stage">
+
+        <div id="module-r1" class="module-view active">
+            <style>
+                #module-r1 { --r1-blue: #0f62fe; --r1-bg: #f4f7f6; }
+                #r1-sidebar { width: 240px; background: #161616; color: #a8a8a8; display: flex; flex-direction: column; }
+                #r1-sidebar .item { padding: 12px 20px; cursor: pointer; border-left: 3px solid transparent; }
+                #r1-sidebar .item.active { background: #262626; color: white; border-left-color: var(--r1-blue); }
+                #r1-content { flex: 1; padding: 20px; overflow-y: auto; }
+                .r1-card { background: white; padding: 20px; margin-bottom: 20px; border: 1px solid #e0e0e0; }
+            </style>
+            <div class="flex h-full">
+                <div id="r1-sidebar">
+                    <div style="height:60px; display:flex; align-items:center; padding:0 20px; color:white; font-weight:bold; border-bottom:1px solid #333;">Streamliner R1</div>
+                    <div class="item active" onclick="R1.nav('dashboard')">Dashboard</div>
+                    <div class="item" onclick="R1.nav('projects')">Projects</div>
+                    <div class="item" onclick="R1.nav('timeline')">Timeline</div>
+                    <div class="item" onclick="R1.nav('financials')">Financials</div>
+                </div>
+                <div id="r1-content"></div>
+            </div>
+            <script>
+                const R1 = {
+                    nav(view) {
+                        document.querySelectorAll('#r1-sidebar .item').forEach(e=>e.classList.remove('active'));
+                        event.target.classList.add('active');
+                        const c = document.getElementById('r1-content');
+                        if(view==='dashboard') c.innerHTML = `<h2 style="margin-top:0">Dashboard</h2><div class="r1-card">Portfolio Value: $1.5M</div>`;
+                        else if(view==='projects') c.innerHTML = `<h2 style="margin-top:0">Projects</h2><div class="r1-card"><ul><li>ERP Migration</li><li>Cloud Setup</li></ul></div>`;
+                        else if(view==='timeline') c.innerHTML = `<h2 style="margin-top:0">Timeline</h2><div class="r1-card">Gantt Chart Placeholder</div>`;
+                        else if(view==='financials') c.innerHTML = `<h2 style="margin-top:0">Financials</h2><div class="r1-card">Budget vs Actuals</div>`;
+                    }
+                };
+                R1.nav('dashboard'); // Init
+            </script>
+        </div>
+
+        <div id="module-r2" class="module-view">
+            <style>
+                #module-r2 { --r2-slate: #0f172a; --r2-blue: #2563eb; }
+                #r2-sidebar { width: 240px; background: var(--r2-slate); color: #f8fafc; display: flex; flex-direction: column; }
+                #r2-sidebar .item { padding: 12px 20px; cursor: pointer; border-left: 3px solid transparent; }
+                #r2-sidebar .item.active { background: rgba(37,99,235,0.2); color: white; border-left-color: var(--r2-blue); }
+                #r2-content { flex: 1; padding: 30px; overflow-y: auto; background: #f1f5f9; }
+            </style>
+            <div class="flex h-full">
+                <div id="r2-sidebar">
+                    <div style="height:60px; display:flex; align-items:center; padding:0 20px; font-weight:bold; border-bottom:1px solid #333;">YOGIJI R2</div>
+                    <div class="item active" onclick="R2.nav('exec-dash')">Executive Dashboard</div>
+                    <div class="item" onclick="R2.nav('proj-ctrl')">Project Control</div>
+                </div>
+                <div id="r2-content"></div>
+            </div>
+            <script>
+                const R2 = {
+                    nav(view) {
+                        document.querySelectorAll('#r2-sidebar .item').forEach(e=>e.classList.remove('active'));
+                        event.target.classList.add('active');
+                        const c = document.getElementById('r2-content');
+                        if(view==='exec-dash') c.innerHTML = `<h2>Executive Dashboard</h2><div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;"><div style="background:white; p:20px; height:100px; padding:20px;">KPI 1</div><div style="background:white; p:20px; height:100px; padding:20px;">KPI 2</div></div>`;
+                        else c.innerHTML = `<h2>Project Control</h2><div style="background:white; padding:20px;">Control Panel Active</div>`;
+                    }
+                };
+                R2.nav('exec-dash');
+            </script>
+        </div>
+
+        <div id="module-r3" class="module-view">
+            <style>
+                #module-r3 { --r3-dark: #111827; --r3-red: #a81818; }
+                #r3-sidebar { width: 240px; background: var(--r3-dark); color: #d1d5db; display: flex; flex-direction: column; }
+                #r3-sidebar .header { font-size: 11px; text-transform: uppercase; color: #6b7280; padding: 20px 20px 5px; font-weight: 700; }
+                #r3-sidebar .item { padding: 10px 20px; cursor: pointer; }
+                #r3-sidebar .item.active { color: white; background: rgba(168,24,24,0.2); border-right: 3px solid var(--r3-red); }
+                #r3-content { flex: 1; background: #f3f4f6; padding: 24px; }
+            </style>
+            <div class="flex h-full">
+                <div id="r3-sidebar">
+                    <div style="height:60px; display:flex; align-items:center; padding:0 20px; font-weight:bold; color:white; border-bottom:1px solid #333;">HR-OS R3</div>
+                    <div class="item active" onclick="R3.nav('dash1')">Dashboard1</div>
+                    <div class="item" onclick="R3.nav('ctrl1')">Project Control1</div>
+                    <div class="header">Execution & Analysis</div>
+                    <div class="item" onclick="R3.nav('gantt')">Timeline (Gantt)</div>
+                    <div class="item" onclick="R3.nav('fin1')">Financials1</div>
+                </div>
+                <div id="r3-content"></div>
+            </div>
+            <script>
+                const R3 = {
+                    nav(view) {
+                        document.querySelectorAll('#r3-sidebar .item').forEach(e=>e.classList.remove('active'));
+                        event.target.classList.add('active');
+                        document.getElementById('r3-content').innerHTML = `<h2>${event.target.innerText}</h2><div style="background:white; height:200px; border:1px solid #e5e7eb;"></div>`;
+                    }
+                };
+                R3.nav('dash1');
+            </script>
+        </div>
+
+        <div id="module-r4" class="module-view">
+            <style>
+                #module-r4 { --r4-bg: #f8fafc; --r4-blue: #0ea5e9; }
+                #r4-sidebar { width: 240px; background: #0f172a; color: white; }
+                #r4-sidebar .item { padding: 12px 20px; cursor: pointer; color: #94a3b8; }
+                #r4-sidebar .item:hover { color: white; }
+                #r4-sidebar .item.active { color: var(--r4-blue); background: rgba(14,165,233,0.1); }
+            </style>
+            <div class="flex h-full">
+                <div id="r4-sidebar">
+                    <div style="height:60px; display:flex; align-items:center; padding:0 20px; font-weight:bold; border-bottom:1px solid #333;">Streamliner R4</div>
+                    <div class="item active" onclick="R4.nav('dash1')">Executive Dashboard1</div>
+                    <div class="item" onclick="R4.nav('reg')">Project Registry</div>
+                    <div class="item" onclick="R4.nav('sched')">Master Schedule</div>
+                    <div class="item" onclick="R4.nav('fin2')">Financials2</div>
+                </div>
+                <div id="r4-content" class="w-full" style="background:#f8fafc; padding:30px;"></div>
+            </div>
+            <script>
+                const R4 = {
+                    nav(v){ document.getElementById('r4-content').innerHTML = `<h2>${v}</h2>`; }
+                };
+                R4.nav('Executive Dashboard1');
+            </script>
+        </div>
+
+        <div id="module-r5" class="module-view">
+            <style>
+                #module-r5 { --r5-nav: #001529; --r5-blue: #1890ff; }
+                #r5-sidebar { width: 240px; background: var(--r5-nav); color: rgba(255,255,255,0.65); }
+                #r5-sidebar .item { padding: 10px 20px; cursor: pointer; }
+                #r5-sidebar .item.active { background: var(--r5-blue); color: white; }
+            </style>
+            <div class="flex h-full">
+                <div id="r5-sidebar">
+                    <div style="height:60px; display:flex; align-items:center; padding:0 20px; color:white; font-weight:bold;">Realization R5</div>
+                    <div class="item active" onclick="R5.nav('dash2')">Dashboard2</div>
+                    <div class="item" onclick="R5.nav('proj1')">Projects1</div>
+                </div>
+                <div id="r5-content" class="w-full" style="background:#f0f2f5; padding:24px;"></div>
+            </div>
+            <script>
+                const R5 = { nav(v){ document.getElementById('r5-content').innerHTML = `<h2>${v}</h2>`; } };
+                R5.nav('Dashboard2');
+            </script>
+        </div>
+
+        <div id="module-r6" class="module-view">
+            <style>
+                #module-r6 { --r6-side: #1e1e1e; --r6-acc: #00d2d3; }
+                #r6-sidebar { width: 260px; background: var(--r6-side); color: #ccc; overflow-y: auto; }
+                #r6-sidebar .grp { font-size: 11px; text-transform: uppercase; color: #666; padding: 20px 20px 5px; font-weight: bold; }
+                #r6-sidebar .item { padding: 10px 20px; cursor: pointer; border-left: 3px solid transparent; }
+                #r6-sidebar .item:hover { color: white; background: #333; }
+                #r6-sidebar .item.active { border-left-color: var(--r6-acc); background: #252525; color: white; }
+                #r6-content { flex: 1; background: #f5f5f5; padding: 25px; overflow-y: auto; }
+            </style>
+            <div class="flex h-full">
+                <div id="r6-sidebar">
+                    <div style="height:60px; display:flex; align-items:center; padding:0 20px; color:white; font-weight:bold; border-bottom:1px solid #333;">Execution R6</div>
+                    
+                    <div class="item active" onclick="R6.nav('dash3')">Dashboard3</div>
+                    <div class="item" onclick="R6.nav('myview')">My View</div>
+                    
+                    <div class="grp">Execution</div>
+                    <div class="item" onclick="R6.nav('manage')">Manage Projects</div>
+                    <div class="item" onclick="R6.nav('ctrl2')">Project Control2</div>
+                    <div class="item" onclick="R6.nav('plan')">Project Planning</div>
+                    <div class="item" onclick="R6.nav('detail')">Plan Detailing</div>
+                    <div class="item" onclick="R6.nav('task')">Task Management</div>
+                    
+                    <div class="grp">Support</div>
+                    <div class="item" onclick="R6.nav('fullkit')">Full-Kit Mgmt</div>
+                    <div class="item" onclick="R6.nav('issue')">Issue Management</div>
+                    <div class="item" onclick="R6.nav('action')">Action Items</div>
+                    <div class="item" onclick="R6.nav('file')">File Management</div>
+                    <div class="item" onclick="R6.nav('report')">Reports</div>
+                </div>
+                <div id="r6-content"></div>
+            </div>
+            <script>
+                const R6 = {
+                    nav(view) {
+                        document.querySelectorAll('#r6-sidebar .item').forEach(e=>e.classList.remove('active'));
+                        event.target.classList.add('active');
+                        const c = document.getElementById('r6-content');
+                        
+                        // Dynamic Content Generation for R6 Views
+                        if(view === 'dash3') c.innerHTML = `<h2>Dashboard3</h2><div class="grid-4" style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:20px;"><div style="background:white; padding:20px;">Active: 12</div><div style="background:white; padding:20px;">Issues: 4</div></div>`;
+                        else if(view === 'manage') c.innerHTML = `<h2>Manage Projects</h2><div style="background:white; padding:20px;">Project Tree Structure (Active)</div>`;
+                        else if(view === 'detail') c.innerHTML = `<h2>Plan Detailing</h2><div style="background:white; padding:20px;">BOM and Sub-Assembly Drilldown</div>`;
+                        else c.innerHTML = `<h2>${event.target.innerText}</h2><div style="background:white; padding:40px; text-align:center; color:#888;">Module Active</div>`;
+                    }
+                };
+                R6.nav('dash3');
+            </script>
+        </div>
+
+        <div id="module-r7" class="module-view">
+            <style>
+                #module-r7 { --r7-dark: #0f172a; --r7-red: #a81818; }
+                #r7-sidebar { width: 260px; background: var(--r7-dark); color: #d1d5db; display: flex; flex-direction: column; }
+                #r7-sidebar .grp { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 20px 24px 8px; }
+                #r7-sidebar .item { padding: 12px 24px; cursor: pointer; color: #94a3b8; }
+                #r7-sidebar .item:hover { color: white; }
+                #r7-sidebar .item.active { color: white; background: rgba(168,24,24,0.15); border-left: 3px solid var(--r7-red); }
+                #r7-content { flex: 1; background: #f1f5f9; padding: 32px; }
+            </style>
+            <div class="flex h-full">
+                <div id="r7-sidebar">
+                    <div style="height:70px; display:flex; align-items:center; padding:0 20px; font-weight:800; color:white; font-size:20px;">PLANCAST R7</div>
+                    
+                    <div class="grp">Portfolio Control</div>
+                    <div class="item active" onclick="R7.nav('dash')">Portfolio Dashboard</div>
+                    <div class="item" onclick="R7.nav('reg')">Project Registry</div>
+                    
+                    <div class="grp">Execution Intelligence</div>
+                    <div class="item" onclick="R7.nav('ccpm')">Critical Chain (CCPM)</div>
+                    <div class="item" onclick="R7.nav('kit')">Full-Kit Readiness</div>
+                    
+                    <div class="grp">Operations</div>
+                    <div class="item" onclick="alert('Presentation Mode Toggled')">Presentation Mode</div>
+                    <div class="item" onclick="alert('System Reset')">Reset System Data</div>
+                </div>
+                <div id="r7-content"></div>
+            </div>
+            <script>
+                const R7 = {
+                    nav(view) {
+                        document.querySelectorAll('#r7-sidebar .item').forEach(e=>e.classList.remove('active'));
+                        if(event.target.classList.contains('item')) event.target.classList.add('active');
+                        const c = document.getElementById('r7-content');
+                        
+                        if(view === 'dash') c.innerHTML = `<h2>Portfolio Dashboard</h2><div style="background:white; height:300px; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center;">Fever Chart Visualization</div>`;
+                        else if(view === 'ccpm') c.innerHTML = `<h2>Critical Chain Analytics</h2><div style="background:white; height:400px; padding:20px;">Buffer Consumption Graphs</div>`;
+                        else c.innerHTML = `<h2>${event.target.innerText}</h2><div style="background:white; padding:40px;">View Loaded</div>`;
+                    }
+                };
+                R7.nav('dash');
+            </script>
+        </div>
+
+    </div>
+
+    <script>
+        const Master = {
+            switch(id) {
+                // Loader
+                const l = document.getElementById('master-loader');
+                l.classList.add('visible');
+                
+                setTimeout(() => {
+                    // Tabs
+                    document.querySelectorAll('.master-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelector(`.master-tab[onclick*="'${id}'"]`).classList.add('active');
+                    
+                    // Views
+                    document.querySelectorAll('.module-view').forEach(v => v.classList.remove('active'));
+                    document.getElementById(`module-${id}`).classList.add('active');
+                    
+                    l.classList.remove('visible');
+                }, 400);
+            }
+        };
+        
+        // Boot
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => document.getElementById('master-loader').classList.remove('visible'), 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOGIJI DIGI - Production Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --brand-red: #a81818;
+            --brand-dark: #1f2937;
+        }
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Tab Styles */
+        .tab-active { border-bottom: 3px solid var(--brand-red); color: var(--brand-red); font-weight: 700; background-color: #fff1f2; }
+        .tab-inactive { color: #6b7280; border-bottom: 3px solid transparent; }
+        .tab-inactive:hover { color: var(--brand-dark); border-bottom: 3px solid #e5e7eb; background-color: white; }
+
+        /* KPI Card Hover */
+        .kpi-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+        /* Table Expansion Animation */
+        .expand-row { animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards; transform-origin: top; overflow: hidden; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: scaleY(0.95); max-height: 0; }
+            to { opacity: 1; transform: scaleY(1); max-height: 500px; }
+        }
+        
+        /* Select Dropdown */
+        .custom-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-appearance: none; appearance: none;
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { yogi: { red: '#a81818', dark: '#1f2937' } } } }
+        }
+    </script>
+</head>
+<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
+
+    <nav class="bg-white shadow-sm border-b border-gray-200 flex-none z-50">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-14">
+                <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 bg-yogi-red flex items-center justify-center rounded shadow-sm">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 012 2h2a2 2 0 012-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                    <span class="font-bold text-lg text-gray-900 tracking-tight">YOGIJI DIGI <span class="text-xs text-gray-500 font-normal ml-2">Analytics v3.1</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                        <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+                        <span class="text-xs font-bold text-green-800">Live Sync</span>
+                    </div>
+                    <div class="h-8 w-8 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-xs cursor-pointer hover:bg-yogi-red transition">SH</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8 custom-scroll">
+        <div class="max-w-[1800px] mx-auto">
+            
+            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end mb-6 gap-4">
+                
+                <div class="w-full xl:w-auto">
+                    <div class="flex bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="setContext('forecast')" id="tab-forecast" class="tab-active py-2 px-6 text-sm transition-all flex-1 xl:flex-none">
+                            Forecast (TQ3)
+                        </button>
+                        <div class="w-[1px] bg-gray-200"></div>
+                        <button onclick="setContext('actuals')" id="tab-actuals" class="tab-inactive py-2 px-6 text-sm transition-all flex-1 xl:flex-none">
+                            Actual Billing (TQ1/TQ2)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 w-full xl:w-auto justify-end bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex flex-col justify-center px-2">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Filters</span>
+                    </div>
+                    
+                    <select id="filter-status" onchange="applySlicer('status', this.value)" class="custom-select bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded focus:ring-yogi-red focus:border-yogi-red block w-36 py-1.5 pl-2">
+                        <option value="all">Status: All</option>
+                        <option value="Dispatched">Dispatched</option>
+                        <option value="Not Dispatched">Not Dispatched</option>
+                        <option value="Hold">Hold</option>
+                    </select>
+
+                    <select id="filter-month" onchange="applySlicer('month', this.value)" class="custom-select bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded focus:ring-yogi-red focus:border-yogi-red block w-36 py-1.5 pl-2">
+                        <option value="all">Month: All</option>
+                        </select>
+
+                    <button onclick="resetAllFilters()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 rounded text-xs font-bold transition flex items-center gap-1 border border-gray-200">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <div id="active-filters-container" class="flex gap-2 mb-4 h-6">
+                </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="kpi-card bg-white p-4 rounded-lg border-l-4 border-yogi-red shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Projects</p>
+                        <span class="text-yogi-red bg-red-50 p-1 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></span>
+                    </div>
+                    <h3 id="kpi-projects" class="text-2xl font-bold text-gray-900 mt-2">0</h3>
+                </div>
+                <div class="kpi-card bg-white p-4 rounded-lg border-l-4 border-yogi-red shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Billing Value (Cr)</p>
+                        <span class="text-green-600 bg-green-50 p-1 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                    </div>
+                    <h3 id="kpi-revenue" class="text-2xl font-bold text-gray-900 mt-2">0</h3>
+                </div>
+                <div class="kpi-card bg-white p-4 rounded-lg border-l-4 border-yogi-red shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Avg. Monthly (Cr)</p>
+                        <span class="text-purple-600 bg-purple-50 p-1 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg></span>
+                    </div>
+                    <h3 id="kpi-avg" class="text-2xl font-bold text-gray-900 mt-2">0</h3>
+                </div>
+                 <div class="kpi-card bg-white p-4 rounded-lg border-l-4 border-yogi-red shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Assemblies</p>
+                        <span class="text-blue-600 bg-blue-50 p-1 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg></span>
+                    </div>
+                    <h3 id="kpi-assemblies" class="text-2xl font-bold text-gray-900 mt-2">0</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow-sm lg:col-span-5 border border-gray-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-gray-800 uppercase">Billing by Manager</h3>
+                    </div>
+                    <div class="flex-grow relative w-full h-64">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow-sm lg:col-span-3 border border-gray-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-gray-800 uppercase">Product Mix</h3>
+                    </div>
+                    <div class="flex-grow relative w-full h-64">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow-sm lg:col-span-4 border border-gray-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-gray-800 uppercase">Monthly Trend</h3>
+                    </div>
+                    <div class="flex-grow relative w-full h-64">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-bold text-gray-800 text-sm uppercase">Detailed Project Matrix</h3>
+                        <span class="text-[10px] text-gray-400 font-normal">Click (+) to view Assemblies</span>
+                    </div>
+                    <span id="table-count" class="text-[10px] font-bold text-yogi-red bg-red-50 px-2 py-1 rounded border border-red-100">0 Projects</span>
+                </div>
+                <div class="overflow-x-auto max-h-[600px] custom-scroll">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-white text-xs uppercase text-gray-500 sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th class="px-6 py-3 border-b border-gray-100 w-12 text-center"></th> 
+                                <th class="px-6 py-3 border-b border-gray-100 font-semibold">Project Name</th>
+                                <th class="px-6 py-3 border-b border-gray-100 font-semibold">Manager</th>
+                                <th class="px-6 py-3 border-b border-gray-100 font-semibold">Product</th>
+                                <th class="px-6 py-3 border-b border-gray-100 font-semibold">Month</th>
+                                <th class="px-6 py-3 border-b border-gray-100 font-semibold">Status</th>
+                                <th class="px-6 py-3 border-b border-gray-100 font-semibold text-right">Billing (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-gray-100">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. CONFIG & UTILS ---
+        const fiscalMonthOrder = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+        
+        // Security: Simple HTML Escape (Mock data is safe, but good practice)
+        const escapeHtml = (unsafe) => {
+            return String(unsafe)
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // Dynamic Color Generator
+        const brandPalette = ['#a81818', '#1f2937', '#6b7280', '#9ca3af', '#d1d5db', '#ef4444', '#374151'];
+        const generatePalette = (count) => {
+            return Array.from({length: count}, (_, i) => brandPalette[i % brandPalette.length]);
+        };
+
+        // Mock Assembly Generator
+        const generateAssemblies = (baseValue) => {
+            const count = Math.floor(Math.random() * 3) + 2;
+            let remaining = baseValue;
+            let assemblies = [];
+            const parts = ["Housing Frame", "Roller Set", "Motor Coupling", "Hydraulic Pack", "Control Panel", "Gearbox"];
+            for(let i=0; i<count-1; i++) {
+                let val = Math.floor(remaining * (Math.random() * 0.4));
+                remaining -= val;
+                assemblies.push({ name: parts[i%parts.length], val: val });
+            }
+            assemblies.push({ name: "Final Assembly", val: remaining });
+            return assemblies;
+        };
+
+        // --- 2. DATA (With Explicit Context) ---
+        const rawData = [
+            { id: 101, name: "2231-SHYAM-6HI CRM", pm: "Saurabh", product: "CRM", month: "Oct", status: "Not Dispatched", val: 48500000, context: 'forecast' },
+            { id: 102, name: "2403-GOPANI-4HI CRM", pm: "Mayank", product: "CRM", month: "Nov", status: "Dispatched", val: 10000000, context: 'forecast' },
+            { id: 103, name: "2412-HI TECH-SPARE", pm: "Mayank", product: "SPARE", month: "Dec", status: "Hold", val: 10000000, context: 'forecast' },
+            { id: 104, name: "2405-JSPL-TRIMMING", pm: "Saurabh", product: "TRIMMING", month: "Oct", status: "Not Dispatched", val: 37650000, context: 'forecast' },
+            { id: 105, name: "2305-APL-CGL", pm: "Saurabh", product: "CGL", month: "Aug", status: "Dispatched", val: 139000000, context: 'actuals' },
+            { id: 106, name: "2404-GOPANI-4HI SPM", pm: "Aditya Sharma", product: "SPM", month: "Sep", status: "Dispatched", val: 15900000, context: 'actuals' },
+            { id: 107, name: "2502-AL SHAKER-PICKLING", pm: "Aditya Saini", product: "PICKLING", month: "Nov", status: "Not Dispatched", val: 110880000, context: 'forecast' },
+            { id: 108, name: "2521-BMWIL-6HI CRM", pm: "Mayank", product: "CRM", month: "Dec", status: "Not Dispatched", val: 357500000, context: 'forecast' },
+            { id: 109, name: "2527-AECPL-GI/GL LINE", pm: "Saurabh", product: "CGL", month: "Jul", status: "Dispatched", val: 413125000, context: 'actuals' },
+            { id: 110, name: "2506-JSW-APL", pm: "Aditya Sharma", product: "APL", month: "May", status: "Not Dispatched", val: 436474820, context: 'actuals' },
+            { id: 111, name: "2420-INDIA STEEL-CCL", pm: "Saurabh", product: "CCL", month: "Nov", status: "Dispatched", val: 49092705, context: 'forecast' },
+            { id: 112, name: "2522-APL-SPM", pm: "Aditya Saini", product: "SPM", month: "Dec", status: "Not Dispatched", val: 51000000, context: 'forecast' },
+            { id: 113, name: "2425-MMI-6HI CRM", pm: "Mayank", product: "CRM", month: "Oct", status: "Dispatched", val: 85286000, context: 'forecast' },
+            { id: 114, name: "2511-GAURANG-6HI", pm: "Aditya Sharma", product: "CRM", month: "Sep", status: "Not Dispatched", val: 107254700, context: 'actuals' },
+            { id: 115, name: "2427-PROMPT-6HI CRM", pm: "Mayank", product: "CRM", month: "Apr", status: "Hold", val: 112028000, context: 'actuals' }
+        ];
+
+        // Enrich with assemblies
+        const database = rawData.map(d => ({ ...d, assemblies: generateAssemblies(d.val) }));
+
+        // --- 3. STATE ---
+        let state = {
+            context: 'forecast', 
+            filters: { pm: null, product: null, month: null, status: null },
+            expandedRows: []
+        };
+        let charts = {};
+
+        // --- 4. CORE LOGIC ---
+        function init() {
+            initCharts();
+            updateDashboard();
+        }
+
+        function setContext(ctx) {
+            state.context = ctx;
+            document.getElementById('tab-forecast').className = ctx === 'forecast' ? 'tab-active py-2 px-6 text-sm transition-all flex-1 xl:flex-none' : 'tab-inactive py-2 px-6 text-sm transition-all flex-1 xl:flex-none';
+            document.getElementById('tab-actuals').className = ctx === 'actuals' ? 'tab-active py-2 px-6 text-sm transition-all flex-1 xl:flex-none' : 'tab-inactive py-2 px-6 text-sm transition-all flex-1 xl:flex-none';
+            
+            // UX: Reset filters on context switch for clean slate
+            resetAllFilters(false); 
+        }
+
+        function getFilteredData() {
+            return database.filter(row => {
+                if (row.context !== state.context) return false;
+                if (state.filters.pm && row.pm !== state.filters.pm) return false;
+                if (state.filters.product && row.product !== state.filters.product) return false;
+                if (state.filters.month && row.month !== state.filters.month) return false;
+                if (state.filters.status && row.status !== state.filters.status) return false;
+                return true;
+            });
+        }
+
+        function updateDashboard() {
+            const data = getFilteredData();
+            
+            // Clean up stale expanded rows (Fix 3)
+            const validIds = new Set(data.map(d => d.id));
+            state.expandedRows = state.expandedRows.filter(id => validIds.has(id));
+
+            updateSlicerOptions();
+            updateKPIs(data);
+            updateVisuals(data);
+            renderTable(data);
+            renderFilterChips();
+        }
+
+        function updateKPIs(data) {
+            const totalVal = data.reduce((sum, d) => sum + d.val, 0);
+            const totalProj = data.length;
+            const totalAssm = data.reduce((sum, d) => sum + d.assemblies.length, 0);
+            
+            const uniqueMonths = new Set(data.map(d => d.month)).size || 1; 
+
+            document.getElementById('kpi-projects').innerText = totalProj;
+            document.getElementById('kpi-revenue').innerText = (totalVal / 10000000).toFixed(2);
+            document.getElementById('kpi-assemblies').innerText = totalAssm;
+            document.getElementById('kpi-avg').innerText = (totalVal / 10000000 / uniqueMonths).toFixed(2);
+        }
+
+        // --- 5. FILTERS & SLICERS ---
+
+        function applySlicer(key, val) {
+            state.filters[key] = val === 'all' ? null : val;
+            updateDashboard();
+        }
+
+        function applyChartFilter(key, val) {
+            state.filters[key] = state.filters[key] === val ? null : val; 
+            if(key === 'month' || key === 'status') {
+                document.getElementById(`filter-${key}`).value = state.filters[key] || 'all';
+            }
+            updateDashboard();
+        }
+
+        function removeFilter(key) {
+            state.filters[key] = null;
+            if(key === 'month' || key === 'status') {
+                document.getElementById(`filter-${key}`).value = 'all';
+            }
+            updateDashboard();
+        }
+
+        function resetAllFilters(refresh = true) {
+            state.filters = { pm: null, product: null, month: null, status: null };
+            document.getElementById('filter-status').value = 'all';
+            document.getElementById('filter-month').value = 'all';
+            if(refresh) updateDashboard();
+        }
+
+        function updateSlicerOptions() {
+            const contextMonths = [...new Set(database.filter(d => d.context === state.context).map(d => d.month))];
+            contextMonths.sort((a,b) => fiscalMonthOrder.indexOf(a) - fiscalMonthOrder.indexOf(b));
+            
+            const monthSelect = document.getElementById('filter-month');
+            const currentVal = monthSelect.value;
+            
+            monthSelect.innerHTML = '<option value="all">Month: All</option>' + 
+                contextMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+            
+            if(contextMonths.includes(currentVal)) monthSelect.value = currentVal;
+        }
+
+        function renderFilterChips() {
+            const container = document.getElementById('active-filters-container');
+            container.innerHTML = '';
+            
+            Object.entries(state.filters).forEach(([key, val]) => {
+                if(val) {
+                    const chip = document.createElement('div');
+                    chip.className = 'bg-yogi-red text-white text-[10px] font-bold px-2 rounded-full flex items-center gap-2 shadow-sm animate-fade-in cursor-pointer hover:bg-red-800 transition';
+                    chip.innerHTML = `<span class="uppercase">${escapeHtml(key)}: ${escapeHtml(val)}</span> <button onclick="removeFilter('${key}')" class="hover:text-red-200">&times;</button>`;
+                    container.appendChild(chip);
+                }
+            });
+        }
+
+        // --- 6. CHARTS ---
+
+        function initCharts() {
+            const common = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: { 
+                        backgroundColor: '#1f2937', 
+                        padding: 10, 
+                        cornerRadius: 4,
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.label}: ${ctx.formattedValue} Cr`
+                        }
+                    }
+                }
+            };
+
+            // Bar
+            charts.bar = new Chart(document.getElementById('barChart'), {
+                type: 'bar',
+                data: { labels: [], datasets: [] },
+                options: {
+                    ...common,
+                    onClick: (e, els) => { if(els.length) applyChartFilter('pm', charts.bar.data.labels[els[0].index]); },
+                    scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+                }
+            });
+
+            // Pie
+            charts.pie = new Chart(document.getElementById('pieChart'), {
+                type: 'doughnut',
+                data: { labels: [], datasets: [] },
+                options: {
+                    ...common,
+                    plugins: { 
+                        legend: { display: true, position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
+                        tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.formattedValue} Cr` } }
+                    },
+                    cutout: '70%',
+                    onClick: (e, els) => { if(els.length) applyChartFilter('product', charts.pie.data.labels[els[0].index]); }
+                }
+            });
+
+            // Line
+            charts.line = new Chart(document.getElementById('lineChart'), {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    ...common,
+                    scales: { y: { display: false }, x: { grid: { display: false } } },
+                    onClick: (e, els) => { if(els.length) applyChartFilter('month', charts.line.data.labels[els[0].index]); }
+                }
+            });
+        }
+
+        function updateVisuals(data) {
+            const groupBy = (k) => {
+                const map = {};
+                data.forEach(d => map[d[k]] = (map[d[k]] || 0) + d.val);
+                return map;
+            };
+
+            // Bar (PM)
+            const pmData = groupBy('pm');
+            charts.bar.data.labels = Object.keys(pmData);
+            charts.bar.data.datasets = [{
+                // FIX 1: Convert to Number
+                data: Object.values(pmData).map(v => Number((v/10000000).toFixed(2))),
+                backgroundColor: Object.keys(pmData).map(p => p === state.filters.pm ? '#a81818' : '#e5e7eb'),
+                borderRadius: 4,
+                barPercentage: 0.6
+            }];
+            charts.bar.update();
+
+            // Pie (Product)
+            const prodData = groupBy('product');
+            const prodLabels = Object.keys(prodData);
+            charts.pie.data.labels = prodLabels;
+            charts.pie.data.datasets = [{
+                // FIX 1: Convert to Number
+                data: Object.values(prodData).map(v => Number((v/10000000).toFixed(2))),
+                backgroundColor: generatePalette(prodLabels.length),
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }];
+            charts.pie.update();
+
+            // Line (Month)
+            const monthData = groupBy('month');
+            const sortedMonths = Object.keys(monthData).sort((a,b) => fiscalMonthOrder.indexOf(a) - fiscalMonthOrder.indexOf(b));
+            
+            charts.line.data.labels = sortedMonths;
+            charts.line.data.datasets = [{
+                // FIX 1: Convert to Number
+                data: sortedMonths.map(m => Number((monthData[m]/10000000).toFixed(2))),
+                borderColor: '#a81818',
+                backgroundColor: (ctx) => {
+                    const grad = ctx.chart.ctx.createLinearGradient(0,0,0,200);
+                    grad.addColorStop(0, 'rgba(168, 24, 24, 0.2)');
+                    grad.addColorStop(1, 'rgba(168, 24, 24, 0)');
+                    return grad;
+                },
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointBackgroundColor: sortedMonths.map(m => m === state.filters.month ? '#a81818' : '#fff'),
+                pointBorderColor: '#a81818'
+            }];
+            charts.line.update();
+        }
+
+        // --- 7. TABLE ---
+        
+        function toggleExpansion(id) {
+            const idx = state.expandedRows.indexOf(id);
+            if(idx > -1) state.expandedRows.splice(idx, 1);
+            else state.expandedRows.push(id);
+            renderTable(getFilteredData());
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            document.getElementById('table-count').innerText = `${data.length} Projects`;
+            tbody.innerHTML = '';
+
+            if(!data.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-400 text-xs">No Data Available</td></tr>`;
+                return;
+            }
+
+            data.forEach(row => {
+                const isExpanded = state.expandedRows.includes(row.id);
+                const tr = document.createElement('tr');
+                tr.className = `group transition hover:bg-gray-50 border-b border-gray-100 ${isExpanded ? 'bg-gray-50' : ''}`;
+                
+                let badge = 'bg-gray-100 text-gray-600';
+                if(row.status === 'Dispatched') badge = 'bg-green-100 text-green-700';
+                if(row.status === 'Hold') badge = 'bg-yellow-100 text-yellow-700';
+                if(row.status === 'Not Dispatched') badge = 'bg-red-50 text-red-700';
+
+                // Security: Using escapeHtml on dynamic strings
+                tr.innerHTML = `
+                    <td class="px-6 py-3 text-center">
+                        <button onclick="toggleExpansion(${row.id})" class="h-5 w-5 rounded border flex items-center justify-center text-xs transition ${isExpanded ? 'bg-yogi-red border-yogi-red text-white' : 'border-gray-300 text-gray-400 hover:border-yogi-red hover:text-yogi-red'}">
+                            ${isExpanded ? '−' : '+'}
+                        </button>
+                    </td>
+                    <td class="px-6 py-3 font-semibold text-gray-800">${escapeHtml(row.name)}</td>
+                    <td class="px-6 py-3 text-gray-600">${escapeHtml(row.pm)}</td>
+                    <td class="px-6 py-3"><span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">${escapeHtml(row.product)}</span></td>
+                    <td class="px-6 py-3 text-gray-500">${row.month}</td>
+                    <td class="px-6 py-3"><span class="${badge} px-2 py-0.5 rounded text-[10px] font-bold uppercase">${row.status}</span></td>
+                    <td class="px-6 py-3 text-right font-bold text-gray-900">₹${row.val.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+
+                if(isExpanded) {
+                    const childTr = document.createElement('tr');
+                    const asmHtml = row.assemblies.map(a => `
+                        <div class="flex justify-between py-1.5 border-b border-gray-200 last:border-0 hover:bg-white px-2 rounded">
+                            <span class="text-gray-600 text-xs pl-2 border-l-2 border-gray-300">${escapeHtml(a.name)}</span>
+                            <span class="text-gray-900 font-medium text-xs">₹${a.val.toLocaleString()}</span>
+                        </div>
+                    `).join('');
+
+                    childTr.innerHTML = `
+                        <td colspan="7" class="p-0 border-b border-gray-100 bg-gray-50">
+                            <div class="expand-row px-8 py-3 bg-gray-100/50 shadow-inner">
+                                <div class="max-w-2xl">
+                                    <h4 class="text-[10px] font-bold text-gray-400 uppercase mb-2">Assembly Breakdown</h4>
+                                    ${asmHtml}
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(childTr);
+                }
+            });
+        }
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>

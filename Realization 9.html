@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOGIJI DIGI | Master Execution OS (Realisation 9)</title>
+    <style>
+        /* -----------------------------------------------------------------------------
+           MASTER CSS RESET & VARIABLES (Superset of R1-R7)
+           ----------------------------------------------------------------------------- */
+        :root {
+            /* BRAND COLORS (Unified Palette) */
+            --yd-red: #a81818;
+            --yd-red-hover: #8a1212;
+            --yd-slate: #374151;
+            --yd-dark: #0f172a;
+            
+            /* UI COLORS */
+            --primary: #2563eb; 
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            
+            /* BACKGROUNDS */
+            --bg-body: #f1f5f9;
+            --bg-sidebar: #0f172a;
+            --bg-card: #ffffff;
+            
+            /* STATUS INDICATORS */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+
+            /* BORDERS & SPACING */
+            --border: #e2e8f0;
+            --border-light: #f0f0f0;
+            --radius: 6px;
+            --header-height: 60px;
+            --master-sidebar-width: 60px; /* Slim master nav */
+            --module-sidebar-width: 240px;
+            
+            /* FONTS */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        
+        body { 
+            margin: 0; padding: 0; 
+            font-family: var(--font-sans); 
+            background-color: var(--bg-body); 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex;
+        }
+
+        /* -----------------------------------------------------------------------------
+           MASTER LAYOUT
+           ----------------------------------------------------------------------------- */
+        /* 1. MASTER SIDEBAR (Switcher between Realizations) */
+        #master-nav {
+            width: var(--master-sidebar-width);
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 15px;
+            z-index: 9999;
+            border-right: 1px solid #333;
+        }
+
+        .master-tab {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            font-size: 14px;
+            border: 1px solid transparent;
+        }
+
+        .master-tab:hover { background: #222; color: white; }
+        .master-tab.active { 
+            background: var(--yd-red); 
+            color: white; 
+            box-shadow: 0 0 10px rgba(168, 24, 24, 0.5);
+        }
+
+        /* 2. MODULE CONTAINER */
+        #master-stage {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-body);
+        }
+
+        /* Module Views - These act as the 'body' for each Realization */
+        .module-view {
+            position: absolute;
+            inset: 0;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-body);
+        }
+
+        .module-view.active { display: flex; }
+
+        /* -----------------------------------------------------------------------------
+           SHARED UTILITIES (Classes used across all files)
+           ----------------------------------------------------------------------------- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        
+        /* Loader */
+        #master-loader {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+            z-index: 10000; display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.3s; pointer-events: none; opacity: 0;
+        }
+        #master-loader.visible { opacity: 1; pointer-events: all; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--yd-red); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast Container */
+        #master-toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 10001; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #1e293b; color: white; padding: 12px 20px; border-radius: 6px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div id="master-loader"><div class="spinner"></div></div>
+
+    <div id="master-toast-container"></div>
+
+    <nav id="master-nav">
+        <div class="master-tab active" onclick="MasterApp.switchModule('r1')" title="Streamliner Enterprise (R1)">R1</div>
+        <div class="master-tab" onclick="MasterApp.switchModule('r2')" title="YOGIJI Portfolio (R2)">R2</div>
+        <div class="master-tab" onclick="MasterApp.switchModule('r3')" title="HR-OS & Control (R3)">R3</div>
+        <div class="master-tab" onclick="MasterApp.switchModule('r4')" title="Streamliner OS (R4)">R4</div>
+        <div class="master-tab" onclick="MasterApp.switchModule('r5')" title="Realization Tech (R5)">R5</div>
+        <div class="master-tab" onclick="MasterApp.switchModule('r6')" title="Execution System (R6)">R6</div>
+        <div class="master-tab" onclick="MasterApp.switchModule('r7')" title="Plancast OS (R7)">R7</div>
+    </nav>
+
+    <div id="master-stage">
+        
+        <div id="module-r1" class="module-view active">
+            <div id="app-r1" class="h-full flex flex-col"></div>
+
+<style>
+    /* R1 Scoped Styles */
+    #module-r1 {
+        --r1-primary: #0f62fe;
+        --r1-bg-body: #f4f7f6;
+        --r1-bg-sidebar: #161616;
+        --r1-text-main: #161616;
+        --r1-border: #e0e0e0;
+    }
+
+    #module-r1 .btn-r1 { padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    #module-r1 .btn-r1-primary { background: var(--r1-primary); color: white; }
+    #module-r1 .btn-r1-secondary { background: white; border: 1px solid var(--r1-border); color: var(--r1-text-main); }
+    
+    #module-r1 .card-r1 { background: white; border: 1px solid var(--r1-border); border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); overflow: hidden; }
+    #module-r1 .sidebar-r1 { width: 260px; background: var(--r1-bg-sidebar); color: #a8a8a8; display: flex; flex-direction: column; }
+    #module-r1 .nav-item-r1 { padding: 12px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-left: 3px solid transparent; }
+    #module-r1 .nav-item-r1:hover, #module-r1 .nav-item-r1.active { background: #262626; color: white; border-left-color: var(--r1-primary); }
+    
+    #module-r1 table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #module-r1 th { text-align: left; padding: 10px 16px; border-bottom: 2px solid #f0f0f0; color: #6f6f6f; font-weight: 600; }
+    #module-r1 td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+</style>
+
+<script>
+(function() {
+    // --- R1: SCOPED UTILITIES ---
+    const Utils = {
+        id: () => 'r1_' + Math.random().toString(36).substr(2, 9),
+        formatCurrency: (n) => '$' + n.toLocaleString(),
+        formatDate: (d) => new Date(d).toLocaleDateString(),
+        calculateStatusColor: (s) => s === 'At Risk' ? '#da1e28' : (s === 'Completed' ? '#198038' : '#0f62fe')
+    };
+
+    // --- R1: DATA STORE ---
+    const DB_KEY = 'R1_DB';
+    let state = {
+        projects: [
+            { id: 'p1', name: 'ERP Migration Phase 2', manager: 'Admin', status: 'In Progress', start: '2025-01-10', end: '2025-06-15', budget: 1500000, actual: 450000, progress: 35 },
+            { id: 'p2', name: 'Cloud Infra Upgrade', manager: 'Jane Doe', status: 'At Risk', start: '2025-02-01', end: '2025-05-20', budget: 800000, actual: 600000, progress: 60 }
+        ]
+    };
+
+    // --- R1: COMPONENTS ---
+    const Sidebar = () => `
+        <div class="sidebar-r1">
+            <div style="height:60px; display:flex; align-items:center; padding:0 20px; color:white; font-weight:700; border-bottom:1px solid #333;">
+                Streamliner <span style="font-size:10px; background:#0f62fe; padding:2px 6px; border-radius:10px; margin-left:8px;">ENT</span>
+            </div>
+            <div style="flex:1; padding-top:20px;">
+                <div class="nav-item-r1 active" onclick="R1_App.nav('dashboard')">Dashboard</div>
+                <div class="nav-item-r1" onclick="R1_App.nav('projects')">Projects</div>
+                <div class="nav-item-r1" onclick="R1_App.nav('gantt')">Timeline</div>
+            </div>
+            <div style="padding:20px; border-top:1px solid #333;">
+                <div style="font-size:13px; font-weight:500; color:white;">Admin User</div>
+                <div style="font-size:11px;">System Admin</div>
+            </div>
+        </div>
+    `;
+
+    const Dashboard = () => {
+        const p = state.projects;
+        return `
+            <div style="padding:20px; overflow-y:auto; height:100%;">
+                <h2 style="font-size:20px; font-weight:700; margin-bottom:20px;">Executive Dashboard</h2>
+                <div class="flex gap-4 mb-4">
+                    <div class="card-r1 flex-1 p-4">
+                        <div style="font-size:11px; font-weight:700; color:#6f6f6f; text-transform:uppercase;">Active Projects</div>
+                        <div style="font-size:24px; font-weight:700; margin-top:5px;">${p.length}</div>
+                    </div>
+                    <div class="card-r1 flex-1 p-4">
+                        <div style="font-size:11px; font-weight:700; color:#6f6f6f; text-transform:uppercase;">At Risk</div>
+                        <div style="font-size:24px; font-weight:700; margin-top:5px; color:#da1e28;">${p.filter(x=>x.status==='At Risk').length}</div>
+                    </div>
+                </div>
+                <div class="card-r1">
+                    <div style="padding:15px; background:#fafafa; border-bottom:1px solid #f0f0f0; font-weight:700;">Project Portfolio</div>
+                    <table>
+                        <thead><tr><th>Name</th><th>Manager</th><th>Budget</th><th>Status</th></tr></thead>
+                        <tbody>
+                            ${p.map(x => `
+                                <tr>
+                                    <td>${x.name}</td>
+                                    <td>${x.manager}</td>
+                                    <td>${Utils.formatCurrency(x.budget)}</td>
+                                    <td><span style="padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; color:white; background:${Utils.calculateStatusColor(x.status)}">${x.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    };
+
+    // --- R1: APP CONTROLLER ---
+    window.R1_App = {
+        init: () => {
+            const root = document.getElementById('app-r1');
+            root.innerHTML = `
+                <div style="display:flex; height:100%;">
+                    ${Sidebar()}
+                    <div id="r1-content" style="flex:1; background:#f4f7f6;">
+                        ${Dashboard()}
+                    </div>
+                </div>
+            `;
+        },
+        nav: (view) => {
+            const content = document.getElementById('r1-content');
+            if(view === 'dashboard') content.innerHTML = Dashboard();
+            else content.innerHTML = `<div style="padding:40px; text-align:center; color:#999;">${view.charAt(0).toUpperCase() + view.slice(1)} Module Loaded</div>`;
+        }
+    };
+
+    // Auto-boot R1 when loaded
+    R1_App.init();
+})();
+</script>
+        </div>
+
+        <div id="module-r2" class="module-view">
+            <div id="r2-root" style="display: flex; height: 100%; width: 100%;">
+
+    <nav id="r2-sidebar">
+        <div class="sidebar-brand">
+            <svg class="brand-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            YOGIJI DIGI
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Main</div>
+            <div class="nav-item active" data-view="dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Executive Dashboard
+            </div>
+            <div class="nav-item" data-view="projects">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                Project Control
+            </div>
+            <div class="nav-item" data-view="financials">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                Financials
+            </div>
+            <div class="nav-item" data-view="issues">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Issues & Risks
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Administration</div>
+            <div class="nav-item" data-view="users">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                User Management
+            </div>
+        </div>
+    </nav>
+
+    <main id="r2-main">
+        <header id="r2-header">
+            <div class="breadcrumbs" id="r2-breadcrumbs">Home / <span>Dashboard</span></div>
+            <div class="header-actions">
+                <div class="toggle-demo" id="r2-demo-toggle" title="Enhance UI for presentation">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Demo Mode
+                </div>
+                <div class="user-profile">
+                    <div class="avatar">SH</div>
+                    <span style="font-size:13px; font-weight:600;">Sarthak Handa</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="r2-content-canvas">
+            </div>
+
+        <div id="r2-loader"><div class="spinner"></div></div>
+    </main>
+
+    <div id="r2-toast-container"></div>
+
+    <div class="modal-overlay" id="r2-modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Modal Title</h3>
+                <button class="btn-outline btn-sm" onclick="R2_App.UI.closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="r2-modal-content">
+                </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="R2_App.UI.closeModal()">Cancel</button>
+                <button class="btn btn-primary" id="r2-modal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    /* R2 SCOPED STYLES */
+    #module-r2 {
+        --r2-bg-body: #f1f5f9;
+        --r2-bg-sidebar: #0f172a;
+        --r2-bg-card: #ffffff;
+        --r2-primary: #2563eb;
+        --r2-text-main: #334155;
+        --r2-border: #e2e8f0;
+        --r2-header-height: 64px;
+        --r2-sidebar-width: 260px;
+    }
+
+    #r2-root {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--r2-bg-body);
+        color: var(--r2-text-main);
+        font-size: 14px;
+    }
+
+    /* Sidebar */
+    #r2-sidebar {
+        width: var(--r2-sidebar-width);
+        background-color: var(--r2-bg-sidebar);
+        color: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #1e293b;
+        flex-shrink: 0;
+    }
+
+    #r2-sidebar .sidebar-brand {
+        height: var(--r2-header-height);
+        display: flex; align-items: center; padding: 0 24px;
+        font-weight: 700; font-size: 18px; border-bottom: 1px solid #1e293b;
+    }
+    #r2-sidebar .brand-icon { color: var(--r2-primary); margin-right: 12px; }
+
+    #r2-sidebar .nav-section { margin-top: 24px; }
+    #r2-sidebar .nav-label {
+        text-transform: uppercase; font-size: 11px; font-weight: 600;
+        color: #475569; padding: 0 24px; margin-bottom: 8px;
+    }
+    #r2-sidebar .nav-item {
+        display: flex; align-items: center; padding: 10px 24px;
+        cursor: pointer; border-left: 3px solid transparent; color: #94a3b8;
+    }
+    #r2-sidebar .nav-item:hover { background-color: rgba(255,255,255,0.05); color: #fff; }
+    #r2-sidebar .nav-item.active {
+        background-color: rgba(37, 99, 235, 0.1); color: #fff; border-left-color: var(--r2-primary);
+    }
+    #r2-sidebar .nav-item svg { width: 18px; height: 18px; margin-right: 12px; }
+
+    /* Main Area */
+    #r2-main { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+    
+    #r2-header {
+        height: var(--r2-header-height); background: white; border-bottom: 1px solid var(--r2-border);
+        display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
+    }
+
+    #r2-content-canvas { flex: 1; overflow-y: auto; padding: 32px; position: relative; }
+
+    /* R2 Utilities */
+    #module-r2 .card { background: white; border: 1px solid var(--r2-border); border-radius: 6px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    #module-r2 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    #module-r2 .card-title { font-size: 16px; font-weight: 700; margin: 0; }
+    
+    #module-r2 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+    #module-r2 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px; }
+
+    #module-r2 .kpi-card { display: flex; flex-direction: column; }
+    #module-r2 .kpi-value { font-size: 28px; font-weight: 700; margin: 8px 0; }
+    #module-r2 .kpi-label { font-size: 12px; color: #64748b; text-transform: uppercase; }
+
+    #module-r2 table { width: 100%; border-collapse: collapse; }
+    #module-r2 th { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--r2-border); color: #64748b; font-size: 12px; text-transform: uppercase; }
+    #module-r2 td { padding: 14px 16px; border-bottom: 1px solid var(--r2-border); font-size: 13px; }
+    
+    #module-r2 .btn { padding: 8px 16px; border-radius: 4px; font-weight: 500; font-size: 13px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 8px; }
+    #module-r2 .btn-primary { background: var(--r2-primary); color: white; }
+    #module-r2 .btn-outline { background: white; border-color: var(--r2-border); color: var(--r2-text-main); }
+    #module-r2 .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    /* Modals & Loaders */
+    #r2-loader { position: absolute; inset: 0; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    #r2-loader.visible { opacity: 1; pointer-events: all; }
+    
+    #r2-toast-container { position: absolute; bottom: 24px; right: 24px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+    
+    .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: white; width: 600px; max-width: 90%; border-radius: 8px; box-shadow: 0 20px 25px rgba(0,0,0,0.1); }
+    .modal-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+    .modal-footer { padding: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; }
+
+    /* Demo Mode Toggle */
+    .toggle-demo { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; background: #eff6ff; color: var(--r2-primary); padding: 6px 12px; border-radius: 20px; cursor: pointer; border: 1px solid #bfdbfe; }
+    .toggle-demo.active { background: var(--r2-primary); color: white; }
+    
+    /* Demo Mode Override */
+    #module-r2.demo-mode .kpi-card { animation: r2-pulse 3s infinite; }
+    @keyframes r2-pulse { 0% { box-shadow: 0 0 0 0px rgba(37, 99, 235, 0.1); } 50% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); } 100% { box-shadow: 0 0 0 0px rgba(37, 99, 235, 0); } }
+
+</style>
+
+<script>
+(function() {
+    // --- R2 APP LOGIC ---
+    window.R2_App = {
+        State: {
+            currentView: 'dashboard',
+            selectedProjectId: null,
+            activeTab: 'overview',
+            isDemoMode: false,
+            currentUser: { id: 1, name: "Sarthak Handa", role: "admin" }
+        },
+
+        DB: {
+            projects: [], finances: [], tasks: [], issues: [],
+            init() {
+                // Seeding minimal data for R2
+                for (let i = 1; i <= 10; i++) {
+                    const status = i % 4 === 0 ? 'Critical' : (i % 3 === 0 ? 'At Risk' : 'On Track');
+                    this.projects.push({
+                        id: i, name: `Project ${['Alpha', 'Beta', 'Gamma'][i%3]} ${i}`,
+                        code: `PRJ-${100+i}`, status: status, manager: 'S. Handa',
+                        progress: Math.floor(Math.random() * 90) + 10,
+                        budget: 1000000 * i, spend: 500000 * i
+                    });
+                    this.finances.push({
+                        projectId: i,
+                        monthly: Array.from({length:6}, (_,m)=>({planned: 100, actual: 80 + Math.random()*40}))
+                    });
+                }
+            }
+        },
+
+        Services: {
+            delay: (ms) => new Promise(r => setTimeout(r, ms)),
+            async getDashboardStats() {
+                await this.delay(200);
+                const p = R2_App.DB.projects;
+                return {
+                    totalBudget: p.reduce((s,x)=>s+x.budget,0),
+                    activeProjects: p.length,
+                    budgetHealth: 88,
+                    critical: p.filter(x=>x.status==='Critical').length
+                };
+            },
+            async getProjects() { await this.delay(200); return R2_App.DB.projects; },
+            async getProjectDetails(id) { 
+                await this.delay(200); 
+                return { ...R2_App.DB.projects.find(x=>x.id==id), tasks: [], issues: [], finances: R2_App.DB.finances.find(f=>f.projectId==id) }; 
+            }
+        },
+
+        Renderers: {
+            clear() { document.getElementById('r2-content-canvas').innerHTML = ''; },
+            
+            dashboard(stats, projects) {
+                const html = `
+                    <div class="grid-4">
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Portfolio Value</span>
+                            <span class="kpi-value">$${(stats.totalBudget/1000000).toFixed(1)}M</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Active Projects</span>
+                            <span class="kpi-value">${stats.activeProjects}</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Budget Burn</span>
+                            <span class="kpi-value">${stats.budgetHealth}%</span>
+                        </div>
+                        <div class="card kpi-card" style="border-left:4px solid #ef4444;">
+                            <span class="kpi-label">Critical</span>
+                            <span class="kpi-value" style="color:#ef4444">${stats.critical}</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Priority Watchlist</h3></div>
+                        <table>
+                            <thead><tr><th>Code</th><th>Name</th><th>Progress</th><th>Status</th></tr></thead>
+                            <tbody>
+                                ${projects.slice(0,5).map(p => `
+                                    <tr onclick="R2_App.Router.navigate('project', ${p.id})">
+                                        <td style="font-family:monospace; color:#64748b;">${p.code}</td>
+                                        <td style="font-weight:600; color:#2563eb;">${p.name}</td>
+                                        <td>${p.progress}%</td>
+                                        <td><span class="badge" style="background:${p.status==='Critical'?'#fee2e2':'#dcfce7'}; color:${p.status==='Critical'?'#991b1b':'#166534'}">${p.status}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                this.clear();
+                document.getElementById('r2-content-canvas').innerHTML = html;
+            },
+
+            projectList(projects) {
+                const html = `
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">All Projects</h3></div>
+                        <table>
+                            <thead><tr><th>Code</th><th>Name</th><th>Manager</th><th>Budget</th><th>Status</th></tr></thead>
+                            <tbody>
+                                ${projects.map(p => `
+                                    <tr onclick="R2_App.Router.navigate('project', ${p.id})">
+                                        <td>${p.code}</td>
+                                        <td><strong>${p.name}</strong></td>
+                                        <td>${p.manager}</td>
+                                        <td>$${(p.budget/1000000).toFixed(1)}M</td>
+                                        <td>${p.status}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                this.clear();
+                document.getElementById('r2-content-canvas').innerHTML = html;
+            },
+
+            projectDetail(data) {
+                const html = `
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 style="margin:0;">${data.name}</h2>
+                            <button class="btn btn-outline" onclick="R2_App.Router.navigate('projects')">Back</button>
+                        </div>
+                        <div style="margin-bottom:20px; display:flex; gap:20px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                            <div style="font-weight:600; color:#2563eb; border-bottom:2px solid #2563eb;">Overview</div>
+                            <div style="color:#64748b; cursor:pointer;">Financials</div>
+                        </div>
+                        <div class="grid-2">
+                            <div><strong>Manager:</strong> ${data.manager}</div>
+                            <div><strong>Status:</strong> ${data.status}</div>
+                            <div><strong>Budget:</strong> $${data.budget.toLocaleString()}</div>
+                            <div><strong>Spend:</strong> $${data.spend.toLocaleString()}</div>
+                        </div>
+                    </div>
+                `;
+                this.clear();
+                document.getElementById('r2-content-canvas').innerHTML = html;
+            }
+        },
+
+        Router: {
+            async navigate(view, param = null) {
+                // Nav UI Update
+                document.querySelectorAll('#r2-sidebar .nav-item').forEach(el => el.classList.remove('active'));
+                const navEl = document.querySelector(`#r2-sidebar .nav-item[data-view="${view==='project'?'projects':view}"]`);
+                if(navEl) navEl.classList.add('active');
+
+                // Loader
+                R2_App.UI.showLoader(true);
+                
+                // Breadcrumbs
+                const crumbs = document.getElementById('r2-breadcrumbs');
+                crumbs.innerHTML = `Home / <span>${view.charAt(0).toUpperCase() + view.slice(1)}</span>`;
+
+                // Logic
+                if(view === 'dashboard') {
+                    const stats = await R2_App.Services.getDashboardStats();
+                    const projs = await R2_App.Services.getProjects();
+                    R2_App.Renderers.dashboard(stats, projs);
+                } else if(view === 'projects') {
+                    const projs = await R2_App.Services.getProjects();
+                    R2_App.Renderers.projectList(projs);
+                } else if(view === 'project') {
+                    const data = await R2_App.Services.getProjectDetails(param);
+                    R2_App.Renderers.projectDetail(data);
+                } else {
+                     document.getElementById('r2-content-canvas').innerHTML = `<div style="text-align:center; padding:50px; color:#94a3b8;">Module Under Construction</div>`;
+                }
+
+                R2_App.UI.showLoader(false);
+            }
+        },
+
+        UI: {
+            showLoader(show) { 
+                const l = document.getElementById('r2-loader'); 
+                if(show) l.classList.add('visible'); else l.classList.remove('visible'); 
+            },
+            closeModal() { document.getElementById('r2-modal-overlay').classList.remove('open'); },
+            toggleDemo() {
+                const root = document.getElementById('module-r2');
+                const btn = document.getElementById('r2-demo-toggle');
+                root.classList.toggle('demo-mode');
+                btn.classList.toggle('active');
+            }
+        },
+
+        init() {
+            this.DB.init();
+            
+            // Nav Listeners
+            document.querySelectorAll('#r2-sidebar .nav-item').forEach(el => {
+                el.addEventListener('click', (e) => this.Router.navigate(e.currentTarget.dataset.view));
+            });
+            
+            // Demo Toggle
+            document.getElementById('r2-demo-toggle').addEventListener('click', () => this.UI.toggleDemo());
+
+            this.Router.navigate('dashboard');
+        }
+    };
+
+    // Boot R2
+    R2_App.init();
+})();
+</script>
+            </div>
+
+        <div id="module-r3" class="module-view">
+            <div id="r3-root" style="display: flex; height: 100%; width: 100%;">
+
+    <nav id="r3-sidebar">
+        <div class="sidebar-brand">
+            <div style="font-weight: 800; font-size: 20px; color: #fff; letter-spacing: -1px; display: flex; align-items: center; gap: 10px;">
+                <div style="width: 30px; height: 30px; background: #a81818; border-radius: 4px; display: flex; align-items: center; justify-content: center;">Y</div>
+                YOGIJI DIGI
+            </div>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-label">Executive Overview</div>
+            <div class="nav-item active" data-view="dashboard1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Dashboard
+            </div>
+            <div class="nav-item" data-view="projects">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                Project Control
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Execution & Analysis</div>
+            <div class="nav-item" data-view="timeline">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                Timeline (Gantt)
+            </div>
+            <div class="nav-item" data-view="financials1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                Financials
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">System</div>
+            <div class="nav-item" data-view="settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                HR-OS Config
+            </div>
+        </div>
+    </nav>
+
+    <main id="r3-main">
+        <header id="r3-header">
+            <div class="breadcrumbs" id="r3-breadcrumbs">Home / <span>Dashboard</span></div>
+            
+            <div class="user-profile">
+                <div class="user-info">
+                    <span class="user-name">Harvey Reginald Specter</span>
+                    <span class="user-role">Senior Partner</span>
+                </div>
+                <div class="avatar">HS</div>
+            </div>
+        </header>
+
+        <div id="r3-content-canvas">
+            </div>
+
+        <div id="r3-loader"><div class="spinner"></div></div>
+    </main>
+
+</div>
+
+<style>
+    /* R3 SCOPED STYLES */
+    #module-r3 {
+        --r3-yd-red: #a81818;
+        --r3-yd-slate: #374151;
+        --r3-yd-dark: #111827;
+        --r3-bg-body: #f3f4f6;
+        --r3-bg-surface: #ffffff;
+        --r3-border: #e5e7eb;
+        --r3-text-main: #1f2937;
+        --r3-text-muted: #6b7280;
+        --r3-success: #10b981;
+        --r3-danger: #ef4444;
+        --r3-sidebar-width: 260px;
+    }
+
+    #r3-root { font-family: 'Inter', sans-serif; background: var(--r3-bg-body); color: var(--r3-text-main); font-size: 14px; }
+
+    /* R3 Sidebar */
+    #r3-sidebar {
+        width: var(--r3-sidebar-width); background: var(--r3-yd-dark); color: #d1d5db;
+        display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    #r3-sidebar .sidebar-brand { height: 70px; display: flex; align-items: center; padding: 0 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); }
+    
+    #r3-sidebar .nav-section { margin-top: 24px; }
+    #r3-sidebar .nav-label { font-size: 11px; font-weight: 700; color: #9ca3af; padding: 0 24px; margin-bottom: 8px; text-transform: uppercase; }
+    #r3-sidebar .nav-item { display: flex; align-items: center; padding: 10px 24px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; color: #d1d5db; font-weight: 500; }
+    #r3-sidebar .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    #r3-sidebar .nav-item.active { background: rgba(168, 24, 24, 0.15); color: #ffffff; border-left-color: var(--r3-yd-red); }
+    #r3-sidebar .nav-item svg { width: 18px; height: 18px; margin-right: 12px; }
+
+    /* R3 Main */
+    #r3-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    #r3-header { height: 60px; background: var(--r3-bg-surface); border-bottom: 1px solid var(--r3-border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+    #r3-content-canvas { flex: 1; overflow-y: auto; padding: 32px; }
+    
+    #r3-breadcrumbs { font-size: 14px; color: var(--r3-text-muted); }
+    #r3-breadcrumbs span { color: var(--r3-text-main); font-weight: 600; }
+
+    /* R3 User Profile */
+    #module-r3 .user-profile { display: flex; align-items: center; gap: 12px; }
+    #module-r3 .user-info { text-align: right; }
+    #module-r3 .user-name { display: block; font-size: 13px; font-weight: 600; }
+    #module-r3 .user-role { display: block; font-size: 11px; color: var(--r3-text-muted); }
+    #module-r3 .avatar { width: 36px; height: 36px; background: var(--r3-yd-red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+
+    /* R3 Cards & UI */
+    #module-r3 .card { background: var(--r3-bg-surface); border: 1px solid var(--r3-border); border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 24px; }
+    #module-r3 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    #module-r3 .card-title { font-size: 16px; font-weight: 700; color: var(--r3-yd-dark); margin: 0; }
+    
+    #module-r3 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+    #module-r3 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px; }
+    
+    #module-r3 .kpi-card { position: relative; overflow: hidden; }
+    #module-r3 .kpi-card::after { content:''; position: absolute; top:0; left:0; width: 4px; height: 100%; background: var(--r3-yd-red); }
+    #module-r3 .kpi-label { font-size: 12px; color: var(--r3-text-muted); text-transform: uppercase; font-weight: 600; }
+    #module-r3 .kpi-value { font-size: 28px; font-weight: 700; margin: 8px 0; color: var(--r3-yd-dark); }
+    
+    #module-r3 table { width: 100%; border-collapse: collapse; }
+    #module-r3 th { text-align: left; padding: 12px 16px; border-bottom: 1px solid #d1d5db; color: var(--r3-text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    #module-r3 td { padding: 14px 16px; border-bottom: 1px solid var(--r3-border); font-size: 13px; }
+
+    #module-r3 .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    #module-r3 .badge-success { background: #dcfce7; color: #166534; }
+    #module-r3 .badge-warning { background: #fef3c7; color: #92400e; }
+    #module-r3 .badge-danger { background: #fee2e2; color: #991b1b; }
+    #module-r3 .badge-neutral { background: #f3f4f6; color: #4b5563; }
+
+    #module-r3 .btn { padding: 8px 16px; border-radius: 4px; font-weight: 500; font-size: 13px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 8px; }
+    #module-r3 .btn-primary { background: var(--r3-yd-red); color: white; }
+    #module-r3 .btn-outline { background: white; border-color: #d1d5db; color: var(--r3-text-main); }
+    
+    /* Loader */
+    #r3-loader { position: absolute; inset: 0; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    #r3-loader.visible { opacity: 1; pointer-events: all; }
+</style>
+
+<script>
+(function() {
+    // --- R3 APP LOGIC ---
+    window.R3_App = {
+        State: { currentView: 'dashboard1', isLoading: false },
+
+        DB: {
+            projects: [],
+            init() {
+                const depts = ['Engineering', 'R&D', 'IT', 'Marketing', 'Legal'];
+                for(let i=1; i<=12; i++) {
+                    const status = i === 2 ? 'Critical' : (i === 5 ? 'At Risk' : (i > 10 ? 'Completed' : 'On Track'));
+                    this.projects.push({
+                        id: i, code: `YD-${202600 + i}`,
+                        name: `Phase ${i} Expansion: ${['Alpha', 'Bravo', 'Charlie'][i%3]}`,
+                        dept: depts[i%5], manager: i%2===0 ? "Mike Ross" : "Donna Paulsen",
+                        status: status, progress: status === 'Completed' ? 100 : Math.floor(Math.random() * 85) + 10,
+                        budget: 1000000 + (i*100000), actual: 500000 + (i*50000)
+                    });
+                }
+            },
+            getTasks() {
+                return ['Requirements', 'Design', 'Dev', 'Testing', 'Deploy'].map((n, i) => ({
+                    id: i, name: n, startOffset: i*10, duration: 10,
+                    progress: i<2?100:(i==2?50:0), status: i<2?'Done':(i==2?'In Progress':'Pending')
+                }));
+            }
+        },
+
+        Views: {
+            dashboard1() {
+                const projects = R3_App.DB.projects;
+                return `
+                    <div class="grid-4">
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Total Portfolio</span>
+                            <span class="kpi-value">$24.5M</span>
+                            <span class="kpi-trend trend-up">12% vs LY</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Active Projects</span>
+                            <span class="kpi-value">${projects.filter(p=>p.status!=='Completed').length}</span>
+                        </div>
+                         <div class="card kpi-card">
+                            <span class="kpi-label">Resource Util</span>
+                            <span class="kpi-value">94%</span>
+                        </div>
+                        <div class="card kpi-card" style="border-left:4px solid var(--r3-danger);">
+                            <span class="kpi-label">Critical</span>
+                            <span class="kpi-value" style="color:var(--r3-danger)">${projects.filter(p=>p.status==='Critical').length}</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">High Priority Watchlist</h3></div>
+                        <table>
+                            <thead><tr><th>Status</th><th>Code</th><th>Name</th><th>Manager</th><th>Progress</th></tr></thead>
+                            <tbody>
+                                ${projects.slice(0,5).map(p => `
+                                    <tr>
+                                        <td><span class="badge" style="background:${p.status==='Critical'?'#fee2e2':(p.status==='At Risk'?'#fef3c7':'#dcfce7')}">${p.status}</span></td>
+                                        <td>${p.code}</td>
+                                        <td><strong>${p.name}</strong></td>
+                                        <td>${p.manager}</td>
+                                        <td>${p.progress}%</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            },
+            projects() {
+                return `
+                    <div class="card">
+                         <div class="card-header"><h3 class="card-title">Project Control Center</h3></div>
+                         <table>
+                            <thead><tr><th>Code</th><th>Name</th><th>Dept</th><th>Budget</th><th>Status</th></tr></thead>
+                            <tbody>
+                                ${R3_App.DB.projects.map(p => `
+                                    <tr>
+                                        <td>${p.code}</td>
+                                        <td>${p.name}</td>
+                                        <td>${p.dept}</td>
+                                        <td>$${(p.budget/1000).toFixed(0)}k</td>
+                                        <td>${p.status}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        },
+
+        Router: {
+            go(view) {
+                R3_App.UI.toggleLoader(true);
+                document.querySelectorAll('#r3-sidebar .nav-item').forEach(el => el.classList.remove('active'));
+                const nav = document.querySelector(`#r3-sidebar .nav-item[data-view="${view}"]`);
+                if(nav) nav.classList.add('active');
+                
+                document.getElementById('r3-breadcrumbs').innerHTML = `Home / <span>${view.charAt(0).toUpperCase() + view.slice(1)}</span>`;
+                
+                setTimeout(() => {
+                    const canvas = document.getElementById('r3-content-canvas');
+                    if(view === 'dashboard1') canvas.innerHTML = R3_App.Views.dashboard1();
+                    else if(view === 'projects') canvas.innerHTML = R3_App.Views.projects();
+                    else canvas.innerHTML = `<div style="text-align:center; padding:50px; color:#9ca3af">Module Under Construction</div>`;
+                    R3_App.UI.toggleLoader(false);
+                }, 300);
+            }
+        },
+
+        UI: {
+            toggleLoader(show) { 
+                const l = document.getElementById('r3-loader'); 
+                if(show) l.classList.add('visible'); else l.classList.remove('visible'); 
+            }
+        },
+
+        init() {
+            this.DB.init();
+            document.querySelectorAll('#r3-sidebar .nav-item').forEach(item => {
+                item.addEventListener('click', (e) => this.Router.go(e.currentTarget.dataset.view));
+            });
+            this.Router.go('dashboard1');
+        }
+    };
+
+    R3_App.init();
+})();
+</script>
+            </div>
+
+        <div id="module-r4" class="module-view">
+            <div id="r4-root" style="position: relative; height: 100%; width: 100%; overflow: hidden;">
+
+    <div id="r4-login-view" style="display: none;">
+        <div class="login-card">
+            <div class="flex-center" style="margin-bottom: 24px;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <h2 style="margin: 0 0 8px 0;">YOGIJI DIGI</h2>
+            <p style="color:#64748b; margin: 0 0 24px 0;">Enterprise Project OS</p>
+            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="R4_App.Auth.login()">
+                Secure Login
+            </button>
+        </div>
+    </div>
+
+    <div id="r4-app-layout" style="display: flex; height: 100%; width: 100%;">
+        
+        <nav id="r4-sidebar">
+            <div class="brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                YOGIJI DIGI
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-label">Workspace</div>
+                <div class="nav-item active" data-view="dashboard" onclick="R4_App.Router.go('dashboard')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Executive Dashboard
+                </div>
+                <div class="nav-item" data-view="projects" onclick="R4_App.Router.go('projects')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    Project Registry
+                </div>
+                <div class="nav-item" data-view="gantt" onclick="R4_App.Router.go('gantt')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"></path></svg>
+                    Master Schedule
+                </div>
+                <div class="nav-item" data-view="financials2" onclick="R4_App.Router.go('financials2')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    Financials
+                </div>
+            </div>
+
+            <div style="margin-top: auto; padding: 24px; border-top: 1px solid #1e293b;">
+                <div class="flex-center" style="justify-content: flex-start; gap: 12px; margin-bottom: 16px;">
+                    <div style="width: 32px; height: 32px; background: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; color: white;">JD</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 13px; color: white;">Sarthak Handa</div>
+                        <div style="font-size: 11px; color: #64748b;">Program Director</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline btn-sm" style="width: 100%; background: transparent; color: #94a3b8; border-color: #334155;" onclick="R4_App.Auth.logout()">Sign Out</button>
+            </div>
+        </nav>
+
+        <div id="r4-main-wrapper">
+            <header id="r4-header">
+                <div style="font-size: 14px; color: #64748b;">
+                    YOGIJI DIGI OS / <span id="r4-breadcrumb-active" style="color: #334155; font-weight: 600;">Dashboard</span>
+                </div>
+                
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <div class="toggle-demo" id="r4-demo-toggle" onclick="R4_App.UI.toggleDemo()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Demo Mode
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="R4_App.UI.Modal.open('r4-project-modal')">+ New Project</button>
+                    <button class="btn btn-outline btn-sm" onclick="R4_App.Store.reset()">Reset Data</button>
+                </div>
+            </header>
+
+            <div id="r4-content-canvas">
+                </div>
+        </div>
+    </div>
+
+    <div id="r4-project-modal" class="modal-overlay">
+        <div class="modal-window">
+            <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between;">
+                <h3 style="margin:0;">New Project Initiative</h3>
+                <button class="btn btn-sm btn-outline" onclick="R4_App.UI.Modal.close('r4-project-modal')">✕</button>
+            </div>
+            <div style="padding: 24px;">
+                <div class="input-group">
+                    <label class="input-label">Project Name</label>
+                    <input type="text" id="r4-np-name" class="form-control" placeholder="e.g. Q3 Cloud Migration">
+                </div>
+                <div class="grid-2" style="margin-bottom: 0;">
+                    <div class="input-group">
+                        <label class="input-label">Budget ($)</label>
+                        <input type="number" id="r4-np-budget" class="form-control" value="50000">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Duration (Days)</label>
+                        <input type="number" id="r4-np-dur" class="form-control" value="30">
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right; border-radius: 0 0 12px 12px;">
+                <button class="btn btn-outline" onclick="R4_App.UI.Modal.close('r4-project-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="R4_App.Actions.createProject()">Initialize Project</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="r4-toast-container"></div>
+
+</div>
+
+<style>
+    /* R4 SCOPED STYLES */
+    #module-r4 {
+        --r4-bg-body: #f1f5f9;
+        --r4-bg-sidebar: #0f172a;
+        --r4-bg-header: rgba(255, 255, 255, 0.9);
+        --r4-bg-card: #ffffff;
+        --r4-text-main: #334155;
+        --r4-text-muted: #64748b;
+        --r4-primary: #2563eb;
+        --r4-primary-hover: #1d4ed8;
+        --r4-success: #10b981;
+        --r4-warning: #f59e0b;
+        --r4-danger: #ef4444;
+        --r4-border: #e2e8f0;
+        --r4-radius: 8px;
+    }
+
+    #r4-root { font-family: 'Inter', sans-serif; background: var(--r4-bg-body); color: var(--r4-text-main); font-size: 14px; }
+
+    /* Login Overlay */
+    #r4-login-view {
+        position: absolute; inset: 0; background: #f8fafc; 
+        display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    #module-r4 .login-card {
+        background: white; width: 400px; padding: 40px;
+        border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        border: 1px solid var(--r4-border); text-align: center;
+    }
+
+    /* Sidebar */
+    #r4-sidebar {
+        width: 260px; background-color: var(--r4-bg-sidebar); color: #f8fafc;
+        display: flex; flex-direction: column; border-right: 1px solid #1e293b;
+        flex-shrink: 0;
+    }
+    #r4-sidebar .brand {
+        height: 64px; display: flex; align-items: center; padding: 0 24px;
+        font-weight: 700; font-size: 18px; border-bottom: 1px solid #1e293b; gap: 12px;
+    }
+    #r4-sidebar .nav-section { margin-top: 24px; }
+    #r4-sidebar .nav-label { text-transform: uppercase; font-size: 11px; font-weight: 600; color: #64748b; padding: 0 24px; margin-bottom: 8px; }
+    #r4-sidebar .nav-item { display: flex; align-items: center; padding: 12px 24px; cursor: pointer; color: #94a3b8; border-left: 3px solid transparent; transition: all 0.2s; }
+    #r4-sidebar .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+    #r4-sidebar .nav-item.active { background: rgba(37, 99, 235, 0.1); color: white; border-left-color: var(--r4-primary); }
+    #r4-sidebar .nav-item svg { width: 18px; height: 18px; margin-right: 12px; }
+
+    /* Main */
+    #r4-main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #r4-header { height: 64px; background: var(--r4-bg-header); border-bottom: 1px solid var(--r4-border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+    #r4-content-canvas { flex: 1; overflow-y: auto; padding: 32px; }
+
+    /* Components */
+    #module-r4 .card { background: white; border: 1px solid var(--r4-border); border-radius: var(--r4-radius); padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    #module-r4 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    #module-r4 .card-title { font-size: 16px; font-weight: 700; margin: 0; }
+    
+    #module-r4 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+    #module-r4 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px; }
+
+    #module-r4 .kpi-card { display: flex; flex-direction: column; }
+    #module-r4 .kpi-value { font-size: 28px; font-weight: 700; margin: 8px 0; }
+    #module-r4 .kpi-label { font-size: 12px; color: var(--r4-text-muted); text-transform: uppercase; font-weight: 600; }
+
+    #module-r4 .btn { padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 13px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 8px; }
+    #module-r4 .btn-primary { background: var(--r4-primary); color: white; }
+    #module-r4 .btn-outline { background: white; border-color: var(--r4-border); color: var(--r4-text-main); }
+    #module-r4 .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    #module-r4 .input-group { margin-bottom: 16px; }
+    #module-r4 .form-control { width: 100%; padding: 10px; border: 1px solid var(--r4-border); border-radius: 6px; }
+
+    #module-r4 table { width: 100%; border-collapse: collapse; }
+    #module-r4 th { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--r4-border); color: var(--r4-text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700; }
+    #module-r4 td { padding: 14px 16px; border-bottom: 1px solid var(--r4-border); font-size: 13px; }
+
+    #module-r4 .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    #module-r4 .badge-success { background: #dcfce7; color: #166534; }
+    #module-r4 .badge-warning { background: #fef3c7; color: #92400e; }
+    #module-r4 .badge-danger { background: #fee2e2; color: #991b1b; }
+    #module-r4 .badge-info { background: #e0f2fe; color: #075985; }
+
+    /* Gantt */
+    #module-r4 .gantt-container { border: 1px solid var(--r4-border); background: white; border-radius: 6px; display: flex; flex-direction: column; height: 500px; overflow: hidden; }
+    #module-r4 .gantt-header { padding: 12px; border-bottom: 1px solid var(--r4-border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+    #module-r4 .gantt-body { display: flex; flex: 1; overflow: hidden; }
+    #module-r4 .gantt-sidebar { width: 220px; border-right: 1px solid var(--r4-border); background: white; }
+    #module-r4 .gantt-row-label { height: 40px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; padding-left: 16px; font-size: 12px; font-weight: 500; }
+    #module-r4 .gantt-timeline { flex: 1; overflow: auto; position: relative; background: white; }
+    
+    /* Modals & Toasts */
+    .modal-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-window { background: white; width: 500px; border-radius: 12px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
+    
+    #r4-toast-container { position: absolute; bottom: 24px; right: 24px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
+    .toast { background: #1e293b; color: white; padding: 12px 20px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; gap: 10px; }
+
+    /* Demo Toggle */
+    .toggle-demo { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; background: #eff6ff; color: var(--r4-primary); padding: 6px 12px; border-radius: 20px; cursor: pointer; border: 1px solid #bfdbfe; }
+    .toggle-demo.active { background: var(--r4-primary); color: white; border-color: var(--r4-primary); }
+</style>
+
+<script>
+(function() {
+    // --- R4 APP CONTROLLER ---
+    window.R4_App = {
+        Store: {
+            state: null,
+            init() {
+                const projects = [
+                    { id: 'p1', name: 'Global ERP Migration', status: 'In Progress', budget: 1200000, actual: 450000, start: '2025-01-10', duration: 120, progress: 35 },
+                    { id: 'p2', name: 'AI Analytics Pilot', status: 'At Risk', budget: 500000, actual: 380000, start: '2025-02-01', duration: 90, progress: 65 },
+                    { id: 'p3', name: 'Infra Refresh', status: 'On Track', budget: 250000, actual: 50000, start: '2025-03-15', duration: 60, progress: 15 },
+                    { id: 'p4', name: 'Q3 Marketing', status: 'Planned', budget: 150000, actual: 0, start: '2025-05-01', duration: 45, progress: 0 }
+                ];
+                
+                // Gen Tasks
+                const tasks = [];
+                projects.forEach(p => {
+                    ['Discovery', 'Planning', 'Execution', 'Deployment'].forEach((ph, i) => {
+                        tasks.push({
+                            id: `t-${p.id}-${i}`, projectId: p.id, name: `${p.name} - ${ph}`,
+                            startOffset: i * 20, duration: 15,
+                            progress: p.progress > (i+1)*25 ? 100 : (p.progress > i*25 ? 50 : 0),
+                            status: p.status
+                        });
+                    });
+                });
+
+                this.state = { projects, tasks };
+            },
+            addProject(p) { this.state.projects.push(p); },
+            reset() { this.init(); R4_App.Router.go('dashboard'); }
+        },
+
+        Router: {
+            go(view) {
+                // Update Nav
+                document.querySelectorAll('#r4-sidebar .nav-item').forEach(el => el.classList.remove('active'));
+                const link = document.querySelector(`#r4-sidebar .nav-item[data-view="${view}"]`);
+                if(link) link.classList.add('active');
+                
+                // Update Breadcrumb
+                document.getElementById('r4-breadcrumb-active').innerText = view.charAt(0).toUpperCase() + view.slice(1);
+                
+                // Render
+                const canvas = document.getElementById('r4-content-canvas');
+                canvas.innerHTML = '';
+                
+                if (view === 'dashboard') R4_App.Views.dashboard(canvas);
+                else if (view === 'projects') R4_App.Views.projects(canvas);
+                else if (view === 'gantt') R4_App.Views.gantt(canvas);
+                else if (view === 'financials2') R4_App.Views.financials(canvas);
+            }
+        },
+
+        Views: {
+            dashboard(el) {
+                const s = R4_App.Store.state;
+                const total = s.projects.reduce((a,b)=>a+b.budget,0);
+                const active = s.projects.length;
+                
+                el.innerHTML = `
+                    <div class="grid-4">
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Portfolio Value</span>
+                            <span class="kpi-value">$${(total/1000).toFixed(0)}k</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Active Projects</span>
+                            <span class="kpi-value">${active}</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Risk Level</span>
+                            <span class="kpi-value" style="color:#ef4444">High</span>
+                        </div>
+                        <div class="card kpi-card">
+                            <span class="kpi-label">Efficiency</span>
+                            <span class="kpi-value">92%</span>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card" style="height:300px;">
+                            <div class="card-header"><h3 class="card-title">Portfolio Health</h3></div>
+                            <div id="r4-chart-donut" style="height:200px;"></div>
+                        </div>
+                        <div class="card" style="height:300px;">
+                            <div class="card-header"><h3 class="card-title">Buffer Consumption</h3></div>
+                            <div id="r4-chart-fever" style="height:200px;"></div>
+                        </div>
+                    </div>
+                `;
+                R4_App.Charts.donut('r4-chart-donut', [60, 30, 10]);
+                R4_App.Charts.fever('r4-chart-fever');
+            },
+            projects(el) {
+                const rows = R4_App.Store.state.projects.map(p => `
+                    <tr>
+                        <td><span class="badge ${p.status==='At Risk'?'badge-danger':'badge-success'}">${p.status}</span></td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>$${p.budget.toLocaleString()}</td>
+                        <td>${p.progress}%</td>
+                        <td><button class="btn btn-sm btn-outline">View</button></td>
+                    </tr>
+                `).join('');
+                el.innerHTML = `<div class="card"><table><thead><tr><th>Status</th><th>Project</th><th>Budget</th><th>Progress</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+            },
+            gantt(el) {
+                const tasks = R4_App.Store.state.tasks;
+                const bars = tasks.map((t, i) => {
+                    const x = t.startOffset * 5; 
+                    const w = t.duration * 5;
+                    const c = t.status === 'At Risk' ? '#ef4444' : '#2563eb';
+                    return `<rect x="${150 + x}" y="${40 + i*40 + 10}" width="${w}" height="20" fill="${c}" rx="4" />
+                            <text x="10" y="${40 + i*40 + 25}" font-size="11" fill="#334155">${t.name}</text>`;
+                }).join('');
+                el.innerHTML = `<div class="card" style="overflow:auto;"><svg height="${tasks.length*40 + 50}" width="800">${bars}</svg></div>`;
+            },
+            financials(el) {
+                el.innerHTML = `<div class="card"><div style="text-align:center; padding:40px; color:#94a3b8;">Financial Module Loaded</div></div>`;
+            }
+        },
+
+        Charts: {
+            donut(id, vals) {
+                const el = document.getElementById(id);
+                if(el) el.innerHTML = `<svg viewBox="0 0 32 32" style="width:100%; height:100%; transform:rotate(-90deg); border-radius:50%;"><circle r="16" cx="16" cy="16" fill="#10b981" stroke-dasharray="100 100" /><circle r="16" cx="16" cy="16" fill="none" stroke="#ef4444" stroke-width="32" stroke-dasharray="${vals[2]} 100" /></svg>`; 
+            },
+            fever(id) {
+                const el = document.getElementById(id);
+                if(el) el.innerHTML = `<svg viewBox="0 0 100 50" style="width:100%; height:100%;"><path d="M0,50 L100,50 L100,0 Z" fill="#dcfce7" /><path d="M0,50 L80,30" stroke="#2563eb" stroke-width="2" fill="none" /></svg>`;
+            }
+        },
+
+        UI: {
+            toggleDemo() {
+                document.getElementById('r4-demo-toggle').classList.toggle('active');
+                R4_App.UI.Toast('Demo Mode Toggled', 'success');
+            },
+            Modal: {
+                open(id) { document.getElementById(id).classList.add('open'); },
+                close(id) { document.getElementById(id).classList.remove('open'); }
+            },
+            Toast(msg) {
+                const c = document.getElementById('r4-toast-container');
+                c.innerHTML = `<div class="toast">${msg}</div>`;
+                setTimeout(() => c.innerHTML='', 3000);
+            }
+        },
+
+        Actions: {
+            createProject() {
+                const name = document.getElementById('r4-np-name').value;
+                if(!name) return;
+                R4_App.Store.addProject({ id:'new', name, status:'Planned', budget:50000, progress:0 });
+                R4_App.UI.Modal.close('r4-project-modal');
+                R4_App.Router.go('projects');
+            }
+        },
+        
+        Auth: {
+            login() { document.getElementById('r4-login-view').style.display='none'; },
+            logout() { document.getElementById('r4-login-view').style.display='flex'; }
+        },
+
+        init() {
+            this.Store.init();
+            this.Router.go('dashboard');
+            // Auto login for demo
+            this.Auth.login();
+        }
+    };
+
+    R4_App.init();
+})();
+</script>
+             </div>
+
+        <div id="module-r5" class="module-view">
+            <div id="r5-root" style="position: relative; height: 100%; width: 100%; overflow: hidden;">
+
+    <div id="r5-login-screen" style="display: none;">
+        <div class="login-box">
+            <svg viewBox="0 0 24 24" width="64" height="64" fill="#0050b3" style="margin-bottom:20px;">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            <h1 style="margin:0 0 10px 0; color:#002140; font-size:24px;">Streamliner</h1>
+            <p style="color:#8c8c8c; margin-bottom:30px;">Enterprise Project Execution Platform</p>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:14px;" onclick="R5_App.auth.login()">
+                Sign In to Workspace
+            </button>
+        </div>
+    </div>
+
+    <div style="display: flex; height: 100%;">
+        <aside id="r5-sidebar">
+            <div class="brand">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                REALIZATION
+            </div>
+            <div class="nav-scroll">
+                <div class="nav-item active" data-view="dashboard2" onclick="R5_App.router.go('dashboard2')">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Dashboard
+                </div>
+                <div class="nav-item" data-view="projects1" onclick="R5_App.router.go('projects1')">
+                    <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    Projects
+                </div>
+                
+                <div class="nav-group" style="margin-top:24px;">
+                    <div class="nav-header">Execution</div>
+                    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg> My View</div>
+                    <div class="nav-item"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Performance</div>
+                </div>
+            </div>
+        </aside>
+
+        <div id="r5-main-wrapper">
+            <header id="r5-header">
+                <div class="flex items-center gap-4">
+                    <div class="breadcrumb">Home / <span id="r5-page-title">Dashboard</span></div>
+                    <div class="badge normal">Division: DEFAULT</div>
+                </div>
+                <div class="user-menu">
+                    <div class="flex items-center gap-2 cursor-pointer">
+                        <div class="user-info">
+                            <div class="user-name">Sarthak Handa</div>
+                            <div class="user-role">Analytics Engineer</div>
+                        </div>
+                        <div class="avatar">SH</div>
+                    </div>
+                </div>
+            </header>
+
+            <div id="r5-content-area">
+                </div>
+        </div>
+    </div>
+
+    <div id="r5-loader">
+        <div class="spinner"></div>
+        <div style="margin-top:16px; font-weight:600; color:#555;">Loading Realization Engine...</div>
+    </div>
+
+</div>
+
+<style>
+    /* R5 SCOPED STYLES */
+    #module-r5 {
+        --r5-primary: #0050b3;
+        --r5-primary-light: #1890ff;
+        --r5-bg-body: #f0f2f5;
+        --r5-bg-sidebar: #001529;
+        --r5-border: #d9d9d9;
+        --r5-text: #262626;
+        --r5-rag-red: #f5222d;
+        --r5-rag-amber: #fa8c16;
+        --r5-rag-green: #52c41a;
+    }
+
+    #r5-root { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--r5-bg-body); color: var(--r5-text); font-size: 13px; }
+
+    /* Login */
+    #r5-login-screen { position: absolute; inset: 0; background: #001529; z-index: 100; display: flex; align-items: center; justify-content: center; }
+    #module-r5 .login-box { background: white; width: 400px; padding: 40px; border-radius: 8px; text-align: center; }
+
+    /* Sidebar */
+    #r5-sidebar { width: 240px; background: var(--r5-bg-sidebar); color: rgba(255,255,255,0.65); display: flex; flex-direction: column; border-right: 1px solid #000; flex-shrink: 0; }
+    #r5-sidebar .brand { height: 54px; display: flex; align-items: center; padding: 0 20px; color: white; font-weight: 700; font-size: 16px; background: #002140; }
+    #r5-sidebar .brand svg { margin-right: 10px; fill: white; width: 20px; }
+    #r5-sidebar .nav-header { padding: 0 24px; margin-bottom: 6px; font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.35); font-weight: 600; }
+    #r5-sidebar .nav-item { padding: 10px 24px; cursor: pointer; display: flex; align-items: center; transition: background 0.2s; font-weight: 500; }
+    #r5-sidebar .nav-item:hover { color: white; background: rgba(255,255,255,0.08); }
+    #r5-sidebar .nav-item.active { background: var(--r5-primary-light); color: white; }
+    #r5-sidebar .nav-item svg { width: 16px; height: 16px; margin-right: 12px; opacity: 0.8; fill: currentColor; }
+
+    /* Main */
+    #r5-main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #f0f2f5; }
+    #r5-header { height: 54px; background: white; border-bottom: 1px solid var(--r5-border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+    #r5-content-area { flex: 1; overflow-y: auto; padding: 24px; }
+
+    /* Components */
+    #module-r5 .card { background: white; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); margin-bottom: 24px; overflow: hidden; border: 1px solid #e8e8e8; }
+    #module-r5 .card-header { padding: 16px 24px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
+    #module-r5 .card-body { padding: 24px; }
+    #module-r5 .card-body.nopad { padding: 0; }
+
+    #module-r5 .btn { padding: 6px 12px; border: 1px solid var(--r5-border); background: white; border-radius: 4px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+    #module-r5 .btn-primary { background: var(--r5-primary); color: white; border-color: var(--r5-primary); }
+    
+    #module-r5 table.data-table { width: 100%; border-collapse: collapse; }
+    #module-r5 table.data-table th { background: #fafafa; border-bottom: 1px solid var(--r5-border); padding: 12px 16px; text-align: left; font-weight: 600; color: #595959; font-size: 12px; }
+    #module-r5 table.data-table td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: var(--r5-text); }
+    #module-r5 table.data-table tr:hover td { background: #e6f7ff; cursor: pointer; }
+
+    /* Badges */
+    #module-r5 .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    #module-r5 .badge.critical { background: #fff1f0; color: #f5222d; border: 1px solid #f5222d; }
+    #module-r5 .badge.warning { background: #fff7e6; color: #fa8c16; border: 1px solid #fa8c16; }
+    #module-r5 .badge.ontrack { background: #f6ffed; color: #52c41a; border: 1px solid #52c41a; }
+    #module-r5 .badge.normal { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+
+    /* Gantt */
+    #module-r5 .gantt-container { display: flex; height: 600px; border: 1px solid var(--r5-border); background: white; }
+    #module-r5 .gantt-sidebar { width: 300px; border-right: 1px solid var(--r5-border); overflow-y: hidden; }
+    #module-r5 .gantt-timeline { flex: 1; overflow: auto; position: relative; }
+    #module-r5 .gantt-bar { height: 18px; border-radius: 3px; position: absolute; top: 7px; cursor: pointer; }
+
+    /* Loader */
+    #r5-loader { position: absolute; inset: 0; background: rgba(255,255,255,0.9); z-index: 99; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+    #r5-loader.active { opacity: 1; pointer-events: all; }
+</style>
+
+<script>
+(function() {
+    // --- R5 APP LOGIC ---
+    window.R5_App = {
+        Store: {
+            state: { projects1: [], users: [], tasks: [] },
+            init() {
+                // Seed Users
+                const names = ["Aditya Saini", "Akshay Verma", "Gaurav Purohit", "Kunal Dagar", "Sanjay Kumar"];
+                this.state.users = names.map((n, i) => ({ id: `u${i}`, name: n, velocity: Math.floor(Math.random()*100) }));
+
+                // Seed Projects
+                const types = ["4HI CRM 400MM", "6HI CRM 1500 MM", "COLD ROLLING MILL", "PICKLING LINE"];
+                for (let i = 0; i < 20; i++) {
+                    const progress = Math.floor(Math.random() * 100);
+                    const buffer = Math.floor(Math.random() * 100);
+                    let status = 'Green';
+                    if (buffer > progress + 20) status = 'Red';
+                    else if (buffer > progress) status = 'Yellow';
+
+                    const proj = {
+                        id: `PRJ-${1000+i}`,
+                        name: `N-${2200+i} ${types[i%types.length]}`,
+                        manager: this.state.users[i%this.state.users.length].name,
+                        status: status,
+                        progress: progress,
+                        bufferConsumed: buffer,
+                        startDate: '2024-01-01',
+                        endDate: '2025-06-30',
+                        financials: { budget: (Math.random()*500).toFixed(2), actual: (Math.random()*200).toFixed(2) }
+                    };
+                    this.state.projects1.push(proj);
+                    this.seedTasks(proj);
+                }
+            },
+            seedTasks(p) {
+                ['Engineering', 'Ordering', 'Manufacturing', 'Assembly'].forEach((ph, i) => {
+                    this.state.tasks.push({
+                        id: `${p.id}-T${i}`, projectId: p.id, name: `${p.name} - ${ph}`,
+                        startOffset: i*30, duration: 25, progress: Math.random()>0.5?100:0, status: Math.random()>0.8?'Stuck':'IP'
+                    });
+                });
+            }
+        },
+
+        router: {
+            go(route, params) {
+                // Nav UI
+                document.querySelectorAll('#r5-sidebar .nav-item').forEach(el => el.classList.remove('active'));
+                const nav = document.querySelector(`#r5-sidebar .nav-item[data-view="${route}"]`);
+                if(nav) nav.classList.add('active');
+
+                // Loader
+                document.getElementById('r5-loader').classList.add('active');
+                
+                setTimeout(() => {
+                    const content = document.getElementById('r5-content-area');
+                    const title = document.getElementById('r5-page-title');
+                    
+                    if (route === 'dashboard2') {
+                        title.innerText = 'Executive Dashboard';
+                        content.innerHTML = R5_App.Views.dashboard2();
+                        R5_App.Charts.renderVelocity('r5-chart-velocity');
+                    } else if (route === 'projects1') {
+                        title.innerText = 'Project Registry';
+                        content.innerHTML = R5_App.Views.projectList();
+                    } else if (route === 'gantt') {
+                        title.innerText = `Timeline: ${params.name}`;
+                        content.innerHTML = R5_App.Views.gantt(params);
+                        R5_App.Charts.renderGantt('r5-gantt-canvas', params.id);
+                    }
+                    document.getElementById('r5-loader').classList.remove('active');
+                }, 300);
+            }
+        },
+
+        Views: {
+            dashboard2() {
+                const s = R5_App.Store.state;
+                return `
+                    <div class="flex gap-4 mb-4">
+                        <div class="card grow">
+                            <div class="card-header">Overall Velocity Trend</div>
+                            <div class="card-body"><div id="r5-chart-velocity" style="height:250px; width:100%;"></div></div>
+                        </div>
+                        <div class="card" style="width:300px;">
+                            <div class="card-header">Division Status</div>
+                            <div class="card-body nopad">
+                                <table class="data-table">
+                                    <thead><tr><th>Division</th><th>Velocity</th></tr></thead>
+                                    <tbody>
+                                        <tr><td>DEFAULT</td><td><span style="color:red; font-weight:bold;">24%</span></td></tr>
+                                        <tr><td>SPARES</td><td><span style="color:orange; font-weight:bold;">56%</span></td></tr>
+                                        <tr><td>TEST</td><td><span style="color:green; font-weight:bold;">59%</span></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Top Performers</div>
+                        <div class="card-body nopad">
+                            <table class="data-table">
+                                <thead><tr><th>Name</th><th>Velocity</th></tr></thead>
+                                <tbody>
+                                    ${s.users.slice(0,5).map(u => `<tr><td>${u.name}</td><td>${u.velocity}%</td></tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+            projectList() {
+                const projects = R5_App.Store.state.projects1;
+                return `
+                    <div class="card">
+                        <div class="card-header">Master Project Registry</div>
+                        <div class="card-body nopad">
+                            <table class="data-table">
+                                <thead><tr><th>Status</th><th>Name</th><th>Manager</th><th>Budget</th><th>Progress</th></tr></thead>
+                                <tbody>
+                                    ${projects.map(p => {
+                                        const badge = p.status === 'Red' ? 'critical' : (p.status === 'Yellow' ? 'warning' : 'ontrack');
+                                        return `<tr onclick='R5_App.router.go("gantt", ${JSON.stringify(p)})'>
+                                            <td><span class="badge ${badge}">${p.status.toUpperCase()}</span></td>
+                                            <td style="color:var(--r5-primary); font-weight:600;">${p.name}</td>
+                                            <td>${p.manager}</td>
+                                            <td>${p.financials.budget} Cr</td>
+                                            <td>${p.progress}%</td>
+                                        </tr>`;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+            gantt(p) {
+                return `
+                    <div class="card" style="height:600px; display:flex; flex-direction:column;">
+                        <div class="card-header">Execution Schedule: ${p.name}</div>
+                        <div class="gantt-container" style="border:none; flex:1;">
+                            <div class="gantt-sidebar" id="r5-gantt-sidebar"></div>
+                            <div class="gantt-timeline">
+                                <div id="r5-gantt-canvas" style="width:1500px; height:100%; position:relative;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        },
+
+        Charts: {
+            renderVelocity(id) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                const h = 250, w = el.clientWidth || 800;
+                let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}">`;
+                // Simple Line
+                let path = `M 0 ${h}`;
+                for(let i=0; i<10; i++) {
+                    const x = i * (w/9);
+                    const y = h - (Math.random() * h * 0.8);
+                    path += ` L ${x} ${y}`;
+                    svg += `<circle cx="${x}" cy="${y}" r="4" fill="#1890ff" />`;
+                }
+                svg += `<path d="${path}" fill="none" stroke="#1890ff" stroke-width="2"/></svg>`;
+                el.innerHTML = svg;
+            },
+            renderGantt(id, pid) {
+                const tasks = R5_App.Store.state.tasks.filter(t => t.projectId === pid);
+                const sidebar = document.getElementById('r5-gantt-sidebar');
+                const canvas = document.getElementById(id);
+                
+                let sbHtml = '<div style="padding:10px; border-bottom:1px solid #eee; font-weight:bold;">Task</div>';
+                let cvHtml = '';
+                
+                tasks.forEach((t, i) => {
+                    const top = 40 + (i*32);
+                    sbHtml += `<div style="height:32px; padding:8px 10px; border-bottom:1px solid #f0f0f0;">${t.name}</div>`;
+                    
+                    const left = t.startOffset * 2;
+                    const width = t.duration * 2;
+                    const color = t.status === 'Stuck' ? '#ff4d4f' : '#1890ff';
+                    cvHtml += `<div class="gantt-bar" style="top:${top+7}px; left:${left}px; width:${width}px; background:${color};"></div>`;
+                });
+                
+                sidebar.innerHTML = sbHtml;
+                canvas.innerHTML = cvHtml;
+            }
+        },
+
+        auth: {
+            login() { 
+                document.getElementById('r5-login-screen').style.display = 'none';
+                R5_App.router.go('dashboard2');
+            }
+        },
+
+        init() {
+            this.Store.init();
+            this.auth.login(); // Auto-login for master integration
+        }
+    };
+
+    R5_App.init();
+})();
+</script>
+             </div>
+
+        <div id="module-r6" class="module-view">
+            <div id="r6-root" style="position: relative; height: 100%; width: 100%; overflow: hidden;">
+
+    <header id="r6-header">
+        <div class="brand-area">
+            <svg class="brand-logo" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            <span class="brand-name">Streamliner</span>
+        </div>
+        <div class="header-controls">
+            <div class="badge badge-info" id="r6-system-time">Loading Time...</div>
+            <button class="btn btn-sm btn-secondary">Help</button>
+            <button class="btn btn-sm btn-secondary">Notifications <span class="badge badge-danger" style="margin-left:5px">3</span></button>
+            <div class="user-profile">
+                <div class="user-avatar">PM</div>
+                <span class="user-name">Proj. Manager</span>
+            </div>
+        </div>
+    </header>
+
+    <aside id="r6-sidebar">
+        <div class="nav-group">
+            <div class="nav-header">Overview</div>
+            <div class="nav-item active" onclick="R6_App.router('dashboard3')">
+                <span class="nav-icon">📊</span> Dashboard
+            </div>
+            <div class="nav-item" onclick="R6_App.router('myview')">
+                <span class="nav-icon">👤</span> My View
+            </div>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-header">Execution</div>
+            <div class="nav-item" onclick="R6_App.router('manageProjects')">
+                <span class="nav-icon">🏗️</span> Projects
+            </div>
+            <div class="nav-item" onclick="R6_App.router('projectControl')">
+                <span class="nav-icon">🕹️</span> Control Room
+            </div>
+            <div class="nav-item" onclick="R6_App.router('planning')">
+                <span class="nav-icon">📅</span> Planning
+            </div>
+            <div class="nav-item" onclick="R6_App.router('tasks')">
+                <span class="nav-icon">✅</span> Tasks
+            </div>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-header">Support</div>
+            <div class="nav-item" onclick="R6_App.router('fullkit')">
+                <span class="nav-icon">📦</span> Full-Kit
+            </div>
+            <div class="nav-item" onclick="R6_App.router('issues')">
+                <span class="nav-icon">⚠️</span> Issues
+            </div>
+            <div class="nav-item" onclick="R6_App.router('files')">
+                <span class="nav-icon">📁</span> Files
+            </div>
+        </div>
+    </aside>
+
+    <main id="r6-content">
+        </main>
+
+</div>
+
+<style>
+    /* R6 SCOPED STYLES */
+    #module-r6 {
+        --r6-primary: #0f172a;       /* Dark Slate */
+        --r6-secondary: #334155;     /* Slate */
+        --r6-accent: #0ea5e9;        /* Sky Blue */
+        --r6-accent-hover: #0284c7;
+        --r6-success: #10b981;
+        --r6-warning: #f59e0b;
+        --r6-danger: #ef4444;
+        --r6-bg: #f8fafc;
+        --r6-card-bg: #ffffff;
+        --r6-border: #e2e8f0;
+        --r6-text: #1e293b;
+        --r6-text-sec: #64748b;
+        --r6-header-height: 60px;
+        --r6-sidebar-width: 260px;
+    }
+
+    #r6-root {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--r6-bg);
+        color: var(--r6-text);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* Layout Components */
+    #r6-header {
+        height: var(--r6-header-height);
+        background-color: var(--r6-card-bg);
+        border-bottom: 1px solid var(--r6-border);
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 20px;
+        position: absolute; top: 0; left: 0; width: 100%; z-index: 10;
+    }
+
+    #module-r6 .brand-area { display: flex; align-items: center; gap: 15px; width: var(--r6-sidebar-width); }
+    #module-r6 .brand-logo { height: 32px; width: 32px; }
+    #module-r6 .brand-name { font-weight: 700; font-size: 18px; color: var(--r6-primary); }
+    #module-r6 .header-controls { display: flex; align-items: center; gap: 20px; }
+
+    #module-r6 .user-profile { display: flex; align-items: center; gap: 10px; padding: 5px 10px; background: var(--r6-bg); border-radius: 20px; border: 1px solid var(--r6-border); }
+    #module-r6 .user-avatar { width: 28px; height: 28px; background-color: var(--r6-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
+    #module-r6 .user-name { font-weight: 600; font-size: 13px; color: var(--r6-secondary); }
+
+    /* Sidebar */
+    #r6-sidebar {
+        width: var(--r6-sidebar-width);
+        background-color: var(--r6-primary);
+        color: #cbd5e1;
+        position: absolute; top: var(--r6-header-height); bottom: 0; left: 0;
+        overflow-y: auto; display: flex; flex-direction: column; padding-top: 20px;
+    }
+
+    #module-r6 .nav-group { margin-bottom: 25px; }
+    #module-r6 .nav-header { padding: 0 25px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; font-weight: 700; color: #64748b; margin-bottom: 10px; }
+    #module-r6 .nav-item { padding: 10px 25px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+    #module-r6 .nav-item:hover { background-color: rgba(255,255,255,0.05); color: #fff; }
+    #module-r6 .nav-item.active { background-color: rgba(14, 165, 233, 0.1); color: var(--r6-accent); border-left-color: var(--r6-accent); }
+    #module-r6 .nav-icon { width: 18px; text-align: center; font-size: 14px; }
+
+    /* Content */
+    #r6-content {
+        position: absolute; top: var(--r6-header-height); left: var(--r6-sidebar-width); right: 0; bottom: 0;
+        padding: 30px; overflow-y: auto; background-color: var(--r6-bg);
+    }
+
+    /* UI Elements */
+    #module-r6 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    #module-r6 .panel-title { font-size: 24px; font-weight: 700; color: var(--r6-primary); }
+    #module-r6 .panel-subtitle { font-size: 14px; color: var(--r6-text-sec); margin-top: 5px; }
+    
+    #module-r6 .card { background: var(--r6-card-bg); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--r6-border); padding: 20px; margin-bottom: 20px; }
+    #module-r6 .card-title { font-size: 16px; font-weight: 600; margin-bottom: 15px; color: var(--r6-secondary); }
+
+    #module-r6 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    #module-r6 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+
+    #module-r6 .stat-tile { display: flex; flex-direction: column; }
+    #module-r6 .stat-value { font-size: 28px; font-weight: 700; color: var(--r6-primary); margin: 5px 0; }
+    #module-r6 .stat-label { font-size: 12px; text-transform: uppercase; color: var(--r6-text-sec); font-weight: 600; }
+    #module-r6 .stat-trend { font-size: 12px; display: flex; align-items: center; gap: 4px; margin-top: 5px; }
+    #module-r6 .trend-up { color: var(--r6-success); }
+    #module-r6 .trend-down { color: var(--r6-danger); }
+
+    /* Tables */
+    #module-r6 table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #module-r6 th { background-color: #f8fafc; color: var(--r6-secondary); font-weight: 600; text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--r6-border); }
+    #module-r6 td { padding: 12px 16px; border-bottom: 1px solid var(--r6-border); color: var(--r6-text); }
+    #module-r6 tr:hover { background-color: #f1f5f9; }
+
+    /* Badges */
+    #module-r6 .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    #module-r6 .badge-success { background-color: #d1fae5; color: #047857; }
+    #module-r6 .badge-warning { background-color: #fef3c7; color: #b45309; }
+    #module-r6 .badge-danger { background-color: #fee2e2; color: #b91c1c; }
+    #module-r6 .badge-info { background-color: #e0f2fe; color: #0369a1; }
+
+    /* Tree View */
+    #module-r6 .tree-header { display: flex; align-items: center; padding: 8px; background: white; border: 1px solid var(--r6-border); margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
+    #module-r6 .tree-header:hover { background: #f8fafc; }
+    
+    /* Buttons */
+    #module-r6 .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 4px; font-weight: 500; font-size: 13px; border: none; cursor: pointer; gap: 8px; }
+    #module-r6 .btn-primary { background-color: var(--r6-accent); color: white; }
+    #module-r6 .btn-secondary { background-color: white; border: 1px solid var(--r6-border); color: var(--r6-secondary); }
+    #module-r6 .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+</style>
+
+<script>
+(function() {
+    // --- R6 APP LOGIC ---
+    // MOCK DATA
+    const PROJECTS = [
+        { id: 'P001', code: 'PROJ-NTPC-04', name: 'NTPC Line 4 Expansion - Coal Handling', client: 'NTPC', status: 'In Progress' },
+        { id: 'P002', code: 'PROJ-LNT-HF', name: 'L&T Heavy Forge Upgrade', client: 'L&T', status: 'Planning' }
+    ];
+
+    const ASSEMBLIES = [
+        { id: 'A101', projectId: 'P001', name: 'Coil Car Assembly', code: 'CC-01', start: '2025-01-15', finish: '2025-04-15', status: 'In Progress' },
+        { id: 'A102', projectId: 'P001', name: 'Drag Chain Mechanism', code: 'DC-04', start: '2025-01-20', finish: '2025-03-30', status: 'Delayed' },
+        { id: 'A201', projectId: 'P002', name: 'Furnace Door Assy', code: 'FD-88', start: '2025-02-20', finish: '2025-05-20', status: 'Planning' }
+    ];
+
+    const ISSUES = [
+        { id: 'ISS-01', title: 'Material shortage for Housing', severity: 'High', owner: 'Purchase', status: 'Open' },
+        { id: 'ISS-02', title: 'Drawing revision required', severity: 'Medium', owner: 'Design', status: 'In Progress' }
+    ];
+
+    const FILES = [
+        { name: 'GA_Drawing_A101.pdf', type: 'Drawing', date: '2025-01-10', size: '2.4 MB' },
+        { name: 'BOM_A101_Rev0.xlsx', type: 'BOM', date: '2025-01-12', size: '45 KB' }
+    ];
+
+    window.R6_App = {
+        state: { currentRoute: 'dashboard3', selectedProject: 'P001' },
+
+        init() {
+            this.updateTime();
+            this.router('dashboard3');
+        },
+
+        updateTime() {
+            const el = document.getElementById('r6-system-time');
+            if(el) el.innerText = new Date().toLocaleTimeString();
+        },
+
+        router(route) {
+            this.state.currentRoute = route;
+            
+            // Sidebar UI
+            document.querySelectorAll('#r6-sidebar .nav-item').forEach(el => el.classList.remove('active'));
+            const navItem = document.querySelector(`#r6-sidebar .nav-item[onclick*="'${route}'"]`);
+            if(navItem) navItem.classList.add('active');
+
+            // Render
+            const main = document.getElementById('r6-content');
+            main.innerHTML = ''; 
+
+            if(route === 'dashboard3') this.renderDashboard(main);
+            else if(route === 'manageProjects') this.renderProjects(main);
+            else if(route === 'issues') this.renderIssues(main);
+            else if(route === 'files') this.renderFiles(main);
+            else main.innerHTML = `<div style="padding:50px; text-align:center; color:#94a3b8;">Module: ${route} (Loading...)</div>`;
+        },
+
+        renderDashboard(container) {
+            container.innerHTML = `
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Portfolio Dashboard</div>
+                        <div class="panel-subtitle">Executive Summary</div>
+                    </div>
+                    <button class="btn btn-primary">Export Report</button>
+                </div>
+                <div class="grid-4">
+                    <div class="card stat-tile">
+                        <span class="stat-label">Active Projects</span>
+                        <span class="stat-value">${PROJECTS.length}</span>
+                        <span class="stat-trend trend-up">▲ On Track</span>
+                    </div>
+                    <div class="card stat-tile">
+                        <span class="stat-label">Assemblies</span>
+                        <span class="stat-value">${ASSEMBLIES.length}</span>
+                        <span class="stat-trend trend-up">In Pipeline</span>
+                    </div>
+                    <div class="card stat-tile">
+                        <span class="stat-label">Open Issues</span>
+                        <span class="stat-value">${ISSUUES.length}</span>
+                        <span class="stat-trend trend-down">▼ Action Req</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Recent Activity</div>
+                    <ul style="font-size:13px; list-style:none; padding:0;">
+                        <li style="padding:10px 0; border-bottom:1px solid #f1f5f9;">
+                            <span class="badge badge-success">Completed</span> Main Frame Structure (P001) marked complete.
+                        </li>
+                        <li style="padding:10px 0; border-bottom:1px solid #f1f5f9;">
+                            <span class="badge badge-warning">Issue</span> New material shortage reported for Coil Car.
+                        </li>
+                    </ul>
+                </div>
+            `;
+        },
+
+        renderProjects(container) {
+            let html = '';
+            PROJECTS.forEach(p => {
+                const sub = ASSEMBLIES.filter(a => a.projectId === p.id);
+                html += `
+                    <div class="card" style="margin-bottom:10px;">
+                        <div class="tree-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                            <strong style="flex:1;">${p.name}</strong>
+                            <span class="badge badge-info">${sub.length} Assemblies</span>
+                        </div>
+                        <div style="padding:10px; display:none;">
+                            <table>
+                                <thead><tr><th>Assembly</th><th>Code</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    ${sub.map(a => `<tr><td>${a.name}</td><td>${a.code}</td><td><span class="badge badge-${a.status==='Delayed'?'danger':'success'}">${a.status}</span></td></tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = `<div class="panel-header"><div class="panel-title">Manage Projects</div></div>${html}`;
+        },
+
+        renderIssues(container) {
+            container.innerHTML = `
+                <div class="panel-header"><div class="panel-title">Issue Management</div></div>
+                <div class="card">
+                    <table>
+                        <thead><tr><th>ID</th><th>Title</th><th>Severity</th><th>Status</th></tr></thead>
+                        <tbody>
+                            ${ISSUES.map(i => `<tr><td>${i.id}</td><td>${i.title}</td><td><span class="badge badge-${i.severity==='High'?'danger':'warning'}">${i.severity}</span></td><td>${i.status}</td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        },
+
+        renderFiles(container) {
+            container.innerHTML = `
+                <div class="panel-header"><div class="panel-title">File Management</div></div>
+                <div class="card">
+                    <table>
+                        <thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Action</th></tr></thead>
+                        <tbody>
+                            ${FILES.map(f => `<tr><td>${f.name}</td><td>${f.type}</td><td>${f.size}</td><td><button class="btn btn-sm btn-secondary">Download</button></td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+    };
+
+    R6_App.init();
+})();
+</script>
+             </div>
+
+        <div id="module-r7" class="module-view">
+            <div id="r7-root" style="position: relative; height: 100%; width: 100%; overflow: hidden;">
+
+    <div id="r7-login-overlay">
+        <div class="login-box">
+            <div style="font-size: 24px; font-weight: 800; color: #a81818; margin-bottom: 20px;">PLANCAST</div>
+            <h2 style="margin: 0 0 10px 0;">Enterprise OS</h2>
+            <p style="color: #64748b; margin-bottom: 30px;">Execution Control Room</p>
+            <button onclick="R7_App.Auth.login()" class="btn-login">Initialize Workspace</button>
+        </div>
+    </div>
+
+    <div id="r7-sidebar">
+        <div class="sidebar-brand">
+            <div style="font-weight: 800; font-size: 20px; color: #fff; letter-spacing: -0.5px;">PLANCAST</div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Portfolio Control</div>
+            <div class="nav-item active" data-view="dashboard" onclick="R7_App.Router.go('dashboard')">Portfolio Dashboard</div>
+            <div class="nav-item" data-view="projects" onclick="R7_App.Router.go('projects')">Project Registry</div>
+            
+            <div class="nav-label" style="margin-top:20px;">Execution Intelligence</div>
+            <div class="nav-item" data-view="critical" onclick="R7_App.Router.go('critical')">Critical Chain (CCPM)</div>
+            <div class="nav-item" data-view="fullkit" onclick="R7_App.Router.go('fullkit')">Full-Kit Readiness</div>
+            
+            <div class="nav-label" style="margin-top:20px;">Operations</div>
+            <div class="nav-item" onclick="R7_App.UI.toggleDemo()">Presentation Mode</div>
+            <div class="nav-item" onclick="R7_App.Store.reset()">Reset System Data</div>
+        </div>
+    </div>
+
+    <div id="r7-main-wrapper">
+        <header>
+            <div id="r7-breadcrumbs" style="color: #64748b;">Portfolio / <span style="color:#1e293b; font-weight:700;">Dashboard</span></div>
+            <div style="display:flex; align-items:center; gap:20px;">
+                <div id="r7-demo-indicator" class="badge badge-demo" style="display:none;">Executive Demo Active</div>
+                <div style="text-align:right;">
+                    <div style="font-weight:700; font-size:12px;">Harvey Specter</div>
+                    <div style="font-size:10px; color:#64748b;">Senior Program Director</div>
+                </div>
+                <div style="width:36px; height:36px; background:#a81818; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">HS</div>
+            </div>
+        </header>
+
+        <div id="r7-content-canvas">
+            </div>
+    </div>
+
+    <div id="r7-detail-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="r7-modal-header-area" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+            </div>
+            <div class="tab-nav">
+                <div class="tab-link active" onclick="R7_App.UI.switchTab(this, 'overview')">Overview</div>
+                <div class="tab-link" onclick="R7_App.UI.switchTab(this, 'gantt')">Timeline (Gantt)</div>
+                <div class="tab-link" onclick="R7_App.UI.switchTab(this, 'ccpm')">CCPM Analytics</div>
+                <div class="tab-link" onclick="R7_App.UI.switchTab(this, 'bom')">Assemblies & BOM</div>
+            </div>
+            <div id="r7-tab-body">
+            </div>
+            <div style="margin-top:30px; text-align:right;">
+                <button onclick="R7_App.UI.closeModal()" style="padding:10px 20px; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer;">Close Perspective</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    /* R7 SCOPED STYLES */
+    #module-r7 {
+        --r7-red: #a81818;
+        --r7-slate: #374151;
+        --r7-dark: #0f172a;
+        --r7-bg: #f1f5f9;
+        --r7-card: #ffffff;
+        --r7-border: #e2e8f0;
+        --r7-header-h: 64px;
+        --r7-sidebar-w: 260px;
+    }
+
+    #r7-root { font-family: 'Inter', sans-serif; background: var(--r7-bg); color: #1e293b; font-size: 13px; }
+
+    /* Login */
+    #r7-login-overlay { position: absolute; inset: 0; background: var(--r7-dark); z-index: 100; display: flex; align-items: center; justify-content: center; }
+    #module-r7 .login-box { background: white; padding: 40px; border-radius: 12px; width: 400px; text-align: center; }
+    #module-r7 .btn-login { width: 100%; padding: 14px; background: var(--r7-red); color: white; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; }
+
+    /* Layout */
+    #r7-sidebar { width: var(--r7-sidebar-w); background: var(--r7-dark); color: #d1d5db; display: flex; flex-direction: column; position: absolute; top: 0; bottom: 0; left: 0; }
+    #module-r7 .sidebar-brand { height: 70px; display: flex; align-items: center; padding: 0 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); }
+    
+    #module-r7 .nav-section { margin-top: 20px; flex-grow: 1; overflow-y: auto; }
+    #module-r7 .nav-label { text-transform: uppercase; font-size: 11px; font-weight: 700; color: #64748b; padding: 0 24px; margin-bottom: 8px; }
+    #module-r7 .nav-item { display: flex; align-items: center; padding: 12px 24px; cursor: pointer; color: #94a3b8; border-left: 3px solid transparent; }
+    #module-r7 .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+    #module-r7 .nav-item.active { background: rgba(168, 24, 24, 0.15); color: white; border-left-color: var(--r7-red); }
+
+    #r7-main-wrapper { position: absolute; top: 0; left: var(--r7-sidebar-w); right: 0; bottom: 0; display: flex; flex-direction: column; }
+    #module-r7 header { height: var(--r7-header-h); background: white; border-bottom: 1px solid var(--r7-border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+    #r7-content-canvas { flex: 1; overflow-y: auto; padding: 32px; }
+
+    /* UI Components */
+    #module-r7 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+    #module-r7 .card { background: white; border: 1px solid var(--r7-border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    
+    #module-r7 .kpi-card { position: relative; overflow: hidden; }
+    #module-r7 .kpi-card::after { content:''; position: absolute; top:0; left:0; width: 4px; height: 100%; background: var(--r7-red); }
+    #module-r7 .kpi-value { font-size: 26px; font-weight: 700; margin: 8px 0; }
+
+    #module-r7 table { width: 100%; border-collapse: collapse; }
+    #module-r7 th { text-align: left; padding: 12px 16px; border-bottom: 2px solid var(--r7-border); background: #f8fafc; font-size: 11px; text-transform: uppercase; color: #64748b; }
+    #module-r7 td { padding: 12px 16px; border-bottom: 1px solid var(--r7-border); }
+    #module-r7 tr:hover td { background: #f1f5f9; cursor: pointer; }
+
+    /* Badges */
+    #module-r7 .badge { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    #module-r7 .badge-red { background: #fee2e2; color: #b91c1c; }
+    #module-r7 .badge-yellow { background: #fef3c7; color: #92400e; }
+    #module-r7 .badge-green { background: #dcfce7; color: #166534; }
+    #module-r7 .badge-demo { background: #eff6ff; color: #2563eb; }
+
+    /* Modal */
+    #module-r7 .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 200; }
+    #module-r7 .modal-overlay.open { display: flex; }
+    #module-r7 .modal-content { background: white; width: 800px; border-radius: 8px; max-height: 90%; overflow-y: auto; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+    /* Tabs */
+    #module-r7 .tab-nav { display: flex; gap: 20px; border-bottom: 1px solid var(--r7-border); margin-bottom: 20px; }
+    #module-r7 .tab-link { padding: 10px 0; cursor: pointer; color: #64748b; font-weight: 600; border-bottom: 2px solid transparent; }
+    #module-r7 .tab-link.active { color: var(--r7-red); border-bottom-color: var(--r7-red); }
+
+    /* Fever Chart */
+    #module-r7 .fever-zone-red { fill: #fee2e2; }
+    #module-r7 .fever-zone-yellow { fill: #fef3c7; }
+    #module-r7 .fever-zone-green { fill: #dcfce7; }
+</style>
+
+<script>
+(function() {
+    // --- R7 APP LOGIC ---
+    window.R7_App = {
+        Store: {
+            DB_KEY: 'R7_DB',
+            state: null,
+            init() {
+                // Seed High Fidelity Data
+                const projects = [];
+                const prefixes = ["N-2221", "N-2207", "N-2305", "N-2424", "N-2502"];
+                const types = ["4HI CRM 400MM", "6HI CRM 1500 MM", "SKIN PASS MILL", "PICKLING LINE"];
+                
+                for (let i = 0; i < 60; i++) {
+                    const progress = Math.floor(Math.random() * 90);
+                    const buffer = Math.floor(Math.random() * 100);
+                    let status = 'GREEN';
+                    if (buffer > progress + 20) status = 'RED';
+                    else if (buffer > progress) status = 'YELLOW';
+
+                    projects.push({
+                        id: 'PRJ-' + (1000 + i),
+                        code: prefixes[i % 5] + "-" + (100 + i),
+                        name: `${prefixes[i % 5]} ${types[i % 4]} Installation`,
+                        manager: ["Aditya Saini", "Mayank Bandha", "Sarthak Handa"][i % 3],
+                        status: status,
+                        progress: progress,
+                        bufferConsumed: buffer,
+                        budget: (Math.random() * 500).toFixed(2),
+                        assemblies: Array.from({length: 4}, (_,j) => ({
+                            name: ["Mill Housing", "Uncoiler", "Recoiler", "Hydraulics"][j],
+                            fullKit: Math.random() > 0.3,
+                            progress: Math.floor(Math.random() * 100),
+                            bom: [{item: "Casting", qty: 2, status:"Received"}, {item:"Bearings", qty:4, status:"Ordered"}]
+                        }))
+                    });
+                }
+                this.state = { projects };
+            },
+            reset() { this.init(); R7_App.Router.go('dashboard'); }
+        },
+
+        Router: {
+            go(view) {
+                const canvas = document.getElementById('r7-content-canvas');
+                const bread = document.getElementById('r7-breadcrumbs');
+                
+                document.querySelectorAll('#r7-sidebar .nav-item').forEach(n => n.classList.remove('active'));
+                const nav = document.querySelector(`#r7-sidebar .nav-item[data-view="${view}"]`);
+                if(nav) nav.classList.add('active');
+
+                bread.innerHTML = `Portfolio / <span style="color:#1e293b; font-weight:700;">${view.charAt(0).toUpperCase() + view.slice(1)}</span>`;
+
+                if(view === 'dashboard') R7_App.Views.Dashboard(canvas);
+                else if(view === 'projects') R7_App.Views.ProjectList(canvas);
+                else if(view === 'critical') R7_App.Views.CriticalChain(canvas);
+                else if(view === 'fullkit') R7_App.Views.FullKit(canvas);
+                else canvas.innerHTML = '<div style="padding:40px; text-align:center; color:#999">Module Under Construction</div>';
+            }
+        },
+
+        Views: {
+            Dashboard(el) {
+                const s = R7_App.Store.state;
+                const total = s.projects.length;
+                const critical = s.projects.filter(p => p.status === 'RED').length;
+                const budget = s.projects.reduce((a,b) => a + parseFloat(b.budget), 0).toFixed(0);
+
+                el.innerHTML = `
+                    <div class="grid-4">
+                        <div class="card kpi-card">
+                            <div style="color:#64748b; font-size:11px; font-weight:700; text-transform:uppercase;">Program Capacity</div>
+                            <div class="kpi-value">${total} Projects</div>
+                        </div>
+                        <div class="card kpi-card">
+                            <div style="color:#64748b; font-size:11px; font-weight:700; text-transform:uppercase;">Portfolio Value</div>
+                            <div class="kpi-value">₹${budget} Cr</div>
+                        </div>
+                        <div class="card kpi-card" style="border-left: 4px solid #ef4444;">
+                            <div style="color:#64748b; font-size:11px; font-weight:700; text-transform:uppercase;">Critical Alerts</div>
+                            <div class="kpi-value" style="color:#ef4444;">${critical} Projects</div>
+                        </div>
+                        <div class="card kpi-card">
+                            <div style="color:#64748b; font-size:11px; font-weight:700; text-transform:uppercase;">Resource Index</div>
+                            <div class="kpi-value">92%</div>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px;">
+                        <div class="card">
+                            <h3 style="margin-top:0;">Portfolio Fever Chart (CCPM)</h3>
+                            <div id="r7-fever-svg" style="height:300px;"></div>
+                        </div>
+                        <div class="card">
+                            <h3 style="margin-top:0;">Supply Chain Alerts</h3>
+                            <table>
+                                ${s.projects.slice(0,6).map(p => `
+                                    <tr><td>${p.code}</td><td><span class="badge ${p.status==='RED'?'badge-red':'badge-green'}">${p.status}</span></td></tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    </div>
+                `;
+                R7_App.Charts.drawFever('r7-fever-svg', s.projects);
+            },
+            
+            ProjectList(el) {
+                const s = R7_App.Store.state;
+                el.innerHTML = `
+                    <div class="card">
+                        <h2 style="margin-top:0;">Project Registry</h2>
+                        <table>
+                            <thead><tr><th>Status</th><th>Code</th><th>Name</th><th>Manager</th><th>Progress</th><th>Action</th></tr></thead>
+                            <tbody>
+                                ${s.projects.map(p => `
+                                    <tr onclick="R7_App.UI.openProject('${p.id}')">
+                                        <td><span class="badge ${p.status==='RED'?'badge-red':(p.status==='YELLOW'?'badge-yellow':'badge-green')}">${p.status}</span></td>
+                                        <td style="font-weight:700;">${p.code}</td>
+                                        <td>${p.name}</td>
+                                        <td>${p.manager}</td>
+                                        <td>${p.progress}%</td>
+                                        <td><button style="border:1px solid #e2e8f0; background:white; cursor:pointer;">View</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            },
+
+            CriticalChain(el) {
+                el.innerHTML = `<div class="card"><h2>Critical Chain Analytics</h2><div id="r7-full-fever" style="height:500px;"></div></div>`;
+                R7_App.Charts.drawFever('r7-full-fever', R7_App.Store.state.projects);
+            },
+
+            FullKit(el) {
+                const s = R7_App.Store.state;
+                el.innerHTML = `
+                    <div class="card">
+                        <h2>Full-Kit Readiness</h2>
+                        <table>
+                            <thead><tr><th>Project</th><th>Assembly</th><th>Status</th><th>Progress</th></tr></thead>
+                            <tbody>
+                                ${s.projects.slice(0,20).map(p => p.assemblies.map(a => `
+                                    <tr>
+                                        <td>${p.code}</td>
+                                        <td><strong>${a.name}</strong></td>
+                                        <td><span class="badge ${a.fullKit?'badge-green':'badge-red'}">${a.fullKit?'Released':'Locked'}</span></td>
+                                        <td>${a.progress}%</td>
+                                    </tr>
+                                `).join('')).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        },
+
+        Charts: {
+            drawFever(id, data) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                const w = el.clientWidth, h = el.clientHeight;
+                let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}">
+                    <path d="M 0 ${h} L ${w} ${h} L ${w} 0 L 0 0 Z" fill="#dcfce7" />
+                    <path d="M 0 ${h} L ${w} ${h*0.5} L ${w} 0 L 0 0 Z" fill="#fef3c7" />
+                    <path d="M 0 ${h} L ${w} ${h*0.2} L ${w} 0 L 0 0 Z" fill="#fee2e2" />
+                    <line x1="0" y1="${h}" x2="${w}" y2="${h}" stroke="#ccc" stroke-width="2" />
+                    <line x1="0" y1="0" x2="0" y2="${h}" stroke="#ccc" stroke-width="2" />
+                `;
+                data.forEach(p => {
+                    const cx = (p.progress/100)*w;
+                    const cy = h - ((p.bufferConsumed/100)*h);
+                    const color = p.status === 'RED' ? '#ef4444' : (p.status === 'YELLOW' ? '#f59e0b' : '#10b981');
+                    svg += `<circle cx="${cx}" cy="${cy}" r="5" fill="${color}" stroke="white" stroke-width="1" />`;
+                });
+                svg += `</svg>`;
+                el.innerHTML = svg;
+            }
+        },
+
+        UI: {
+            openProject(id) {
+                const p = R7_App.Store.state.projects.find(x => x.id === id);
+                document.getElementById('r7-detail-modal').classList.add('open');
+                document.getElementById('r7-modal-header-area').innerHTML = `
+                    <div><h1 style="margin:0;">${p.code}</h1><p>${p.name}</p></div>
+                    <span class="badge ${p.status==='RED'?'badge-red':'badge-green'}" style="font-size:14px;">${p.status}</span>
+                `;
+                document.getElementById('r7-tab-body').innerHTML = `<p>Project Manager: ${p.manager}</p><p>Budget: ₹${p.budget} Cr</p>`;
+            },
+            closeModal() { document.getElementById('r7-detail-modal').classList.remove('open'); },
+            switchTab(el, tab) {
+                document.querySelectorAll('#r7-detail-modal .tab-link').forEach(t => t.classList.remove('active'));
+                el.classList.add('active');
+                document.getElementById('r7-tab-body').innerHTML = `<div style="padding:20px; text-align:center; color:#999;">${tab.toUpperCase()} View Loaded</div>`;
+            },
+            toggleDemo() {
+                const ind = document.getElementById('r7-demo-indicator');
+                ind.style.display = ind.style.display === 'none' ? 'block' : 'none';
+            }
+        },
+
+        Auth: {
+            login() {
+                document.getElementById('r7-login-overlay').style.display = 'none';
+                R7_App.Store.init();
+                R7_App.Router.go('dashboard');
+            }
+        },
+
+        init() {
+            // Auto Login for Master Integration
+            this.Auth.login();
+        }
+    };
+
+    R7_App.init();
+})();
+</script>
+             </div>
+
+    </div>
+
+    <script>
+        const MasterApp = {
+            state: {
+                activeModule: 'r1'
+            },
+            
+            init() {
+                console.log("Master OS Initialized");
+                this.switchModule('r1');
+            },
+
+            switchModule(moduleId) {
+                // Update State
+                this.state.activeModule = moduleId;
+
+                // UI: Update Nav Tabs
+                document.querySelectorAll('.master-tab').forEach(t => t.classList.remove('active'));
+                const activeTab = document.querySelector(`.master-tab[onclick*="'${moduleId}'"]`);
+                if(activeTab) activeTab.classList.add('active');
+
+                // UI: Switch View
+                document.querySelectorAll('.module-view').forEach(v => v.classList.remove('active'));
+                document.getElementById(`module-${moduleId}`).classList.add('active');
+
+                this.toast(`Switched to Module ${moduleId.toUpperCase()}`);
+            },
+
+            toast(msg) {
+                const c = document.getElementById('master-toast-container');
+                const t = document.createElement('div');
+                t.className = 'toast';
+                t.innerText = msg;
+                c.appendChild(t);
+                setTimeout(() => t.remove(), 3000);
+            },
+
+            showLoader(show) {
+                const l = document.getElementById('master-loader');
+                if(show) l.classList.add('visible');
+                else l.classList.remove('visible');
+            }
+        };
+
+        // Initialize Master Shell
+        window.addEventListener('DOMContentLoaded', () => MasterApp.init());
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOGIJI DIGI | Enterprise Portfolio Management</title>
+    <style>
+        /* =========================================
+           1. CORE VARIABLES & RESET
+           ========================================= */
+        :root {
+            /* Palette - Enterprise Slate & Blue */
+            --bg-body: #f1f5f9;
+            --bg-sidebar: #0f172a;
+            --bg-card: #ffffff;
+            --bg-header: #ffffff;
+            
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --text-inverse: #f8fafc;
+            
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+
+            --border: #e2e8f0;
+            --border-sidebar: #1e293b;
+
+            /* Spacing & Layout */
+            --sidebar-width: 260px;
+            --header-height: 64px;
+            --border-radius: 6px;
+            
+            /* Transitions */
+            --trans-speed: 0.2s;
+        }
+
+        /* Executive Demo Mode Overrides */
+        body.demo-mode {
+            --trans-speed: 0.8s; /* Slower, more deliberate animations */
+        }
+        
+        body.demo-mode .kpi-card {
+            animation: pulse-border 3s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0px rgba(37, 99, 235, 0.1); }
+            50% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); }
+            100% { box-shadow: 0 0 0 0px rgba(37, 99, 235, 0); }
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            font-size: 14px;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* =========================================
+           2. LAYOUT COMPONENTS
+           ========================================= */
+        
+        /* Sidebar */
+        #app-sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            color: var(--text-inverse);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-sidebar);
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .sidebar-brand {
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.5px;
+            border-bottom: 1px solid var(--border-sidebar);
+        }
+        .brand-icon { color: var(--primary); margin-right: 12px; }
+
+        .nav-section { margin-top: 24px; }
+        .nav-label {
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 600;
+            color: #475569;
+            padding: 0 24px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 24px;
+            cursor: pointer;
+            transition: background var(--trans-speed), border var(--trans-speed);
+            border-left: 3px solid transparent;
+            color: #94a3b8;
+        }
+        .nav-item:hover { background-color: rgba(255,255,255,0.05); color: #fff; }
+        .nav-item.active {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: #fff;
+            border-left-color: var(--primary);
+        }
+        .nav-item svg { width: 18px; height: 18px; margin-right: 12px; }
+
+        /* Main Content Area */
+        #app-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Header */
+        #app-header {
+            height: var(--header-height);
+            background-color: var(--bg-header);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+        }
+
+        .breadcrumbs { font-size: 14px; color: var(--text-muted); }
+        .breadcrumbs span { color: var(--text-main); font-weight: 600; }
+
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        
+        .toggle-demo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #eff6ff;
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            border: 1px solid #bfdbfe;
+        }
+        .toggle-demo.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .avatar { width: 32px; height: 32px; background: var(--secondary); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+
+        /* Content Canvas */
+        #content-canvas {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+            position: relative;
+        }
+
+        /* Loading Overlay */
+        #loader {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        #loader.visible { opacity: 1; pointer-events: all; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* =========================================
+           3. UI COMPONENTS
+           ========================================= */
+        
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .card-title { font-size: 16px; font-weight: 700; margin: 0; }
+
+        /* Dashboard Grid */
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px; }
+        
+        /* KPI Widget */
+        .kpi-card { display: flex; flex-direction: column; }
+        .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 28px; font-weight: 700; margin: 8px 0; color: var(--text-main); }
+        .kpi-trend { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        /* Tables */
+        .data-table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border); color: var(--text-main); font-size: 13px; }
+        tr:hover td { background-color: #f8fafc; cursor: pointer; }
+        
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-neutral { background: #f1f5f9; color: #475569; }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-outline { background: white; border-color: var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        /* Project Detail View */
+        .project-header { background: white; border-bottom: 1px solid var(--border); padding: 24px 32px; margin: -32px -32px 32px -32px; }
+        .ph-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .ph-title h1 { margin: 0; font-size: 24px; color: #1e293b; }
+        .ph-meta { display: flex; gap: 24px; color: var(--text-muted); font-size: 13px; margin-top: 8px; }
+        .ph-tabs { display: flex; gap: 4px; margin-bottom: -25px; }
+        .tab { padding: 12px 20px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text-muted); font-weight: 500; }
+        .tab:hover { color: var(--primary); }
+        .tab.active { border-bottom-color: var(--primary); color: var(--primary); }
+
+        /* Gantt Specific */
+        .gantt-container { border: 1px solid var(--border); background: white; border-radius: 6px; overflow: hidden; height: 500px; display: flex; flex-direction: column; }
+        .gantt-toolbar { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .gantt-body { flex: 1; overflow: auto; position: relative; background: #fff; }
+        
+        /* SVG Charts */
+        svg.chart { width: 100%; height: 100%; display: block; }
+        .bar-hover:hover { opacity: 0.8; }
+        .chart-tooltip {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: #1e293b; color: white; padding: 12px 20px; border-radius: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: flex; align-items: center; gap: 10px;
+            animation: slideIn 0.3s ease-out;
+            min-width: 300px;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 200;
+            display: none; align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal { background: white; width: 600px; max-width: 90%; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; animation: zoomIn 0.2s; }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+        .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav id="app-sidebar">
+        <div class="sidebar-brand">
+            <svg class="brand-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            YOGIJI DIGI
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Main</div>
+            <div class="nav-item active" data-view="dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Executive Dashboard
+            </div>
+            <div class="nav-item" data-view="projects">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                Project Control
+            </div>
+            <div class="nav-item" data-view="financials">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                Financials
+            </div>
+            <div class="nav-item" data-view="issues">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Issues & Risks
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Administration</div>
+            <div class="nav-item" data-view="users">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                User Management
+            </div>
+            <div class="nav-item" data-view="docs">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Documents
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN APP -->
+    <main id="app-main">
+        <header id="app-header">
+            <div class="breadcrumbs" id="breadcrumbs">Home / <span>Dashboard</span></div>
+            <div class="header-actions">
+                <div class="toggle-demo" id="demo-toggle" title="Enhance UI for presentation">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Demo Mode
+                </div>
+                <div class="user-profile">
+                    <div class="avatar">SH</div>
+                    <span style="font-size:13px; font-weight:600;">Sarthak Handa</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="content-canvas">
+            <!-- Content Injected via JS -->
+        </div>
+
+        <div id="loader"><div class="spinner"></div></div>
+    </main>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
+
+    <!-- GENERIC MODAL -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Modal Title</h3>
+                <button class="btn-outline btn-sm" onclick="App.UI.closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-content">
+                <!-- Content -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="App.UI.closeModal()">Cancel</button>
+                <button class="btn btn-primary" id="modal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+    /**
+     * YOGIJI DIGI - Core Application Logic
+     * Pure Vanilla JS, Modular Architecture
+     */
+
+    const App = {
+        State: {
+            currentView: 'dashboard',
+            selectedProjectId: null,
+            activeTab: 'overview',
+            isDemoMode: false,
+            currentUser: { id: 1, name: "Sarthak Handa", role: "admin" },
+            loading: false
+        },
+
+        // --- MOCK DATABASE (Simulating Enterprise Data) ---
+        DB: {
+            projects: [],
+            tasks: [],
+            issues: [],
+            finances: [],
+            users: [
+                { id: 1, name: "Sarthak Handa", role: "Program Director", active: true },
+                { id: 2, name: "Sarah Connor", role: "Project Manager", active: true },
+                { id: 3, name: "Bruce Wayne", role: "Financial Analyst", active: true },
+                { id: 4, name: "Diana Prince", role: "Operations", active: false }
+            ],
+            
+            // Seed Function to create high-fidelity data
+            init() {
+                const statuses = ['On Track', 'At Risk', 'Critical', 'Completed'];
+                const depts = ['Engineering', 'Supply Chain', 'IT Infrastructure', 'R&D'];
+                
+                // 1. Create 25 Projects
+                for (let i = 1; i <= 25; i++) {
+                    const status = i % 10 === 0 ? 'Critical' : (i % 3 === 0 ? 'At Risk' : (i > 20 ? 'Completed' : 'On Track'));
+                    const budget = Math.floor(Math.random() * 5000000) + 500000;
+                    
+                    this.projects.push({
+                        id: i,
+                        name: `Project ${['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'][i%5]} ${i}`,
+                        code: `PRJ-2024-${100+i}`,
+                        status: status,
+                        manager: this.users[i % 3].name,
+                        dept: depts[i % 4],
+                        progress: status === 'Completed' ? 100 : Math.floor(Math.random() * 90),
+                        startDate: '2024-01-15',
+                        endDate: '2024-12-20',
+                        budget: budget,
+                        spend: Math.floor(budget * (Math.random() * 0.8 + 0.1))
+                    });
+
+                    // 2. Create Finances for each
+                    this.finances.push({
+                        projectId: i,
+                        monthly: Array.from({length: 12}, (_, m) => ({
+                            month: `2024-${m+1 < 10 ? '0'+(m+1) : m+1}`,
+                            planned: Math.floor(budget/12),
+                            actual: Math.floor((budget/12) * (Math.random() * 0.5 + 0.7))
+                        }))
+                    });
+
+                    // 3. Create Issues
+                    const issueCount = Math.floor(Math.random() * 8) + 2;
+                    for (let j = 0; j < issueCount; j++) {
+                        this.issues.push({
+                            id: `${i}-${j}`,
+                            projectId: i,
+                            title: `Issue regarding ${['resource allocation', 'timeline slippage', 'budget variance', 'vendor delay'][j%4]}`,
+                            severity: j % 3 === 0 ? 'High' : 'Medium',
+                            status: j % 2 === 0 ? 'Open' : 'Resolved',
+                            owner: this.users[j%3].name
+                        });
+                    }
+
+                    // 4. Create Tasks (Gantt Data) - Only needed for Project 1-5 for demo
+                    if (i <= 5) {
+                        const start = new Date(2024, 0, 15);
+                        for(let t=1; t<=15; t++) {
+                            const dur = Math.floor(Math.random() * 10) + 5;
+                            const taskStart = new Date(start);
+                            taskStart.setDate(start.getDate() + (t*5));
+                            
+                            this.tasks.push({
+                                id: `T-${i}-${t}`,
+                                projectId: i,
+                                name: `Phase ${Math.ceil(t/5)}: Task Activity ${t}`,
+                                start: taskStart.toISOString().split('T')[0],
+                                duration: dur,
+                                percent: Math.floor(Math.random() * 100),
+                                dependency: t > 1 ? `T-${i}-${t-1}` : null
+                            });
+                        }
+                    }
+                }
+            }
+        },
+
+        // --- SERVICES (Simulate Async API) ---
+        Services: {
+            delay: (ms) => new Promise(res => setTimeout(res, ms)),
+
+            async getDashboardStats() {
+                await this.delay(400); // Network lag
+                const p = App.DB.projects;
+                const totalBudget = p.reduce((sum, x) => sum + x.budget, 0);
+                const totalSpend = p.reduce((sum, x) => sum + x.spend, 0);
+                return {
+                    totalProjects: p.length,
+                    activeProjects: p.filter(x => x.status !== 'Completed').length,
+                    critical: p.filter(x => x.status === 'Critical').length,
+                    budgetHealth: Math.round((totalSpend / totalBudget) * 100),
+                    totalBudget: totalBudget
+                };
+            },
+
+            async getProjects(filter = null) {
+                await this.delay(300);
+                if (!filter) return App.DB.projects;
+                return App.DB.projects.filter(p => p.status === filter);
+            },
+
+            async getProjectDetails(id) {
+                await this.delay(500);
+                const proj = App.DB.projects.find(p => p.id == id);
+                const tasks = App.DB.tasks.filter(t => t.projectId == id);
+                const issues = App.DB.issues.filter(i => i.projectId == id);
+                const finances = App.DB.finances.find(f => f.projectId == id);
+                return { ...proj, tasks, issues, finances };
+            },
+            
+            async updateTask(id, data) {
+                await this.delay(200);
+                // logic to update task
+                return true;
+            }
+        },
+
+        // --- UI RENDERERS ---
+        Renderers: {
+            // Helper to clear content
+            clear() { document.getElementById('content-canvas').innerHTML = ''; },
+
+            dashboard(stats, projects) {
+                const fmtMoney = (n) => '$' + (n/1000000).toFixed(1) + 'M';
+                
+                let html = `
+                <div class="grid-4">
+                    <div class="card kpi-card">
+                        <span class="kpi-label">Portfolio Value</span>
+                        <span class="kpi-value">${fmtMoney(stats.totalBudget)}</span>
+                        <span class="kpi-trend trend-up">▲ 12% vs LY</span>
+                    </div>
+                    <div class="card kpi-card">
+                        <span class="kpi-label">Active Projects</span>
+                        <span class="kpi-value">${stats.activeProjects}</span>
+                        <span class="kpi-trend trend-neutral">Of ${stats.totalProjects} Total</span>
+                    </div>
+                    <div class="card kpi-card">
+                        <span class="kpi-label">Budget Burn</span>
+                        <span class="kpi-value">${stats.budgetHealth}%</span>
+                        <span class="kpi-trend ${stats.budgetHealth > 90 ? 'trend-down' : 'trend-up'}">Target: < 90%</span>
+                    </div>
+                    <div class="card kpi-card" style="border-left: 4px solid var(--danger)">
+                        <span class="kpi-label">Critical Items</span>
+                        <span class="kpi-value" style="color:var(--danger)">${stats.critical}</span>
+                        <span class="kpi-trend">Requires Action</span>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card" style="height: 350px;">
+                        <div class="card-header">
+                            <h3 class="card-title">Portfolio Health Distribution</h3>
+                        </div>
+                        <div id="chart-health" style="height: 250px;"></div>
+                    </div>
+                    <div class="card" style="height: 350px;">
+                        <div class="card-header">
+                            <h3 class="card-title">Top 5 Resource Allocation</h3>
+                        </div>
+                        <div id="chart-resources" style="height: 250px;"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">High Priority Project Watchlist</h3>
+                        <button class="btn btn-outline btn-sm" onclick="App.Router.navigate('projects')">View All</button>
+                    </div>
+                    <div class="data-table-container">
+                        <table>
+                            <thead>
+                                <tr><th>Project Code</th><th>Name</th><th>Manager</th><th>Progress</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                                ${projects.slice(0,5).map(p => App.Renderers.components.projectRow(p)).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                `;
+                this.clear();
+                document.getElementById('content-canvas').innerHTML = html;
+                
+                // Render SVG Charts
+                App.Charts.drawDonut('chart-health', [
+                    {label: 'On Track', value: 15, color: '#10b981'},
+                    {label: 'At Risk', value: 8, color: '#f59e0b'},
+                    {label: 'Critical', value: 2, color: '#ef4444'}
+                ]);
+                
+                App.Charts.drawBar('chart-resources', [85, 72, 65, 45, 30], ['Eng', 'Ops', 'IT', 'Mkt', 'HR']);
+            },
+
+            projectList(projects) {
+                let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Master Project Registry</h3>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" placeholder="Search projects..." class="btn btn-outline" style="cursor:text; width:200px;">
+                            <button class="btn btn-primary">+ New Project</button>
+                        </div>
+                    </div>
+                    <div class="data-table-container">
+                        <table id="proj-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Code</th>
+                                    <th>Project Name</th>
+                                    <th>Department</th>
+                                    <th>Budget</th>
+                                    <th>Spend</th>
+                                    <th>Completion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${projects.map(p => App.Renderers.components.projectRowFull(p)).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                `;
+                this.clear();
+                document.getElementById('content-canvas').innerHTML = html;
+            },
+
+            projectDetail(data) {
+                const { id, name, code, status, manager, tasks, issues, finances } = data;
+                
+                // Helper for status badge class
+                const statusClass = status === 'Critical' ? 'badge-danger' : (status === 'At Risk' ? 'badge-warning' : 'badge-success');
+
+                const content = `
+                <div class="project-header">
+                    <div class="ph-top">
+                        <div class="ph-title">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <h1>${name}</h1>
+                                <span class="badge ${statusClass}">${status}</span>
+                            </div>
+                            <div class="ph-meta">
+                                <span>Code: <strong>${code}</strong></span>
+                                <span>Manager: <strong>${manager}</strong></span>
+                                <span>Tasks: <strong>${tasks.length}</strong></span>
+                            </div>
+                        </div>
+                        <div class="ph-actions">
+                            <button class="btn btn-outline" onclick="App.Router.navigate('projects')">Back to List</button>
+                            <button class="btn btn-primary">Edit Project</button>
+                        </div>
+                    </div>
+                    <div class="ph-tabs">
+                        <div class="tab ${App.State.activeTab==='overview'?'active':''}" onclick="App.Controller.switchTab('overview')">Overview</div>
+                        <div class="tab ${App.State.activeTab==='schedule'?'active':''}" onclick="App.Controller.switchTab('schedule')">Schedule (Gantt)</div>
+                        <div class="tab ${App.State.activeTab==='financials'?'active':''}" onclick="App.Controller.switchTab('financials')">Financials</div>
+                        <div class="tab ${App.State.activeTab==='issues'?'active':''}" onclick="App.Controller.switchTab('issues')">Issues (${issues.length})</div>
+                    </div>
+                </div>
+                
+                <div id="tab-content">
+                    <!-- CONTENT LOADED BY SWITCH TAB -->
+                </div>
+                `;
+                
+                this.clear();
+                document.getElementById('content-canvas').innerHTML = content;
+                App.Renderers.renderTabContent(data);
+            },
+
+            renderTabContent(data) {
+                const container = document.getElementById('tab-content');
+                if(!container) return;
+
+                if (App.State.activeTab === 'overview') {
+                    container.innerHTML = `
+                        <div class="grid-2">
+                            <div class="card">
+                                <h3 class="card-title">Executive Summary</h3>
+                                <p style="line-height:1.6; color:var(--text-muted); margin-top:10px;">
+                                    This project is currently executing within the defined parameters. 
+                                    Key milestones for Q3 are approaching. Resource allocation is stable at 95%.
+                                </p>
+                            </div>
+                            <div class="card">
+                                <h3 class="card-title">Recent Activity</h3>
+                                <ul style="list-style:none; padding:0; margin-top:10px;">
+                                    <li style="padding:8px 0; border-bottom:1px solid #eee; font-size:13px;">
+                                        <strong>Sarah Connor</strong> updated task completion to 85% <span style="float:right; color:#999">2h ago</span>
+                                    </li>
+                                    <li style="padding:8px 0; border-bottom:1px solid #eee; font-size:13px;">
+                                        <strong>System</strong> generated Monthly Financial Report <span style="float:right; color:#999">1d ago</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                } else if (App.State.activeTab === 'schedule') {
+                    container.innerHTML = `
+                        <div class="gantt-container">
+                            <div class="gantt-toolbar">
+                                <div>
+                                    <button class="btn btn-outline btn-sm">Day</button>
+                                    <button class="btn btn-primary btn-sm">Week</button>
+                                    <button class="btn btn-outline btn-sm">Month</button>
+                                </div>
+                                <button class="btn btn-outline btn-sm">Export PDF</button>
+                            </div>
+                            <div class="gantt-body" id="gantt-chart-area">
+                                <!-- SVG GANTT HERE -->
+                            </div>
+                        </div>
+                    `;
+                    App.Charts.drawGantt('gantt-chart-area', data.tasks);
+                } else if (App.State.activeTab === 'financials') {
+                    container.innerHTML = `
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title">Planned vs Actual Spend (YTD)</h3></div>
+                            <div id="fin-chart" style="height:300px; width:100%;"></div>
+                        </div>
+                    `;
+                    App.Charts.drawFinancialChart('fin-chart', data.finances);
+                } else if (App.State.activeTab === 'issues') {
+                    container.innerHTML = `
+                        <div class="card">
+                             <table class="table">
+                                <thead><tr><th>Severity</th><th>Issue</th><th>Owner</th><th>Status</th><th>Actions</th></tr></thead>
+                                <tbody>
+                                    ${data.issues.map(i => `
+                                        <tr>
+                                            <td><span class="badge ${i.severity==='High'?'badge-danger':'badge-warning'}">${i.severity}</span></td>
+                                            <td>${i.title}</td>
+                                            <td>${i.owner}</td>
+                                            <td>${i.status}</td>
+                                            <td><button class="btn btn-outline btn-sm">View</button></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                             </table>
+                        </div>
+                    `;
+                }
+            },
+
+            components: {
+                projectRow(p) {
+                    const badge = p.status === 'Critical' ? 'badge-danger' : (p.status === 'At Risk' ? 'badge-warning' : 'badge-success');
+                    return `<tr onclick="App.Router.navigate('project', ${p.id})">
+                        <td>${p.code}</td>
+                        <td style="font-weight:500">${p.name}</td>
+                        <td>${p.manager}</td>
+                        <td>
+                            <div style="width:100px; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                                <div style="width:${p.progress}%; height:100%; background:var(--primary);"></div>
+                            </div>
+                        </td>
+                        <td><span class="badge ${badge}">${p.status}</span></td>
+                    </tr>`;
+                },
+                projectRowFull(p) {
+                    const badge = p.status === 'Critical' ? 'badge-danger' : (p.status === 'At Risk' ? 'badge-warning' : (p.status === 'Completed' ? 'badge-neutral' : 'badge-success'));
+                    const fmt = (n) => '$' + n.toLocaleString();
+                    return `<tr onclick="App.Router.navigate('project', ${p.id})">
+                        <td><span class="badge ${badge}">${p.status}</span></td>
+                        <td style="font-family:monospace; color:var(--text-muted);">${p.code}</td>
+                        <td style="font-weight:600; color:var(--primary);">${p.name}</td>
+                        <td>${p.dept}</td>
+                        <td>${fmt(p.budget)}</td>
+                        <td>${fmt(p.spend)}</td>
+                        <td>
+                             <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:12px; width:30px;">${p.progress}%</span>
+                                <div style="width:80px; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                                    <div style="width:${p.progress}%; height:100%; background:${p.progress===100?'var(--success)':'var(--primary)'};"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                }
+            }
+        },
+
+        // --- CHARTING ENGINE (Pure SVG) ---
+        Charts: {
+            createSVG(width, height) {
+                const ns = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(ns, "svg");
+                svg.setAttribute("width", "100%");
+                svg.setAttribute("height", "100%");
+                svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+                svg.classList.add("chart");
+                return svg;
+            },
+
+            drawDonut(id, data) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                el.innerHTML = '';
+                const size = 200;
+                const center = size / 2;
+                const radius = 80;
+                const svg = this.createSVG(size, size);
+                
+                let startAngle = 0;
+                const total = data.reduce((acc, d) => acc + d.value, 0);
+
+                data.forEach(slice => {
+                    const angle = (slice.value / total) * 360;
+                    const endAngle = startAngle + angle;
+                    
+                    const x1 = center + radius * Math.cos(Math.PI * startAngle / 180);
+                    const y1 = center + radius * Math.sin(Math.PI * startAngle / 180);
+                    const x2 = center + radius * Math.cos(Math.PI * endAngle / 180);
+                    const y2 = center + radius * Math.sin(Math.PI * endAngle / 180);
+                    
+                    const largeArcFlag = angle > 180 ? 1 : 0;
+                    
+                    const pathData = [
+                        `M ${center} ${center}`,
+                        `L ${x1} ${y1}`,
+                        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                        `Z`
+                    ].join(" ");
+                    
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", pathData);
+                    path.setAttribute("fill", slice.color);
+                    path.setAttribute("stroke", "white");
+                    path.setAttribute("stroke-width", "2");
+                    svg.appendChild(path);
+                    
+                    startAngle = endAngle;
+                });
+
+                // Center Circle for Donut
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", center);
+                circle.setAttribute("cy", center);
+                circle.setAttribute("r", radius * 0.6);
+                circle.setAttribute("fill", "white");
+                svg.appendChild(circle);
+
+                // Center Text
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", center);
+                text.setAttribute("y", center + 5);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("font-weight", "bold");
+                text.setAttribute("font-size", "24");
+                text.textContent = total;
+                svg.appendChild(text);
+
+                el.appendChild(svg);
+            },
+
+            drawBar(id, values, labels) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                el.innerHTML = '';
+                const w = 400, h = 200;
+                const svg = this.createSVG(w, h);
+                const padding = 30;
+                const barWidth = (w - (padding * 2)) / values.length - 10;
+                const maxVal = Math.max(...values);
+
+                values.forEach((v, i) => {
+                    const bh = (v / maxVal) * (h - padding * 2);
+                    const x = padding + i * (barWidth + 10);
+                    const y = h - padding - bh;
+
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute("x", x);
+                    rect.setAttribute("y", y);
+                    rect.setAttribute("width", barWidth);
+                    rect.setAttribute("height", bh);
+                    rect.setAttribute("fill", "#3b82f6");
+                    rect.classList.add("bar-hover");
+                    svg.appendChild(rect);
+
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", x + barWidth/2);
+                    text.setAttribute("y", h - 10);
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("font-size", "10");
+                    text.textContent = labels[i];
+                    svg.appendChild(text);
+                });
+
+                el.appendChild(svg);
+            },
+
+            drawGantt(id, tasks) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                el.innerHTML = '';
+                
+                // Config
+                const rowHeight = 40;
+                const dayWidth = 20;
+                const headerHeight = 30;
+                const sidePadding = 150; // space for task name
+                
+                // Calculate dimensions
+                const totalDays = 120; // 4 months roughly
+                const w = sidePadding + (totalDays * dayWidth);
+                const h = headerHeight + (tasks.length * rowHeight);
+
+                const svg = this.createSVG(w, h);
+                svg.setAttribute("style", "min-width: 1000px;"); // Ensure scroll
+
+                // 1. Grid & Headers
+                for (let i = 0; i < totalDays; i+=7) {
+                    const x = sidePadding + (i * dayWidth);
+                    // Vertical Line
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", x); line.setAttribute("y1", 0);
+                    line.setAttribute("x2", x); line.setAttribute("y2", h);
+                    line.setAttribute("stroke", "#f1f5f9");
+                    svg.appendChild(line);
+                    
+                    // Date Text
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", x + 5);
+                    text.setAttribute("y", 20);
+                    text.setAttribute("font-size", "10");
+                    text.setAttribute("fill", "#64748b");
+                    text.textContent = `W${Math.floor(i/7)+1}`;
+                    svg.appendChild(text);
+                }
+
+                // 2. Tasks
+                const startDate = new Date('2024-01-15');
+
+                tasks.forEach((task, idx) => {
+                    const y = headerHeight + (idx * rowHeight);
+                    const tStart = new Date(task.start);
+                    const diffTime = Math.abs(tStart - startDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    
+                    const barX = sidePadding + (diffDays * dayWidth);
+                    const barW = task.duration * dayWidth;
+
+                    // Row Background
+                    const rowBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rowBg.setAttribute("x", 0); rowBg.setAttribute("y", y);
+                    rowBg.setAttribute("width", w); rowBg.setAttribute("height", rowHeight);
+                    rowBg.setAttribute("fill", idx % 2 === 0 ? "white" : "#f8fafc");
+                    svg.appendChild(rowBg);
+
+                    // Task Name
+                    const name = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    name.setAttribute("x", 10);
+                    name.setAttribute("y", y + 25);
+                    name.setAttribute("font-size", "12");
+                    name.setAttribute("font-weight", "500");
+                    name.textContent = task.name.substring(0, 20) + (task.name.length>20?'...':'');
+                    svg.appendChild(name);
+
+                    // Task Bar
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute("x", barX);
+                    rect.setAttribute("y", y + 10);
+                    rect.setAttribute("width", barW);
+                    rect.setAttribute("height", 20);
+                    rect.setAttribute("rx", 4);
+                    rect.setAttribute("fill", "#3b82f6");
+                    rect.setAttribute("style", "cursor:pointer;");
+                    
+                    // Interaction
+                    rect.onclick = () => App.UI.showToast(`Selected task: ${task.name}`);
+                    svg.appendChild(rect);
+
+                    // Progress
+                    const progW = barW * (task.percent / 100);
+                    const prog = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    prog.setAttribute("x", barX);
+                    prog.setAttribute("y", y + 10);
+                    prog.setAttribute("width", progW);
+                    prog.setAttribute("height", 20);
+                    prog.setAttribute("rx", 4);
+                    prog.setAttribute("fill", "rgba(255,255,255,0.3)");
+                    prog.setAttribute("pointer-events", "none");
+                    svg.appendChild(prog);
+                });
+
+                // 3. Today Line
+                const todayX = sidePadding + (45 * dayWidth); // Simulated today
+                const todayLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                todayLine.setAttribute("x1", todayX); todayLine.setAttribute("y1", 0);
+                todayLine.setAttribute("x2", todayX); todayLine.setAttribute("y2", h);
+                todayLine.setAttribute("stroke", "#ef4444");
+                todayLine.setAttribute("stroke-dasharray", "4");
+                svg.appendChild(todayLine);
+
+                el.appendChild(svg);
+            },
+
+            drawFinancialChart(id, financeData) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                el.innerHTML = '';
+                const w = 800, h = 300;
+                const svg = this.createSVG(w, h);
+                const padding = 40;
+                
+                // Get max value for scaling
+                const allVals = financeData.monthly.flatMap(m => [m.planned, m.actual]);
+                const max = Math.max(...allVals) * 1.2;
+
+                // Axis Lines
+                const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                xAxis.setAttribute("x1", padding); xAxis.setAttribute("y1", h - padding);
+                xAxis.setAttribute("x2", w - padding); xAxis.setAttribute("y2", h - padding);
+                xAxis.setAttribute("stroke", "#cbd5e1");
+                svg.appendChild(xAxis);
+
+                // Data Points
+                const step = (w - (padding * 2)) / 11;
+                
+                // Helper to draw line
+                const drawLine = (key, color) => {
+                    let pathD = "";
+                    financeData.monthly.forEach((m, i) => {
+                        const x = padding + (i * step);
+                        const val = m[key];
+                        const y = (h - padding) - ((val / max) * (h - padding * 2));
+                        pathD += `${i === 0 ? 'M' : 'L'} ${x} ${y} `;
+                        
+                        // Dot
+                        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                        dot.setAttribute("cx", x); dot.setAttribute("cy", y);
+                        dot.setAttribute("r", 4);
+                        dot.setAttribute("fill", color);
+                        // Tooltip logic would go here
+                        svg.appendChild(dot);
+                    });
+                    
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", pathD);
+                    path.setAttribute("fill", "none");
+                    path.setAttribute("stroke", color);
+                    path.setAttribute("stroke-width", 3);
+                    svg.appendChild(path);
+                };
+
+                drawLine('planned', '#94a3b8'); // Gray for planned
+                drawLine('actual', '#2563eb');  // Blue for actual
+
+                el.appendChild(svg);
+            }
+        },
+
+        // --- CONTROLLER (Navigation & Orchestration) ---
+        Controller: {
+            init() {
+                App.DB.init();
+                
+                // Navigation Event Listeners
+                document.querySelectorAll('.nav-item').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        const view = e.currentTarget.dataset.view;
+                        App.Router.navigate(view);
+                    });
+                });
+
+                // Demo Mode Toggle
+                document.getElementById('demo-toggle').addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    document.body.classList.toggle('demo-mode');
+                    App.State.isDemoMode = !App.State.isDemoMode;
+                    App.UI.showToast(App.State.isDemoMode ? "Executive Demo Mode: Enabled" : "Executive Demo Mode: Disabled");
+                });
+
+                // Load Initial View
+                App.Router.navigate('dashboard');
+            },
+
+            async switchTab(tabName) {
+                App.State.activeTab = tabName;
+                
+                // Update UI tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                const clickedTab = Array.from(document.querySelectorAll('.tab')).find(t => t.textContent.toLowerCase().includes(tabName.split(' ')[0]));
+                if(clickedTab) clickedTab.classList.add('active');
+
+                // Reload Content
+                App.UI.showLoader(true);
+                const projData = await App.Services.getProjectDetails(App.State.selectedProjectId);
+                App.Renderers.renderTabContent(projData);
+                App.UI.showLoader(false);
+            }
+        },
+
+        // --- ROUTER ---
+        Router: {
+            async navigate(view, param = null) {
+                // Update Nav UI
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                const activeNav = document.querySelector(`.nav-item[data-view="${view === 'project' ? 'projects' : view}"]`);
+                if(activeNav) activeNav.classList.add('active');
+
+                App.UI.showLoader(true);
+                App.State.currentView = view;
+
+                // Update Breadcrumbs
+                const crumbs = document.getElementById('breadcrumbs');
+                
+                if (view === 'dashboard') {
+                    crumbs.innerHTML = 'Home / <span>Dashboard</span>';
+                    const stats = await App.Services.getDashboardStats();
+                    const projects = await App.Services.getProjects();
+                    App.Renderers.dashboard(stats, projects);
+                } 
+                else if (view === 'projects') {
+                    crumbs.innerHTML = 'Home / <span>Projects</span>';
+                    const projects = await App.Services.getProjects();
+                    App.Renderers.projectList(projects);
+                } 
+                else if (view === 'project') {
+                    App.State.selectedProjectId = param;
+                    App.State.activeTab = 'overview';
+                    const data = await App.Services.getProjectDetails(param);
+                    crumbs.innerHTML = `Home / Projects / <span>${data.code}</span>`;
+                    App.Renderers.projectDetail(data);
+                }
+                else {
+                    // Placeholder for other views
+                    document.getElementById('content-canvas').innerHTML = `
+                        <div style="text-align:center; margin-top:100px; color:#cbd5e1;">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <h2>Module Under Development</h2>
+                            <p>This section is locked in the demo environment.</p>
+                        </div>
+                    `;
+                    crumbs.innerHTML = `Home / <span>${view.charAt(0).toUpperCase() + view.slice(1)}</span>`;
+                }
+
+                App.UI.showLoader(false);
+            }
+        },
+
+        // --- UI UTILITIES ---
+        UI: {
+            showLoader(visible) {
+                const el = document.getElementById('loader');
+                if(visible) el.classList.add('visible');
+                else setTimeout(() => el.classList.remove('visible'), 300); // Slight delay for smoothness
+            },
+
+            showToast(msg) {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> ${msg}`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            },
+
+            closeModal() {
+                document.getElementById('modal-overlay').classList.remove('open');
+            }
+        }
+    };
+
+    // Initialize Application
+    window.addEventListener('DOMContentLoaded', () => {
+        App.Controller.init();
+    });
+
+    </script>
+</body>
+</html>

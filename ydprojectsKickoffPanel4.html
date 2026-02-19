@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Project Kick-Off Panel | YOGIJI DIGI</title>
+    
+    <link href="assets/img/yd-favicon.png" rel="icon" />
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" />
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+      :root {
+        --yd-primary: #2a5071; /* Corporate Blue */
+        --yd-red: #ad283f;     /* Corporate Red */
+        --yd-bg: #f5f7fa;
+      }
+      
+      body {
+        background-color: #f6f9ff;
+        font-family: "Open Sans", system-ui, sans-serif;
+        color: #444444;
+      }
+
+      /* --- HEADER STYLING --- */
+      .header {
+        transition: all 0.5s;
+        z-index: 997;
+        padding: 15px 0;
+        background-color: #ffffff;
+        box-shadow: 0px 2px 20px rgba(1, 41, 112, 0.1);
+      }
+      .logo img {
+        max-height: 40px;
+        margin-right: 6px;
+      }
+      .btn-getstarted {
+        color: var(--yd-primary);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      /* --- MAIN CONTENT --- */
+      .main {
+        margin-top: 80px;
+        padding: 20px 0;
+        min-height: 80vh;
+      }
+
+      .table-container {
+        background: #fffffff0;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0px 0px 30px rgba(127, 137, 161, 0.25);
+      }
+
+      h2.page-title {
+        color: var(--yd-red);
+        font-weight: 700;
+        font-family: "Nunito", sans-serif;
+      }
+
+      /* --- BADGES & STATUS COLORS --- */
+      .badge-sla-green { background-color: #198754; color: white; }
+      .badge-sla-amber { background-color: #ffc107; color: #000; }
+      .badge-sla-red { background-color: #dc3545; color: white; animation: pulse-red 2s infinite; }
+      
+      .status-badge { font-size: 0.8rem; padding: 6px 10px; }
+      
+      /* Semantic Stage Colors - UPDATED FOR NEW WORKFLOW */
+      .bg-stage-0 { background-color: #6c757d; color: #fff; } /* Design Pending */
+      .bg-stage-1 { background-color: #ffc107; color: #000; } /* Decision */
+      .bg-stage-2 { background-color: #0dcaf0; color: #000; } /* Advance */
+      .bg-stage-3 { background-color: #0d6efd; color: #fff; } /* PM Assign */
+      .bg-stage-4 { background-color: #6f42c1; color: #fff; } /* Kickoff */
+      .bg-stage-5 { background-color: #198754; color: #fff; } /* Active */
+      .bg-stage-blocked { background-color: #dc3545; color: #fff; } /* Blocked */
+
+      .legend-item { font-size: 0.8rem; margin-right: 15px; color: #666; }
+
+      @keyframes pulse-red {
+          0% { opacity: 1; }
+          50% { opacity: 0.7; }
+          100% { opacity: 1; }
+      }
+
+      /* --- DATATABLES OVERRIDES --- */
+      table.dataTable thead th {
+        background-color: var(--yd-primary);
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        vertical-align: middle;
+      }
+      table.dataTable tbody td {
+        vertical-align: middle;
+        font-size: 0.9rem;
+      }
+      /* Clickable Rows for Details */
+      table.dataTable tbody tr {
+        cursor: pointer;
+      }
+      table.dataTable tbody tr:hover {
+        background-color: #f1f4f9 !important;
+      }
+
+      /* --- MODALS & FORMS --- */
+      .modal-header { border-bottom: 2px solid var(--yd-primary); }
+      .modal-title { color: var(--yd-primary); font-weight: 700; }
+      .form-label { font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 2px; }
+      .form-control, .form-select { font-size: 0.9rem; }
+      .audit-log { max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #dee2e6; }
+      .audit-item { font-size: 0.8rem; border-left: 3px solid var(--yd-primary); padding-left: 10px; margin-bottom: 8px; }
+
+      /* --- FOOTER --- */
+      .footer { background: #f1f1f1; padding: 30px 0; font-size: 14px; margin-top: auto; }
+      .footer h4 { font-size: 16px; font-weight: bold; color: var(--yd-primary); padding-bottom: 12px; }
+      .footer ul { list-style: none; padding: 0; }
+      .footer ul li { padding: 8px 0; }
+      .footer ul li a { color: #6c757d; text-decoration: none; transition: 0.3s; }
+      .footer ul li a:hover { color: var(--yd-primary); }
+      .copyright { padding-top: 25px; border-top: 1px solid #d1d7dc; color: var(--yd-primary); }
+    </style>
+  </head>
+
+  <body>
+    
+    <header id="header" class="header d-flex align-items-center sticky-top">
+      <div class="container-fluid d-flex align-items-center justify-content-between px-4">
+        <a href="#" class="logo d-flex align-items-center text-decoration-none">
+            <span class="fs-4 fw-bold" style="color: var(--yd-primary);">YOGIJI DIGI</span>
+            <span class="d-none d-lg-block ms-2 fw-bold text-dark"></span>
+        </a>
+        
+        <div class="d-flex align-items-center gap-3">
+            <a href="#" class="btn btn-sm text-danger bg-danger-subtle fw-bold">Reports</a>
+            <a href="#" class="btn btn-sm text-warning-emphasis bg-warning-subtle fw-bold">Meetings</a>
+            
+            <a href="#" class="position-relative text-primary fs-5">
+                <i class="fa-solid fa-bell"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">3</span>
+            </a>
+
+            <div class="dropdown ms-3">
+                <a class="btn-getstarted d-flex align-items-center dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="fa-solid fa-circle-user fs-4 me-2"></i>
+                    <span id="userRoleDisplay">Sashikanth (Sales)</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><h6 class="dropdown-header">Role Simulator</h6></li>
+                    <li><button class="dropdown-item" onclick="app.switchRole('SALES')">Sales (Sashikanth)</button></li>
+                    <li><button class="dropdown-item" onclick="app.switchRole('DESIGN')">Design (Engineering Team)</button></li>
+                    <li><button class="dropdown-item" onclick="app.switchRole('DIRECTOR')">Director (Navneet/Sameer)</button></li>
+                    <li><button class="dropdown-item" onclick="app.switchRole('FINANCE')">Finance (Anup/Manish)</button></li>
+                    <li><button class="dropdown-item" onclick="app.switchRole('VP')">COO/VP (Varun/Aseem)</button></li>
+                    <li><button class="dropdown-item" onclick="app.switchRole('PM')">PM (Aditya/Saurabh)</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item text-danger" onclick="app.resetData()"><i class="fa fa-refresh me-2"></i>Reset Demo</button></li>
+                </ul>
+            </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="container table-container">
+        
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h2 class="page-title mb-0">Project Kick-Off Panel</h2>
+                <p class="text-muted small mb-0">Governance: Sales <i class="fa fa-arrow-right mx-1"></i> Design <i class="fa fa-arrow-right mx-1"></i> Director <i class="fa fa-arrow-right mx-1"></i> Finance/VP <i class="fa fa-arrow-right mx-1"></i> PM</p>
+                <div class="mt-2">
+                    <span class="legend-item"><i class="fa fa-envelope text-primary"></i> Email Trigger</span>
+                    <span class="legend-item"><i class="fa fa-whatsapp text-success"></i> WhatsApp Escalation</span>
+                    <span class="legend-item"><i class="fa fa-ban text-danger"></i> System Block</span>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <button class="btn btn-outline-danger btn-sm" onclick="app.exportPDF()">
+                        <i class="fa-solid fa-file-pdf me-1"></i> Export PDF
+                    </button>
+
+                    <!-- Only Visible to Sales -->
+                    <button class="btn btn-primary btn-sm" id="btnNewProject" onclick="app.openCreateModal()" style="display: none;">
+                        <i class="fa fa-plus me-1"></i> Initiate New Project
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <table id="kickoffTable" class="table table-hover table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th style="width: 10%">SLA</th>
+                    <th style="width: 15%">Project No.</th>
+                    <th style="width: 25%">Client & Site</th>
+                    <!-- Value & Terms removed for security -->
+                    <th style="width: 20%">Stage</th>
+                    <th style="width: 15%">Owner</th>
+                    <th style="width: 15%">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Populated via JS -->
+            </tbody>
+        </table>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="container">
+        <div class="row gy-4">
+          <div class="col-lg-4 col-md-6 footer-about">
+            <a href="#" class="d-flex align-items-center mb-2 text-decoration-none">
+              <span class="fs-4 fw-bold" style="color: var(--yd-primary);">YOGIJI DIGI</span>
+            </a>
+            <p class="small text-muted">Complete industrial factory design and manufacturing. Innovating steel processing since inception.</p>
+          </div>
+          <div class="col-lg-2 col-md-6 footer-links">
+            <h4>Products</h4>
+            <ul>
+              <li><a href="#">Cold Rolling Mills</a></li>
+              <li><a href="#">GI/GL Lines</a></li>
+              <li><a href="#">Pickling Lines</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-3 col-md-6 footer-links">
+            <h4>Contact</h4>
+            <ul>
+              <li><i class="fa fa-map-marker me-2"></i>Faridabad, Haryana</li>
+              <li><i class="fa fa-phone me-2"></i>+91 129 429 5200</li>
+              <li><i class="fa fa-envelope me-2"></i>sales@ydgroup.com</li>
+            </ul>
+          </div>
+        </div>
+        <div class="copyright text-center mt-4">
+          &copy; Copyright <strong><span>YOGIJI DIGI</span></strong>. All Rights Reserved
+        </div>
+      </div>
+    </footer>
+
+    <!-- CREATE MODAL (SALES ENTRY POINT) -->
+    <div class="modal fade" id="createModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa fa-file-contract me-2"></i>Initiate New Project (Sales)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createForm">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Client Name</label>
+                                <input type="text" class="form-control" id="inpClient" required placeholder="e.g. JSW Steel">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Site Name (Location)</label>
+                                <input type="text" class="form-control" id="inpSite" required placeholder="e.g. Bellary">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Machine Type</label>
+                                <input type="text" class="form-control" id="inpMachine" required placeholder="e.g. CGL / CRM">
+                            </div>
+
+                            <!-- SO Number is allowed for Sales -->
+                            <div class="col-md-6">
+                                <label class="form-label">Sales Order (SO) No.</label>
+                                <input type="text" class="form-control" id="inpSO" required placeholder="e.g. SO-2024-001">
+                            </div>
+
+                            <!-- Project No: Hidden for Sales/Auto-pending -->
+                            <div class="col-md-6 non-sales-field" style="display:none;">
+                                <label class="form-label">Project No. (Design Team)</label>
+                                <input type="text" class="form-control" id="inpProjectNo">
+                            </div>
+
+                            <!-- PO Fields: Hidden for Sales -->
+                            <div class="col-md-4 non-sales-field" style="display:none;">
+                                <label class="form-label">PO Number</label>
+                                <input type="text" class="form-control" id="inpPONum">
+                            </div>
+                            <div class="col-md-4 non-sales-field" style="display:none;">
+                                <label class="form-label">PO Value (INR)</label>
+                                <input type="number" class="form-control" id="inpValue">
+                            </div>
+                            <div class="col-md-4 non-sales-field" style="display:none;">
+                                <label class="form-label">Payment Terms</label>
+                                <input type="text" class="form-control" id="inpTerms" placeholder="e.g. 30% Adv, 70% LC">
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">Project Manager</label>
+                                <input type="text" class="form-control bg-light" value="To be assigned by VP (Varun/Aseem)" disabled readonly>
+                                <div class="form-text text-muted fst-italic">Assignments are handled in the governance workflow.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Upload Documents (SO Copy)</label>
+                                <input class="form-control" type="file" id="inpFile">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="app.submitProject()">Initiate Workflow</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETAILS MODAL -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Project Details & History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <div class="row">
+                            <div class="col-6 mb-2"><strong>Code:</strong> <span id="detCode" class="text-primary"></span></div>
+                            <div class="col-6 mb-2"><strong>Status:</strong> <span id="detStatus"></span></div>
+                            <!-- PO No removed for security -->
+                            <div class="col-6 mb-2"><strong>SO No:</strong> <span id="detSO"></span></div>
+                            <div class="col-12"><strong>Documents:</strong> <span id="detFile" class="fst-italic text-muted"></span></div>
+                        </div>
+                    </div>
+                    <h6>Audit Log</h6>
+                    <div id="auditLogContainer" class="audit-log">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION MODAL -->
+    <div class="modal fade" id="actionModal" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="actionTitle">Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="actionBody">
+                    <!-- Dynamic Content -->
+                </div>
+                <div class="modal-footer p-2">
+                    <button type="button" class="btn btn-primary w-100" onclick="app.confirmAction()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        /**
+         * YOGIJI DIGI Governance Logic V2
+         * Updated for New Workflow: Sales -> Design -> Director -> Finance/VP -> PM -> Active
+         */
+        const CONSTANTS = {
+            STATUS: {
+                AWAITING_DESIGN_PROJECT_NO: 'AWAITING_DESIGN_PROJECT_NO', // New Entry Stage
+                PENDING_DIRECTOR_DECISION: 'PENDING_DIRECTOR_DECISION',   // After Design
+                AWAITING_ADVANCE: 'AWAITING_ADVANCE',                     // Finance Stage
+                PENDING_PM_ASSIGNMENT: 'PENDING_PM_ASSIGNMENT',           // VP Stage
+                PENDING_KICKOFF: 'PENDING_KICKOFF',                       // PM Stage
+                ACTIVE: 'ACTIVE',                                         // Execution
+                BLOCKED_NO_APPROVAL: 'BLOCKED_NO_APPROVAL'                // Finance Escalation
+            },
+            ROLES: {
+                SALES: 'SALES', DESIGN: 'DESIGN', DIRECTOR: 'DIRECTOR', FINANCE: 'FINANCE', VP: 'VP', PM: 'PM'
+            },
+            // SLA in days
+            SLA: { DESIGN: 1, DECISION: 2, ADVANCE: 15, PM: 2, KICKOFF: 2 },
+            
+            // Explicit Contacts for Escalation
+            CONTACTS: {
+                DIRECTORS: ['Navneet Gill', 'Sameer Bansal'],
+                SENIOR_MGMT: ['Aseem Gill', 'Varun Jay Rana']
+            }
+        };
+
+        const app = {
+            data: [],
+            currentUser: { role: 'SALES', name: 'Sashikanth Tripathi' },
+            table: null,
+            currentActionId: null,
+
+            init() {
+                this.loadData();
+                this.runEscalationChecks(); // Run automatic checks on load
+                this.initTable();
+                this.updateUI();
+                
+                // Show role selection hint on first load
+                const Toast = Swal.mixin({
+                    toast: true, position: 'top-end', showConfirmButton: false, timer: 3000
+                });
+                Toast.fire({ icon: 'info', title: 'Logged in as Sales' });
+            },
+
+            loadData() {
+                const stored = localStorage.getItem('yd_governance_v2');
+                if (stored) {
+                    this.data = JSON.parse(stored);
+                } else {
+                    this.data = this.generateDummyData(); 
+                    this.saveData();
+                }
+            },
+
+            saveData() {
+                localStorage.setItem('yd_governance_v2', JSON.stringify(this.data));
+                this.renderTable();
+            },
+
+            resetData() {
+                if(confirm("Reset all demo data and logic?")) {
+                    localStorage.removeItem('yd_governance_v2');
+                    location.reload();
+                }
+            },
+
+            // --- AUTOMATED ESCALATION LOGIC ---
+            runEscalationChecks() {
+                let changed = false;
+                let alerts = [];
+
+                this.data.forEach(p => {
+                    const days = (new Date() - new Date(p.stageDate)) / (1000 * 60 * 60 * 24);
+                    // Get last history entry to prevent duplicate logging
+                    const lastLog = p.history.length > 0 ? p.history[p.history.length - 1] : { action: '' };
+
+                    // 1. Design Escalation (> 1 Day) - Log Only
+                    if (p.status === CONSTANTS.STATUS.AWAITING_DESIGN_PROJECT_NO && days > CONSTANTS.SLA.DESIGN) {
+                         if (!lastLog.action.includes('Escalated')) {
+                             const msg = `SLA Breached (>24h). Auto-escalated to Directors: ${CONSTANTS.CONTACTS.DIRECTORS.join(', ')}`;
+                             p.history.push({ action: msg, by: 'SYSTEM', date: new Date().toISOString() });
+                             alerts.push(`Project ${p.code}: Design SLA Breached`);
+                             changed = true;
+                         }
+                    }
+
+                    // 2. Advance Delay (> 15 Days) -> BLOCK
+                    if (p.status === CONSTANTS.STATUS.AWAITING_ADVANCE && days > CONSTANTS.SLA.ADVANCE) {
+                         // Switch Status to BLOCKED
+                         p.status = CONSTANTS.STATUS.BLOCKED_NO_APPROVAL;
+                         const msg = `SLA Breached (>15 Days). Project Auto-BLOCKED. Escalated to: ${CONSTANTS.CONTACTS.DIRECTORS.join(', ')}`;
+                         p.history.push({ action: msg, by: 'SYSTEM', date: new Date().toISOString() });
+                         alerts.push(`Project ${p.code}: BLOCKED due to payment delay`);
+                         changed = true;
+                    }
+
+                    // 3. PM Assignment (> 2 Days) - Log Only
+                    if (p.status === CONSTANTS.STATUS.PENDING_PM_ASSIGNMENT && days > CONSTANTS.SLA.PM) {
+                         if (!lastLog.action.includes('Escalated')) {
+                             const msg = `SLA Breached (>48h). Escalated to Senior Mgmt: ${CONSTANTS.CONTACTS.SENIOR_MGMT.join(', ')}`;
+                             p.history.push({ action: msg, by: 'SYSTEM', date: new Date().toISOString() });
+                             alerts.push(`Project ${p.code}: PM Assignment Escalated`);
+                             changed = true;
+                         }
+                    }
+                    
+                    // 4. Kick-off Delay (> 2 Days) - Log Only
+                    if (p.status === CONSTANTS.STATUS.PENDING_KICKOFF && days > CONSTANTS.SLA.KICKOFF) {
+                        if (!lastLog.action.includes('Escalated')) {
+                            const msg = `SLA Breached (>48h). Kick-off Delayed. Escalated to: ${CONSTANTS.CONTACTS.SENIOR_MGMT.join(', ')}`;
+                            p.history.push({ action: msg, by: 'SYSTEM', date: new Date().toISOString() });
+                            alerts.push(`Project ${p.code}: Kick-off Delayed`);
+                            changed = true;
+                        }
+                    }
+                });
+
+                if (changed) {
+                    this.saveData(); // Save new logs/status
+                    if (alerts.length > 0) {
+                        // Show simple toast summary
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Automated Governance Actions',
+                            html: alerts.join('<br>'),
+                            toast: true,
+                            position: 'top-end',
+                            timer: 6000,
+                            showConfirmButton: false,
+                            background: '#fff3cd',
+                            color: '#856404'
+                        });
+                    }
+                }
+            },
+
+            initTable() {
+                this.table = $('#kickoffTable').DataTable({
+                    pageLength: 25,
+                    order: [[0, 'asc']], // Default sort by SLA
+                    columns: [
+                        { data: 'sla', className: 'text-center' },
+                        { data: 'code', className: 'fw-bold text-primary' },
+                        { data: 'client' },
+                        // Value & Terms removed from columns config
+                        { data: 'stage' },
+                        { data: 'owner' },
+                        { data: 'action', className: 'text-end', orderable: false }
+                    ]
+                });
+
+                // Row Click Event for Details
+                $('#kickoffTable tbody').on('click', 'tr', function(e) {
+                    if ($(e.target).closest('button').length) return;
+                    const data = app.table.row(this).data();
+                    const codeText = $(data.code).text(); 
+                    const p = app.data.find(x => x.code === codeText || x.tempId === codeText); // Check code or temp ID
+                    if(p) app.openDetails(p.id);
+                });
+            },
+
+            renderTable() {
+                if (!this.table) return;
+                this.table.clear();
+
+                const rows = this.data.map(p => {
+                    const sla = this.calculateSLA(p);
+                    const statusInfo = this.getStatusInfo(p);
+                    const actionBtn = this.getActionBtn(p);
+
+                    // Value and Terms variables removed from here to prevent display in table
+
+                    return {
+                        sla: `<span class="badge rounded-pill ${sla.color}" style="min-width: 60px">${sla.text}</span>`,
+                        code: `<span class="fw-bold">${p.code}</span>`,
+                        client: `<div>${p.client}</div><div class="small text-muted"><i class="fa fa-map-marker-alt me-1"></i>${p.site} / ${p.machine}</div>`,
+                        // Value & Terms column removed
+                        stage: `<span class="badge status-badge ${statusInfo.cls}">${statusInfo.label}</span>`,
+                        owner: `<div class="fw-bold small">${p.owner}</div><div class="text-muted" style="font-size:0.7rem">${p.ownerRole || 'Owner'}</div>`,
+                        action: actionBtn
+                    };
+                });
+
+                this.table.rows.add(rows);
+                this.table.draw();
+            },
+
+            // --- LOGIC ---
+            calculateSLA(p) {
+                if (p.status === CONSTANTS.STATUS.ACTIVE) return { color: 'badge-sla-green', text: 'Active' };
+                if (p.status === CONSTANTS.STATUS.BLOCKED_NO_APPROVAL) return { color: 'badge-sla-red', text: 'BLOCKED' };
+                
+                const daysInStage = (new Date() - new Date(p.stageDate)) / (1000 * 60 * 60 * 24);
+                let limit = 2; // Default
+                
+                // SLA Definitions
+                if (p.status === CONSTANTS.STATUS.AWAITING_DESIGN_PROJECT_NO) limit = CONSTANTS.SLA.DESIGN; // 1 Day
+                if (p.status === CONSTANTS.STATUS.AWAITING_ADVANCE) limit = CONSTANTS.SLA.ADVANCE; // 15 Days
+                
+                if (daysInStage > limit) return { color: 'badge-sla-red', text: 'Escalated' };
+                if (daysInStage > limit * 0.7) return { color: 'badge-sla-amber', text: 'Due Soon' };
+                return { color: 'badge-sla-green', text: 'On Track' };
+            },
+
+            getStatusInfo(p) {
+                const map = {
+                    [CONSTANTS.STATUS.AWAITING_DESIGN_PROJECT_NO]: { cls: 'bg-stage-0', label: 'Design: Assign Project #' },
+                    [CONSTANTS.STATUS.PENDING_DIRECTOR_DECISION]: { cls: 'bg-stage-1', label: 'Director Decision' },
+                    [CONSTANTS.STATUS.AWAITING_ADVANCE]: { cls: 'bg-stage-2', label: 'Awaiting Advance' },
+                    [CONSTANTS.STATUS.PENDING_PM_ASSIGNMENT]: { cls: 'bg-stage-3', label: 'Pending PM Assign' },
+                    [CONSTANTS.STATUS.PENDING_KICKOFF]: { cls: 'bg-stage-4', label: 'Pending Kick-Off' },
+                    [CONSTANTS.STATUS.ACTIVE]: { cls: 'bg-stage-5', label: 'Execution Started' },
+                    [CONSTANTS.STATUS.BLOCKED_NO_APPROVAL]: { cls: 'bg-stage-blocked', label: 'BLOCKED - ESCALATED' }
+                };
+                return map[p.status] || { cls: 'bg-secondary', label: p.status };
+            },
+
+            getActionBtn(p) {
+                if (p.status === CONSTANTS.STATUS.ACTIVE) return `<span class="text-success small fw-bold"><i class="fa fa-check-circle"></i> Running</span>`;
+                if (p.status === CONSTANTS.STATUS.BLOCKED_NO_APPROVAL) return `<span class="text-danger small fw-bold"><i class="fa fa-ban"></i> HALTED</span>`;
+                
+                const role = this.currentUser.role;
+                let btn = `<button class="btn btn-sm btn-outline-secondary disabled" disabled style="font-size: 0.75rem"><i class="fa fa-lock"></i> Locked</button>`;
+
+                // Design Logic
+                if (role === 'DESIGN' && p.status === CONSTANTS.STATUS.AWAITING_DESIGN_PROJECT_NO) {
+                    btn = `<button class="btn btn-sm text-white" style="background-color:#6c757d" onclick="app.openAction(${p.id})">Enter Project #</button>`;
+                } 
+                // Director Logic
+                else if (role === 'DIRECTOR' && p.status === CONSTANTS.STATUS.PENDING_DIRECTOR_DECISION) {
+                    btn = `<button class="btn btn-sm btn-warning fw-bold" onclick="app.openAction(${p.id})">Take Decision</button>`;
+                } 
+                // Finance Logic
+                else if (role === 'FINANCE' && p.status === CONSTANTS.STATUS.AWAITING_ADVANCE) {
+                    btn = `<button class="btn btn-sm btn-info text-white" onclick="app.openAction(${p.id})">Record Receipt</button>`;
+                } 
+                // VP Logic
+                else if (role === 'VP' && p.status === CONSTANTS.STATUS.PENDING_PM_ASSIGNMENT) {
+                    btn = `<button class="btn btn-sm btn-primary" onclick="app.openAction(${p.id})">Assign PM</button>`;
+                } 
+                // PM Logic
+                else if (role === 'PM' && p.status === CONSTANTS.STATUS.PENDING_KICKOFF) {
+                    btn = `<button class="btn btn-sm btn-dark" style="background-color: #6f42c1" onclick="app.openAction(${p.id})">Complete Kick-Off</button>`;
+                }
+                return btn;
+            },
+
+            // --- ACTIONS ---
+            openCreateModal() {
+                // Reset form
+                document.getElementById('createForm').reset();
+                
+                // Visibility Logic: Sales can only see their fields
+                const isSales = this.currentUser.role === 'SALES';
+                
+                // Hide/Show fields based on role (though UI says only Sales initiates)
+                if(isSales) {
+                    $('.non-sales-field').hide();
+                } else {
+                    // Just in case we allow others later, though requirements say only Sales
+                    $('.non-sales-field').show(); 
+                }
+
+                new bootstrap.Modal(document.getElementById('createModal')).show();
+            },
+
+            submitProject() {
+                // Sales Input Only
+                const client = $('#inpClient').val();
+                const site = $('#inpSite').val();
+                const machine = $('#inpMachine').val();
+                const so = $('#inpSO').val();
+                const fileInput = document.getElementById('inpFile');
+
+                if(!client || !site || !machine || !so) return Swal.fire('Error', 'Please fill all required Sales fields.', 'error');
+
+                const maxId = this.data.reduce((max, p) => Math.max(max, p.id), 2600);
+                const nextId = maxId + 1;
+                
+                // Initial Code is Pending
+                const tempCode = `PENDING-${nextId}`;
+
+                const newP = {
+                    id: nextId,
+                    code: tempCode,
+                    tempId: tempCode, // Helper for lookup
+                    projectNo: null, // To be filled by Design
+                    client: client,
+                    site: site,
+                    machine: machine,
+                    poValue: null, // Hidden for Sales
+                    poNum: null,   // Hidden for Sales
+                    soNum: so,
+                    terms: null,   // Hidden for Sales
+                    file: fileInput.files[0] ? fileInput.files[0].name : 'No file',
+                    
+                    // Initial State: Waiting for Design
+                    status: CONSTANTS.STATUS.AWAITING_DESIGN_PROJECT_NO,
+                    owner: 'DESIGN',
+                    ownerRole: 'Design Team',
+                    
+                    stageDate: new Date().toISOString(),
+                    history: [{ action: 'Project Initiated (Sales)', by: this.currentUser.name, date: new Date().toISOString() }]
+                };
+
+                this.data.push(newP);
+                this.saveData();
+                bootstrap.Modal.getInstance(document.getElementById('createModal')).hide();
+                
+                // Trigger Simulation
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Initiated', 
+                    text: 'Project sent to Design Team for Project Number allocation.',
+                    footer: '<i class="fa fa-envelope me-1"></i> Email Trigger Sent to: design@ydgroup.com'
+                });
+            },
+
+            openAction(id) {
+                this.currentActionId = id;
+                const p = this.data.find(x => x.id === id);
+                const role = this.currentUser.role;
+                const title = document.getElementById('actionTitle');
+                const body = document.getElementById('actionBody');
+
+                if (role === 'DESIGN') {
+                    title.innerText = "Allocate Project Number";
+                    body.innerHTML = `
+                        <p class="small text-muted mb-2">Temporary ID: <strong>${p.code}</strong></p>
+                        <div class="alert alert-warning small py-1"><i class="fa fa-clock me-1"></i> SLA: 24 Hours</div>
+                        <label class="form-label">Official Project Number</label>
+                        <input type="text" class="form-control mb-2" id="actProjectNo" placeholder="e.g. 2604-JSW-CGL">
+                        <div class="form-text text-muted">This will lock the project code.</div>`;
+                } else if (role === 'DIRECTOR') {
+                    title.innerText = "Management Decision";
+                    body.innerHTML = `
+                        <p class="small text-muted mb-2">Project: <strong>${p.code}</strong></p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="dec" id="d1" value="WITH" checked>
+                            <label class="form-check-label" for="d1">Approve <strong>WITH</strong> Advance</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="dec" id="d2" value="WITHOUT">
+                            <label class="form-check-label" for="d2">Approve <strong>WITHOUT</strong> Advance</label>
+                        </div>`;
+                } else if (role === 'FINANCE') {
+                    title.innerText = "Record Advance / Update PO";
+                    body.innerHTML = `
+                        <p class="small text-muted mb-2">Project: <strong>${p.code}</strong></p>
+                        <div class="mb-2">
+                             <label class="form-label">PO Value Update (If needed)</label>
+                             <input type="number" class="form-control" id="actVal" value="${p.poValue || ''}" placeholder="Enter Value">
+                             <div class="form-text text-muted">Confidential: Saved internally only.</div>
+                        </div>
+                        <div class="mb-2">
+                             <label class="form-label">Payment Terms</label>
+                             <input type="text" class="form-control" id="actTerms" value="${p.terms || ''}" placeholder="Enter Terms">
+                        </div>
+                        <div class="mb-2">
+                             <label class="form-label">Upload Receipt</label>
+                             <input class="form-control" type="file">
+                        </div>`;
+                } else if (role === 'VP') {
+                    title.innerText = "Assign Project Manager";
+                    body.innerHTML = `
+                        <p class="small text-muted mb-2">Project: <strong>${p.code}</strong></p>
+                        <label class="form-label">Select PM</label>
+                        <select class="form-select" id="actPM">
+                            <option value="Aditya Saini">Aditya Saini</option>
+                            <option value="Saurabh Jangra">Saurabh Jangra</option>
+                            <option value="Mayank Bandha">Mayank Bandha</option>
+                        </select>`;
+                } else if (role === 'PM') {
+                    title.innerText = "Kick-Off Verification";
+                    body.innerHTML = `
+                        <p class="small text-muted mb-2">Project: <strong>${p.code}</strong></p>
+                        <div class="alert alert-light border small">Confirm Internal Kick-Off Meeting (MOM)</div>
+                        <input type="file" class="form-control">`;
+                }
+
+                new bootstrap.Modal(document.getElementById('actionModal')).show();
+            },
+
+            confirmAction() {
+                const id = this.currentActionId;
+                const p = this.data.find(x => x.id === id);
+                const role = this.currentUser.role;
+                const now = new Date().toISOString();
+                let historyMsg = "";
+                let triggerMsg = "";
+                let triggerIcon = "fa-envelope";
+
+                if (role === 'DESIGN') {
+                    const newCode = $('#actProjectNo').val();
+                    if(!newCode) return Swal.fire('Error', 'Project Number is mandatory', 'error');
+                    
+                    p.code = newCode.toUpperCase();
+                    p.projectNo = p.code;
+                    p.status = CONSTANTS.STATUS.PENDING_DIRECTOR_DECISION;
+                    p.owner = 'DIRECTOR';
+                    p.ownerRole = 'Management';
+                    historyMsg = `Project Number Allocated: ${p.code}`;
+                    triggerMsg = `Email Sent to Directors (${CONSTANTS.CONTACTS.DIRECTORS.join(', ')}): Approval Required`;
+                } 
+                else if (role === 'DIRECTOR') {
+                    const dec = $('input[name="dec"]:checked').val();
+                    if (dec === 'WITH') {
+                        p.status = CONSTANTS.STATUS.AWAITING_ADVANCE;
+                        p.owner = 'FINANCE';
+                        p.ownerRole = 'Accounts';
+                        historyMsg = "Approved (With Advance)";
+                        triggerMsg = "Email Sent to Finance: Collect Advance";
+                    } else {
+                        p.status = CONSTANTS.STATUS.PENDING_PM_ASSIGNMENT;
+                        p.owner = 'VP';
+                        p.ownerRole = 'COO/VP';
+                        historyMsg = "Approved (No Advance) - Direct PM Assign";
+                        triggerMsg = `WhatsApp Sent to VP (${CONSTANTS.CONTACTS.SENIOR_MGMT.join(', ')}): Assign PM Immediately`;
+                        triggerIcon = "fa-whatsapp";
+                    }
+                } 
+                else if (role === 'FINANCE') {
+                    // Check for Escalation (Simulated Logic)
+                    const days = (new Date() - new Date(p.stageDate)) / (1000 * 60 * 60 * 24);
+                    const val = $('#actVal').val();
+                    const terms = $('#actTerms').val();
+                    
+                    if (val) p.poValue = val;
+                    if (terms) p.terms = terms;
+
+                    if (days > 15) {
+                        historyMsg = `Advance Received (Late by ${Math.floor(days-15)} days)`;
+                    } else {
+                        historyMsg = "Advance Receipt Recorded";
+                    }
+
+                    p.status = CONSTANTS.STATUS.PENDING_PM_ASSIGNMENT;
+                    p.owner = 'VP';
+                    p.ownerRole = 'COO/VP';
+                    triggerMsg = `WhatsApp Sent to VP (${CONSTANTS.CONTACTS.SENIOR_MGMT.join(', ')}): Payment Cleared, Assign PM`;
+                    triggerIcon = "fa-whatsapp";
+                } 
+                else if (role === 'VP') {
+                    const pm = $('#actPM').val();
+                    p.status = CONSTANTS.STATUS.PENDING_KICKOFF;
+                    p.owner = pm;
+                    p.ownerRole = 'Project Manager';
+                    historyMsg = `PM Assigned: ${pm}`;
+                    triggerMsg = `Email Sent to ${pm}: Conduct Kick-Off`;
+                } 
+                else if (role === 'PM') {
+                    p.status = CONSTANTS.STATUS.ACTIVE;
+                    p.owner = 'Operations';
+                    p.ownerRole = 'Execution';
+                    historyMsg = "Kick-Off Complete. Moved to Execution.";
+                    triggerMsg = "System Notification: Project Active";
+                }
+
+                p.stageDate = now;
+                p.history.push({ action: historyMsg, by: this.currentUser.name, date: now });
+                
+                this.saveData();
+                bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
+                
+                // Trigger Toast
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Workflow Updated',
+                    text: historyMsg,
+                    footer: `<i class="fa ${triggerIcon} me-1"></i> ${triggerMsg}`,
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            },
+
+            openDetails(id) {
+                const p = this.data.find(x => x.id === id);
+                $('#detCode').text(p.code);
+                $('#detStatus').text(p.status.replace(/_/g, ' '));
+                // Removed detPO set for security
+                $('#detSO').text(p.soNum || 'N/A');
+                $('#detFile').text(p.file || 'No file');
+
+                const logs = p.history.map(h => `
+                    <div class="audit-item">
+                        <div class="fw-bold">${h.action}</div>
+                        <div class="text-muted" style="font-size:0.75rem">${new Date(h.date).toLocaleString()} by ${h.by}</div>
+                    </div>
+                `).join('');
+                $('#auditLogContainer').html(logs);
+                new bootstrap.Modal(document.getElementById('detailsModal')).show();
+            },
+
+            exportPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape');
+                
+                doc.setFillColor(42, 80, 113); // Header Color
+                doc.rect(0, 0, 297, 20, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(14);
+                doc.text('YOGIJI DIGI - Project Kick-Off Status', 14, 13);
+                
+                // Value column removed from PDF export
+                const rows = this.data.map(p => [
+                    p.code, p.client, p.site, p.status.replace(/_/g, ' '), p.owner, this.calculateSLA(p).text
+                ]);
+
+                doc.autoTable({
+                    head: [['Project No', 'Client', 'Site', 'Stage', 'Owner', 'SLA']],
+                    body: rows,
+                    startY: 25,
+                    headStyles: { fillColor: [42, 80, 113] }
+                });
+                doc.save('YD_Kickoff_Report.pdf');
+            },
+
+            // --- USER MANAGEMENT ---
+            switchRole(role) {
+                const names = { 
+                    'SALES': 'Sashikanth (Sales)', 
+                    'DESIGN': 'Amit (Design/Engg)',
+                    'DIRECTOR': 'Navneet (Director)', 
+                    'FINANCE': 'Anup (Finance)', 
+                    'VP': 'Varun (VP)', 
+                    'PM': 'Aditya (PM)' 
+                };
+                this.currentUser = { role: role, name: names[role] };
+                $('#userRoleDisplay').text(names[role]);
+                
+                // Button Visibility Logic: Only Sales initiates
+                if(role === 'SALES') {
+                    $('#btnNewProject').show();
+                } else {
+                    $('#btnNewProject').hide();
+                }
+
+                this.renderTable();
+            },
+
+            generateDummyData() {
+                const now = new Date();
+                const day = 24 * 60 * 60 * 1000;
+                return [
+                    { id: 2605, code: 'PENDING-2605', tempId: 'PENDING-2605', projectNo: null, client: 'TATA STEEL', site: 'Jamshedpur', machine: 'CRM', poValue: null, soNum: 'SO-105', terms: null, status: CONSTANTS.STATUS.AWAITING_DESIGN_PROJECT_NO, owner: 'DESIGN', ownerRole: 'Design Team', stageDate: new Date(now - 0.5*day).toISOString(), history: [{ action: 'Project Initiated', by: 'Sashikanth (Sales)', date: new Date(now - 0.5*day).toISOString() }] },
+                    { id: 2601, code: '2601-BMWIL-CGL', tempId: '2601-BMWIL-CGL', projectNo: '2601-BMWIL-CGL', client: 'BMWIL', site: 'Mumbai', machine: 'CGL', poValue: '4500000', soNum: 'SO-101', terms: '30% Adv', status: CONSTANTS.STATUS.PENDING_DIRECTOR_DECISION, owner: 'DIRECTOR', ownerRole: 'Management', stageDate: new Date(now - 1.5*day).toISOString(), history: [] },
+                    { id: 2602, code: '2602-APL-PICK', tempId: '2602-APL-PICK', projectNo: '2602-APL-PICK', client: 'APL', site: 'Raipur', machine: 'Pickling', poValue: '12000000', soNum: 'SO-102', terms: '10% Adv', status: CONSTANTS.STATUS.AWAITING_ADVANCE, owner: 'FINANCE', ownerRole: 'Accounts', stageDate: new Date(now - 10*day).toISOString(), history: [] },
+                    { id: 2603, code: '2603-JSW-TRIM', tempId: '2603-JSW-TRIM', projectNo: '2603-JSW-TRIM', client: 'JSW', site: 'Bellary', machine: 'Trimming', poValue: '8500000', soNum: 'SO-103', terms: 'LC 90 Days', status: CONSTANTS.STATUS.PENDING_PM_ASSIGNMENT, owner: 'VP', ownerRole: 'COO/VP', stageDate: new Date(now - 1*day).toISOString(), history: [] },
+                    // Simulated Escalation Case (16 days waiting for advance) - Should trigger Block immediately on load
+                    { id: 2600, code: '2600-OLD-PROJ', tempId: '2600-OLD-PROJ', projectNo: '2600-OLD-PROJ', client: 'AMNS', site: 'Hazira', machine: 'CGL', poValue: '9000000', soNum: 'SO-090', terms: 'Adv', status: CONSTANTS.STATUS.AWAITING_ADVANCE, owner: 'FINANCE', ownerRole: 'Accounts', stageDate: new Date(now - 16*day).toISOString(), history: [] },
+                    { id: 2609, code: '2609-JSW-CGL2', tempId: '2609-JSW-CGL2', projectNo: '2609-JSW-CGL2', client: 'JSW', site: 'Vasind', machine: 'CGL 2', poValue: '55000000', soNum: 'SO-099', terms: 'LC', status: CONSTANTS.STATUS.ACTIVE, owner: 'Operations', ownerRole: 'Execution', stageDate: new Date(now - 30*day).toISOString(), history: [] }
+                ];
+            },
+            
+            updateUI() {
+                this.switchRole('SALES');
+            }
+        };
+
+        $(document).ready(() => { app.init(); });
+    </script>
+  </body>
+</html>

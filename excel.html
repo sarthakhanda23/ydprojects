@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Billing & Dispatch Panel | YOGIJI DIGI</title>
+    
+    <link href="yd-favicon.png" rel="icon" />
+    
+    <!-- CSS Libraries -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <!-- JS Libraries for Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- Excel Parse Lib (SheetJS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+      :root {
+        --yd-primary: #2a5071; /* Corporate Blue */
+        --yd-red: #ad283f;     /* Corporate Red */
+        --yd-bg: #f5f7fa;
+      }
+      
+      body {
+        /* Background Image Setup */
+        background: url('ydbg.jpeg') no-repeat center center fixed;
+        background-size: cover;
+        font-family: "Open Sans", system-ui, sans-serif;
+        color: #444444;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* --- HEADER STYLING --- */
+      .header {
+        transition: all 0.5s;
+        z-index: 997;
+        padding: 10px 15px;
+        background-color: #ffffff;
+        box-shadow: 0px 2px 20px rgba(1, 41, 112, 0.1);
+        height: 70px;
+      }
+      .logo img {
+        max-height: 45px;
+        margin-right: 6px;
+      }
+      .btn-getstarted {
+        color: var(--yd-primary);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+
+      /* --- MAIN CONTENT --- */
+      .main {
+        margin-top: 80px; 
+        padding: 20px 0;
+        flex: 1;
+      }
+
+      /* Enterprise Container - Clearer Background */
+      .glass-container {
+        background: rgba(255, 255, 255, 0.92); /* Higher opacity for enterprise readability */
+        padding: 25px;
+        border-radius: 8px; /* Tighter corners */
+        box-shadow: 0px 0px 30px rgba(127, 137, 161, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+      }
+
+      h2.page-title {
+        color: var(--yd-primary);
+        font-weight: 700;
+        font-family: "Nunito", sans-serif;
+        font-size: 1.5rem;
+      }
+
+      /* --- FILTERS --- */
+      .filter-bar {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 20px;
+      }
+      .filter-label { font-size: 0.75rem; font-weight: 700; color: var(--yd-primary); margin-bottom: 4px; display: block; }
+      .form-select-sm { font-size: 0.85rem; border-color: #ced4da; }
+
+      /* --- BADGES & STATUS --- */
+      .status-badge { 
+        font-size: 0.75rem; 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        font-weight: 600; 
+        text-transform: uppercase;
+        width: 100px;
+        display: inline-block;
+        text-align: center;
+        cursor: pointer; /* Clickable */
+        user-select: none;
+      }
+      .bg-dispatched { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+      .bg-pending { background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+
+      /* --- DATATABLES OVERRIDES (Compact & Clean) --- */
+      table.dataTable { width: 100% !important; margin-top: 10px !important; }
+      table.dataTable thead th {
+        background-color: var(--yd-primary);
+        color: white;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 10px 8px;
+        vertical-align: middle;
+        white-space: nowrap;
+        border-bottom: none;
+      }
+      table.dataTable tbody td {
+        vertical-align: middle;
+        font-size: 0.8rem; /* Compact font */
+        padding: 4px 8px; /* Slightly tighter for Excel feel */
+        color: #444;
+        border-bottom: 1px solid #eee;
+      }
+      table.dataTable tbody tr { cursor: pointer; transition: background 0.2s; }
+      table.dataTable tbody tr:hover { background-color: rgba(42, 80, 113, 0.08) !important; }
+      
+      /* DataTables Search Box Styling */
+      div.dataTables_wrapper div.dataTables_filter input {
+        margin-left: 0.5em;
+        display: inline-block;
+        width: auto;
+        font-size: 0.85rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 4px 8px;
+      }
+
+      /* --- EXCEL-LIKE INPUTS --- */
+      .excel-input {
+          border: 1px solid transparent;
+          background-color: transparent;
+          width: 100%;
+          padding: 2px 4px;
+          font-size: 0.8rem;
+          color: #444;
+          border-radius: 3px;
+          transition: all 0.2s;
+      }
+      .excel-input:hover {
+          border: 1px solid #dee2e6;
+          background-color: #fff;
+      }
+      .excel-input:focus {
+          border: 1px solid var(--yd-primary);
+          background-color: #fff;
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(42, 80, 113, 0.1);
+      }
+      .excel-select {
+          border: 1px solid transparent;
+          background-color: transparent;
+          width: 100%;
+          padding: 2px;
+          font-size: 0.8rem;
+          cursor: pointer;
+          border-radius: 3px;
+      }
+      .excel-select:hover, .excel-select:focus {
+          border: 1px solid #dee2e6;
+          background-color: #fff;
+          outline: none;
+      }
+
+      /* --- TABLE FOOTER TOTALS --- */
+      tfoot {
+          background-color: #f8f9fa;
+          font-weight: bold;
+          border-top: 2px solid var(--yd-primary);
+      }
+      tfoot td {
+          padding: 10px 8px !important;
+          color: var(--yd-primary);
+      }
+
+      /* --- MODALS --- */
+      .modal-header { background: var(--yd-primary); color: white; border-bottom: none; }
+      .modal-title { font-weight: 700; font-size: 1.1rem; }
+      .modal-header .btn-close { filter: invert(1); }
+      .form-label { font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 4px; }
+      .form-control, .form-select { font-size: 0.9rem; padding: 8px; }
+      .readonly-field { background-color: #e9ecef; cursor: not-allowed; border: 1px solid #dee2e6; color: #6c757d; }
+
+      /* --- FOOTER --- */
+      .footer { background: #f1f1f1; padding: 30px 0; font-size: 14px; margin-top: auto; border-top: 1px solid #ddd; }
+      .footer h4 { font-size: 16px; font-weight: bold; color: var(--yd-primary); padding-bottom: 12px; }
+      .footer ul { list-style: none; padding: 0; }
+      .footer ul li { padding: 8px 0; }
+      .footer ul li a { color: #6c757d; text-decoration: none; transition: 0.3s; }
+      .footer ul li a:hover { color: var(--yd-primary); }
+      .copyright { padding-top: 25px; border-top: 1px solid #d1d7dc; color: var(--yd-primary); }
+
+      /* Utilities */
+      .text-yd-red { color: var(--yd-red); }
+      .text-yd-blue { color: var(--yd-primary); }
+      .btn-primary { background-color: var(--yd-primary); border-color: var(--yd-primary); }
+      .btn-primary:hover { background-color: #1e3a52; }
+      
+      /* Toggle Switch in Modal */
+      .form-check-input:checked { background-color: #198754; border-color: #198754; }
+    </style>
+  </head>
+
+  <body>
+    
+    <!-- HEADER -->
+    <header id="header" class="header d-flex align-items-center sticky-top">
+      <div class="container-fluid d-flex align-items-center justify-content-between">
+        <a href="#" class="logo d-flex align-items-center text-decoration-none">
+          <img src="YDLOGO.png" alt="YD">
+          <span class="badge bg-success ms-3" style="font-size: 0.7rem; vertical-align: middle;">LIVE</span>
+        </a>
+        
+        <div class="d-flex align-items-center gap-2">
+            <!-- Utility Buttons -->
+            <a href="#" class="btn btn-sm" style="background: #fde2e4; color: #9f1239; font-weight:600; font-size: 0.8rem;">Report</a>
+            <a href="#" class="btn btn-sm" style="background: #fff4cc; color: #92400e; font-weight:600; font-size: 0.8rem;">Meeting</a>
+            <a href="#" class="btn btn-sm" style="background: #e0f2fe; color: #0369a1; font-weight:600; font-size: 0.8rem;">Attendance</a>
+
+            <!-- Bell Notification -->
+            <a href="#" class="position-relative d-inline-block mx-3">
+            <i class="fa-solid fa-bell text-primary fs-5"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 9px; padding: 3px 5px">9+</span>
+            </a>
+
+            <!-- User Profile -->
+            <div class="dropdown">
+                <a class="btn-getstarted d-flex align-items-center dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="fa-solid fa-circle-user fs-4 me-2"></i>
+                    <span>Admin User</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li><h6 class="dropdown-header">Billing Admin</h6></li>
+                    <li><button class="dropdown-item small" onclick="app.resetData()"><i class="fa fa-refresh me-2 text-danger"></i>Reset Database</button></li>
+                </ul>
+            </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="container-fluid px-4">
+        
+        <div class="glass-container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="page-title mb-0"><i class="fa-solid fa-file-invoice me-2"></i>Billing & Dispatch Register</h2>
+                    <div class="d-flex gap-4 small text-muted mt-1">
+                       <span>Total: <strong id="kpiTotal">0</strong></span>
+                       <span>Billing: <strong class="text-primary" id="kpiValue">₹0</strong></span>
+                       <span>Dispatched: <strong class="text-success" id="kpiDispatched">0</strong></span>
+                       <span>Pending: <strong class="text-danger" id="kpiPending">0</strong></span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <input type="file" id="excelInput" style="display:none;" accept=".csv, .xlsx, .xls" onchange="app.handleExcelUpload(this)">
+                    <button class="btn btn-success btn-sm" onclick="document.getElementById('excelInput').click()">
+                        <i class="fa-solid fa-file-excel me-1"></i> Import Excel
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="app.exportPDF()">
+                        <i class="fa-solid fa-file-pdf me-1"></i> Export PDF
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="app.openAddModal()">
+                        <i class="fa fa-plus me-1"></i> New Entry
+                    </button>
+                </div>
+            </div>
+
+            <!-- FILTER BAR (CarDekho Style) -->
+            <div class="filter-bar">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="filter-label">Filter by Project</label>
+                        <select class="form-select form-select-sm" id="filterProject"><option value="">All Projects</option></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="filter-label">Filter by PM</label>
+                        <select class="form-select form-select-sm" id="filterPM"><option value="">All PMs</option></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="filter-label">Filter by Category</label>
+                        <select class="form-select form-select-sm" id="filterCategory"><option value="">All Categories</option></select>
+                    </div>
+                     <div class="col-md-2">
+                        <label class="filter-label">Filter by Source</label>
+                        <select class="form-select form-select-sm" id="filterType">
+                            <option value="">All Types</option>
+                            <option value="In House">In House</option>
+                            <option value="Bought Out">Bought Out</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="filter-label">Filter by Month</label>
+                        <select class="form-select form-select-sm" id="filterMonth"><option value="">All Months</option></select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button class="btn btn-sm btn-secondary w-100" onclick="app.clearFilters()">Clear</button>
+                    </div>
+                     <div class="col-md-12 mt-2">
+                         <div class="row">
+                             <div class="col-md-2">
+                                <label class="filter-label">Filter by Status</label>
+                                <select class="form-select form-select-sm" id="filterStatus">
+                                    <option value="">All Statuses</option>
+                                    <option value="Dispatched">Dispatched</option>
+                                    <option value="Pending">Pending</option>
+                                </select>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <table id="billingTable" class="table table-hover w-100">
+                <thead>
+                    <tr>
+                        <th style="display:none">ID</th>
+                        <th width="20%">Project</th>
+                        <th width="10%">PM</th>
+                        <th width="10%">Category</th>
+                        <th width="20%">Assembly</th>
+                        <th width="10%">Type</th>
+                        <th width="10%">Month</th>
+                        <th width="10%" class="text-end">Value (₹)</th>
+                        <th width="10%" class="text-center">Status</th>
+                        <th width="5%" class="text-center"><i class="fa fa-cogs"></i></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data Loaded by JS -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="7" class="text-end">Total Visible:</th>
+                        <th id="footerTotal" class="text-end fw-bold">₹0</th>
+                        <th colspan="2"></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="footer" class="footer position-relative light-background">
+      <div class="container footer-top">
+        <div class="row gy-4">
+          <div class="col-lg-5 col-md-5 footer-about">
+            <a href="#" class="logo d-flex align-items-center mb-2">
+              <img height="40" src="yd-footer.png" onerror="this.onerror=null; this.src='https://placehold.co/100x30/2a5071/fff?text=YD+Footer';">
+            </a>
+            <p class="small text-muted">Advanced ERP solutions for project management, billing, and dispatch tracking.</p>
+          </div>
+          <div class="col-lg-3 col-md-3 footer-links">
+            <h4>Quick Links</h4>
+            <ul>
+              <li><a href="#">Dashboard</a></li>
+              <li><a href="#">Reports</a></li>
+              <li><a href="#">Settings</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-4 col-md-4 footer-links">
+            <h4>Contact</h4>
+            <p class="small text-muted">
+              147-148, Sector - 58<br>
+              Faridabad 121004, Haryana<br>
+              <strong>Email:</strong> sales@ydgroup.com
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="container copyright text-center">
+        <p>© <span>Copyright</span> <strong class="px-1 text-yd-blue">YOGIJI DIGI</strong> <span>All Rights Reserved</span></p>
+      </div>
+    </footer>
+
+    <!-- ADD/EDIT MODAL (Medium) -->
+    <div class="modal fade" id="entryModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Entry Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="entryForm">
+                        <input type="hidden" id="entryId">
+                        
+                        <!-- Header Section (Read Only in Edit Mode) -->
+                        <div class="row g-2 mb-3 p-3 bg-light rounded border">
+                            <div class="col-md-12">
+                                <label class="form-label">Project</label>
+                                <select class="form-select" id="inpProject" required onchange="app.handleProjectChange()">
+                                    <option value="">Select Project...</option>
+                                    <!-- Populated JS -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Project Manager (PM)</label>
+                                <input type="text" class="form-control readonly-field" id="inpPM" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Category</label>
+                                <input type="text" class="form-control readonly-field" id="inpCategory" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Editable Section -->
+                        <h6 class="text-primary border-bottom pb-2 mb-3">Billing & Dispatch Details</h6>
+                        <div class="row g-2">
+                            <div class="col-md-12">
+                                <label class="form-label">Assembly Description</label>
+                                <input type="text" class="form-control" id="inpAssembly" required placeholder="Enter assembly details">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Billing Value (₹)</label>
+                                <input type="number" class="form-control" id="inpValue" required min="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Source Type</label>
+                                <select class="form-select" id="inpType" required>
+                                    <option value="In House">In House</option>
+                                    <option value="Bought Out">Bought Out</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Month</label>
+                                <select class="form-select" id="inpMonth" required>
+                                    <option value="">Select Month...</option>
+                                    <!-- Populated JS -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label d-block">Dispatch Status</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="inpStatus">
+                                    <label class="form-check-label" for="inpStatus" id="lblStatus">Pending</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-danger me-auto btn-sm" id="btnDelete" onclick="app.deleteEntry()" style="display:none;">
+                        <i class="fa fa-trash me-1"></i> Delete
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="app.saveEntry()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // --- DATA & CONFIG ---
+        const MASTER_PROJECTS = [
+            "2424-MMI-6HI CRM", "2425-MMI-6HI CRM", "2207-JTL-6HI CRM", "2403-GOPANI-4HI CRM", 
+            "2404-GOPANI-4HI SPM", "2407-APL-PICKLING", "2414-UTTAM-6HI CRM", "2231-SHYAM-6HI CRM", 
+            "2405-JSPL-TRIMMING", "2406-JSPL-TRIMMING", "2301-CIM-6HI CRM", "2415-UTTAM-TRIMMING", 
+            "2239-SHYAM-TRIMMING", "2401-AART-TRIMMER", "2504-BMWIL-SPARES", "2305-APL-CGL", 
+            "2221-TPI REVAMP", "2503-AFRICAN STEEL-SPARE", "2505-APL-TANDEM-CRM", "2412-HI TECH-SPARE", 
+            "2426-VIKAS-PICKLING", "2507-JSW-BAWAL-SPARE", "2422-AECPL-CGL", "2421-APL-CGL", 
+            "2508-MMI-SPARE", "2518-APL-SPM", "2523-JSW BAWAL", "2535-JSW-JFE-POR SPARE", 
+            "2012-APL-SPARES", "2428-BMWIL-CGL", "2420-INDIA STEEL-CCL", "2427-PROMPT-6HI CRM", 
+            "2521-BMWIL-6HI CRM", "2511-GAURANG-6HI", "2522-APL-SPM", "2527-AECPL-GI/GL LINE", 
+            "2514-GAURANG-CGL", "2501-AL SHAKER-6HI CRM", "2502-AL SHAKER-PICKLING", "2506-JSW-APL", 
+            "2516-APL-5 TANK PICKLING", "2533-BMWIL-4 TANK PICKLING", "2536-JSW-PICKLING REVAMP", 
+            "2532-BMWIL-SLITTING", "2534-BMWIL-TRIMMING"
+        ];
+        const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        // --- APP DEFINITION ---
+        var app = {
+            data: [],
+            table: null,
+            _filterRegistered: false,
+
+            init() {
+                this.loadData();
+                this.initUI();
+                this.initTable();
+            },
+
+            // --- 1. DATA MANAGEMENT ---
+            loadData() {
+                const stored = localStorage.getItem('yd_billing_system_v1');
+                if (stored) {
+                    this.data = JSON.parse(stored);
+                } else {
+                    this.generateDummyData();
+                }
+            },
+
+            generateDummyData() {
+                // Initial generation of 2800 rows
+                let temp = [];
+                for(let i=0; i<2800; i++) {
+                    const p = MASTER_PROJECTS[Math.floor(Math.random() * MASTER_PROJECTS.length)];
+                    temp.push({
+                        id: Date.now() + i,
+                        project: p,
+                        pm: this.determinePM(p),
+                        category: this.determineCategory(p),
+                        assembly: `Assembly-${Math.floor(Math.random()*1000)}-${String.fromCharCode(65+Math.floor(Math.random()*26))}`,
+                        value: Math.floor(Math.random() * 5000000) + 10000,
+                        type: Math.random() > 0.3 ? 'In House' : 'Bought Out',
+                        month: MONTHS[Math.floor(Math.random() * 12)],
+                        dispatched: Math.random() > 0.4
+                    });
+                }
+                this.data = temp;
+                this.saveData();
+            },
+
+            saveData() {
+                localStorage.setItem('yd_billing_system_v1', JSON.stringify(this.data));
+            },
+
+            resetData() {
+                Swal.fire({
+                    title: 'Reset Database?',
+                    text: 'This will regenerate 2800 random entries.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Reset',
+                    confirmButtonColor: '#ad283f'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        localStorage.removeItem('yd_billing_system_v1');
+                        location.reload();
+                    }
+                });
+            },
+
+            // --- 2. LOGIC HELPERS ---
+            determinePM(name) {
+                const n = name.toUpperCase();
+                if (n.includes("MMI")) return "MAYANK";
+                if (n.includes("JSW")) return "SAURABH";
+                if (n.includes("APL") || n.includes("AECPL")) return "ADITYA SAINI";
+                if (n.includes("SHYAM") || n.includes("UTTAM")) return "SACHIN";
+                if (n.includes("BMWIL")) return "KUNAL";
+                return "ADITYA SHARMA"; // Default
+            },
+
+            determineCategory(name) {
+                const n = name.toUpperCase();
+                if (n.includes("CRM")) return "CRM";
+                if (n.includes("PICKLING")) return "PICKLING";
+                if (n.includes("SPM")) return "SPM";
+                if (n.includes("TRIMMING")) return "TRIMMING";
+                if (n.includes("SPARE")) return "SPARE";
+                if (n.includes("CGL") || n.includes("GI/GL")) return "CGL";
+                if (n.includes("REVAMP")) return "REVAMP";
+                return "GENERAL";
+            },
+
+            formatCurrency(val) {
+                return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+            },
+
+            // --- 3. UI INITIALIZATION ---
+            initUI() {
+                // Populate Filter Dropdowns
+                const projects = [...new Set(this.data.map(d => d.project))].sort();
+                const pms = [...new Set(this.data.map(d => d.pm))].sort();
+                const cats = [...new Set(this.data.map(d => d.category))].sort();
+
+                this.populateSelect('filterProject', projects);
+                this.populateSelect('filterPM', pms);
+                this.populateSelect('filterCategory', cats);
+                this.populateSelect('filterMonth', MONTHS);
+                
+                // Populate Modal Selects
+                this.populateSelect('inpProject', MASTER_PROJECTS.sort());
+                this.populateSelect('inpMonth', MONTHS);
+
+                // Filter Event Listeners
+                $('#filterProject, #filterPM, #filterCategory, #filterMonth, #filterStatus, #filterType').on('change', () => {
+                    this.table.draw();
+                    this.updateKPI(); // Update KPIs on filter change
+                });
+
+                // Status Toggle Listener in Modal
+                $('#inpStatus').on('change', function() {
+                    const lbl = $(this).is(':checked') ? 'Dispatched' : 'Pending';
+                    const color = $(this).is(':checked') ? 'text-success' : 'text-danger';
+                    $('#lblStatus').text(lbl).removeClass('text-success text-danger').addClass(color);
+                });
+            },
+
+            populateSelect(id, items) {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                
+                // Safely handle the first option
+                let placeholder = null;
+                if (sel.options.length > 0) {
+                    placeholder = sel.options[0];
+                }
+
+                sel.innerHTML = '';
+                
+                if (placeholder) {
+                    sel.appendChild(placeholder);
+                }
+
+                items.forEach(i => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = i;
+                    sel.appendChild(opt);
+                });
+            },
+
+            updateKPI() {
+                if (!this.table) {
+                    // Fallback for initial load or if table is not ready
+                    const total = this.data.length;
+                    const val = this.data.reduce((a,b) => a + Number(b.value), 0);
+                    const disp = this.data.filter(x => x.dispatched).length;
+                    $('#kpiTotal').text(total.toLocaleString());
+                    $('#kpiValue').text(this.formatCurrency(val));
+                    $('#kpiDispatched').text(disp.toLocaleString());
+                    $('#kpiPending').text((total - disp).toLocaleString());
+                    return;
+                }
+
+                // Get filtered data
+                const filteredData = this.table.rows({ search: 'applied' }).data().toArray();
+                
+                const total = filteredData.length;
+                let billingValue = 0;
+                let dispatched = 0;
+
+                filteredData.forEach(row => {
+                    // DataTables objects are reference to raw data objects
+                    billingValue += Number(row.value) || 0;
+                    if (row.dispatched) dispatched++;
+                });
+
+                const pending = total - dispatched;
+                
+                $('#kpiTotal').text(total.toLocaleString());
+                $('#kpiValue').text(this.formatCurrency(billingValue));
+                $('#kpiDispatched').text(dispatched.toLocaleString());
+                $('#kpiPending').text(pending.toLocaleString());
+            },
+
+            // --- 4. DATATABLES ---
+            initTable() {
+                // GUARDED FILTER REGISTRATION
+                if (!this._filterRegistered) {
+                    $.fn.dataTable.ext.search.push((settings, data, dataIndex) => {
+                        const fProj = $('#filterProject').val();
+                        const fPM = $('#filterPM').val();
+                        const fCat = $('#filterCategory').val();
+                        const fMonth = $('#filterMonth').val();
+                        const fStat = $('#filterStatus').val();
+                        const fType = $('#filterType').val();
+
+                        const id = Number(data[0]); 
+                        const item = app.data.find(x => x.id === id); // Use explicit 'app' reference
+
+                        if(!item) return true;
+
+                        if (fProj && item.project !== fProj) return false;
+                        if (fPM && item.pm !== fPM) return false;
+                        if (fCat && item.category !== fCat) return false;
+                        if (fMonth && item.month !== fMonth) return false;
+                        if (fType && item.type !== fType) return false;
+                        if (fStat) {
+                            const isDisp = fStat === 'Dispatched';
+                            if (item.dispatched !== isDisp) return false;
+                        }
+                        return true;
+                    });
+                    this._filterRegistered = true;
+                }
+
+                this.table = $('#billingTable').DataTable({
+                    data: this.data,
+                    columns: [
+                        { data: 'id', visible: false },
+                        { data: 'project', className: 'fw-bold text-yd-blue' },
+                        { data: 'pm' },
+                        { data: 'category' },
+                        { 
+                            data: 'assembly',
+                            render: function(d, type, row) {
+                                return `<input type="text" class="excel-input" value="${d}" 
+                                        onclick="event.stopPropagation()"
+                                        onchange="app.updateField(${row.id}, 'assembly', this.value)">`;
+                            }
+                        },
+                        { 
+                            data: 'type', 
+                            render: function(d, type, row) {
+                                let opts = '';
+                                ['In House', 'Bought Out'].forEach(opt => {
+                                    opts += `<option value="${opt}" ${d===opt?'selected':''}>${opt}</option>`;
+                                });
+                                return `<select class="excel-select" onclick="event.stopPropagation()" onchange="app.updateField(${row.id}, 'type', this.value)">${opts}</select>`;
+                            }
+                        },
+                        { 
+                            data: 'month',
+                            render: function(d, type, row) {
+                                let opts = '';
+                                MONTHS.forEach(m => {
+                                    opts += `<option value="${m}" ${d===m?'selected':''}>${m}</option>`;
+                                });
+                                return `<select class="excel-select" onclick="event.stopPropagation()" onchange="app.updateField(${row.id}, 'month', this.value)">${opts}</select>`;
+                            }
+                        },
+                        { 
+                            data: 'value', 
+                            className: 'text-end fw-bold', 
+                            render: function(d, type, row) {
+                                return `<input type="number" class="excel-input text-end" value="${d}" 
+                                        onclick="event.stopPropagation()"
+                                        onchange="app.updateField(${row.id}, 'value', this.value)">`;
+                            }
+                        },
+                        { 
+                            data: 'dispatched', className: 'text-center',
+                            render: function(d, type, row) {
+                                return `
+                                    <span class="status-badge ${d ? 'bg-dispatched' : 'bg-pending'}" 
+                                          onclick="event.stopPropagation(); app.toggleStatus(${row.id})">
+                                        ${d ? 'Dispatched' : 'Pending'}
+                                    </span>`;
+                            }
+                        },
+                        {
+                            data: null, className: 'text-center', orderable: false,
+                            render: function(d, type, row) {
+                                return `<button class="btn btn-sm btn-link text-primary p-0" title="Duplicate Row" onclick="event.stopPropagation(); app.duplicateEntry(${row.id})"><i class="fa fa-copy"></i></button>`;
+                            }
+                        }
+                    ],
+                    dom: '<"d-flex justify-content-between mb-2"f>tp', // Restored Search, compact layout
+                    pageLength: 50,
+                    lengthMenu: [15, 50, 100, 500],
+                    language: {
+                        emptyTable: "No records found matching filters",
+                        search: "",
+                        searchPlaceholder: "Search records..."
+                    },
+                    drawCallback: function(settings) {
+                        // Recalculate KPIs whenever table redraws (filter, sort, page change)
+                        app.updateKPI();
+                    },
+                    footerCallback: function (row, data, start, end, display) {
+                        var api = this.api();
+                        // Helper to remove formatting for sum
+                        var intVal = function (i) {
+                            return typeof i === 'string' ? i.replace(/[\$,]/g, '') * 1 : typeof i === 'number' ? i : 0;
+                        };
+                        
+                        // Sum visible rows logic
+                        var total = api.column(7, { search: 'applied' }).data().reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+                        
+                        $('#footerTotal').html(app.formatCurrency(total));
+                    }
+                });
+
+                // Row Click Event (Opens Modal for detailed view)
+                $('#billingTable tbody').on('click', 'tr', function(e) {
+                    // Ignore clicks on inputs/selects to prevent modal opening when editing
+                    if ($(e.target).is('input') || $(e.target).is('select') || $(e.target).closest('.status-badge').length) return;
+                    
+                    const data = app.table.row(this).data();
+                    if(data) app.openEditModal(data.id);
+                });
+            },
+
+            clearFilters() {
+                $('select[id^="filter"]').val('');
+                this.table.draw();
+            },
+
+            // --- 5. LOGIC & ACTIONS ---
+            updateField(id, field, value) {
+                const idx = this.data.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    // Type conversion
+                    if (field === 'value') value = Number(value);
+                    
+                    this.data[idx][field] = value;
+                    this.saveData();
+                    
+                    // Do NOT redraw table completely to maintain focus
+                    // But we MUST update footer if value changed
+                    if (field === 'value') {
+                        // For "live" total feeling, trigger draw(false) which is acceptable.
+                        this.table.draw(false); 
+                        this.updateKPI();
+                    }
+                }
+            },
+
+            duplicateEntry(id) {
+                const idx = this.data.findIndex(x => x.id === id);
+                if (idx === -1) return;
+
+                const newItem = { ...this.data[idx], id: Date.now() }; 
+                
+                // Insert just below clicked row
+                this.data.splice(idx + 1, 0, newItem);
+                
+                this.saveData();
+                
+                // Preserve current page
+                const currentPage = this.table.page();
+                this.table.clear().rows.add(this.data).draw(false);
+                this.table.page(currentPage).draw(false);
+                
+                this.updateKPI(); // Update totals
+                
+                const Toast = Swal.mixin({
+                    toast: true, position: 'top-end', showConfirmButton: false, timer: 1500
+                });
+                Toast.fire({ icon: 'success', title: 'Row Duplicated' });
+            },
+
+            toggleStatus(id) {
+                const idx = this.data.findIndex(x => x.id === id);
+                if (idx > -1) {
+                    this.data[idx].dispatched = !this.data[idx].dispatched;
+                    this.saveData();
+                    // Preserve current page
+                    const currentPage = this.table.page();
+                    this.table.clear().rows.add(this.data).draw(false);
+                    this.table.page(currentPage).draw(false);
+                }
+            },
+
+            handleProjectChange() {
+                const proj = $('#inpProject').val();
+                if(proj) {
+                    $('#inpPM').val(this.determinePM(proj));
+                    $('#inpCategory').val(this.determineCategory(proj));
+                } else {
+                    $('#inpPM').val('');
+                    $('#inpCategory').val('');
+                }
+            },
+
+            // --- EXCEL IMPORT (Bulletproof) ---
+            handleExcelUpload(input) {
+                const file = input.files[0];
+                if (!file) return;
+
+                Swal.fire({
+                    title: 'Import Options',
+                    text: 'Replace existing data?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Replace All',
+                    cancelButtonText: 'Append'
+                }).then((result) => {
+
+                    const reader = new FileReader();
+
+                    reader.onload = (e) => {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+                        // Force raw values
+                        const json = XLSX.utils.sheet_to_json(sheet, {
+                            defval: "",
+                            raw: false
+                        });
+
+                        if (result.isConfirmed) {
+                            this.data = [];
+                        }
+
+                        let count = 0;
+
+                        json.forEach((row, index) => {
+
+                            // Trim all keys
+                            const cleanRow = {};
+                            Object.keys(row).forEach(k => {
+                                cleanRow[k.trim()] = row[k];
+                            });
+
+                            const project = cleanRow["PROJECT"];
+                            if (!project) return;
+
+                            const valueRaw = String(cleanRow["BILLING VALUE (Rs.)"] || "")
+                                            .replace(/[₹, ]/g, "");
+
+                            // Smart Mapping for Type
+                            let rawType = String(cleanRow["BOI /MANUFACTURING"] || "").toUpperCase().trim();
+                            let finalType = "In House"; 
+
+                            if (rawType.includes("BOI")) finalType = "Bought Out";
+                            if (rawType.includes("UNIT")) finalType = "In House";
+                            // Default is already In House
+
+                            this.data.push({
+                                id: Date.now() + index,
+                                project: project,
+                                pm: cleanRow["PM"] || this.determinePM(project),
+                                category: cleanRow["CATEGORY"] || this.determineCategory(project),
+                                assembly: cleanRow["ASSEMBLY"] || "",
+                                value: Number(valueRaw) || 0,
+                                type: finalType,
+                                month: cleanRow["DISPATCH MONTH NAME"] || cleanRow["DISPATCH MONTH"] || "",
+                                dispatched: String(cleanRow["DISPATCH STATUS"]).toLowerCase().includes("dispatch")
+                            });
+
+                            count++;
+                        });
+
+                        this.saveData();
+                        this.table.clear().rows.add(this.data).draw();
+                        // KPIs update automatically via drawCallback
+
+                        Swal.fire('Imported!', `Total rows imported: ${count}`, 'success');
+                    };
+
+                    reader.readAsArrayBuffer(file);
+                    input.value = '';
+                });
+            },
+
+            openAddModal() {
+                $('#entryForm')[0].reset();
+                $('#entryId').val('');
+                $('#modalTitle').text('New Billing Entry');
+                $('#inpProject').prop('disabled', false).removeClass('readonly-field');
+                $('#inpPM, #inpCategory').addClass('readonly-field');
+                $('#inpStatus').prop('checked', false).trigger('change');
+                $('#btnDelete').hide();
+                new bootstrap.Modal(document.getElementById('entryModal')).show();
+            },
+
+            openEditModal(id) {
+                const item = this.data.find(x => x.id === id);
+                if(!item) return;
+                $('#entryId').val(item.id);
+                $('#modalTitle').text('Edit Entry / View Details');
+                $('#inpProject').val(item.project).prop('disabled', true).addClass('readonly-field');
+                $('#inpPM').val(item.pm);
+                $('#inpCategory').val(item.category);
+                $('#inpAssembly').val(item.assembly);
+                $('#inpValue').val(item.value);
+                $('#inpType').val(item.type);
+                $('#inpMonth').val(item.month);
+                $('#inpStatus').prop('checked', item.dispatched).trigger('change');
+                $('#btnDelete').show();
+                new bootstrap.Modal(document.getElementById('entryModal')).show();
+            },
+
+            saveEntry() {
+                const id = $('#entryId').val();
+                const project = $('#inpProject').val();
+                if(!project || !$('#inpAssembly').val() || !$('#inpValue').val()) {
+                    return Swal.fire('Error', 'Please fill all required fields', 'error');
+                }
+                const payload = {
+                    id: id ? Number(id) : Date.now(),
+                    project: project,
+                    pm: $('#inpPM').val(),
+                    category: $('#inpCategory').val(),
+                    assembly: $('#inpAssembly').val(),
+                    value: Number($('#inpValue').val()),
+                    type: $('#inpType').val(),
+                    month: $('#inpMonth').val(),
+                    dispatched: $('#inpStatus').is(':checked')
+                };
+                if(id) {
+                    const idx = this.data.findIndex(x => x.id == id);
+                    if(idx > -1) this.data[idx] = payload;
+                } else {
+                    this.data.unshift(payload);
+                }
+                this.saveData();
+                
+                // Preserve current page
+                const currentPage = this.table.page();
+                this.table.clear().rows.add(this.data).draw(false);
+                this.table.page(currentPage).draw(false);
+
+                const modalEl = document.getElementById('entryModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+                Swal.fire({ icon: 'success', title: 'Saved', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+            },
+
+            deleteEntry() {
+                const id = $('#entryId').val();
+                Swal.fire({
+                    title: 'Delete this entry?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ad283f',
+                    confirmButtonText: 'Yes, delete it'
+                }).then((res) => {
+                    if(res.isConfirmed) {
+                        this.data = this.data.filter(x => x.id != id);
+                        this.saveData();
+                        
+                        // Preserve current page
+                        const currentPage = this.table.page();
+                        this.table.clear().rows.add(this.data).draw(false);
+                        this.table.page(currentPage).draw(false);
+
+                        const modalEl = document.getElementById('entryModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) modalInstance.hide();
+                        Swal.fire('Deleted', '', 'success');
+                    }
+                });
+            },
+
+            exportPDF() {
+                try {
+                    if (!window.jspdf) {
+                        Swal.fire('Error', 'PDF Library not loaded. Check internet connection.', 'error');
+                        return;
+                    }
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('l', 'mm', 'a4');
+                    doc.setFontSize(16);
+                    doc.setTextColor(42, 80, 113);
+                    doc.text("YOGIJI DIGI - Billing & Dispatch Register", 14, 15);
+                    doc.setFontSize(10);
+                    doc.setTextColor(100);
+                    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 22);
+                    const rows = this.table.rows({ filter: 'applied' }).data().toArray().map(r => [
+                        r.project, r.pm, r.category, r.assembly, r.type, r.month, this.formatCurrency(r.value), r.dispatched ? 'Dispatched' : 'Pending'
+                    ]);
+                    doc.autoTable({
+                        head: [['Project', 'PM', 'Category', 'Assembly', 'Type', 'Month', 'Value', 'Status']],
+                        body: rows,
+                        startY: 28,
+                        styles: { fontSize: 8, cellPadding: 2 },
+                        headStyles: { fillColor: [42, 80, 113] }
+                    });
+                    doc.save('YD_Billing_Register.pdf');
+                } catch (err) {
+                    console.error("PDF Export Error:", err);
+                    Swal.fire('Error', 'Failed to generate PDF.', 'error');
+                }
+            }
+        };
+
+        window.app = app;
+        $(document).ready(function() {
+            try { window.app.init(); } catch (err) { console.error("Initialization Error:", err); }
+        });
+    </script>
+  </body>
+</html>

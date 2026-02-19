@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamliner - Enterprise Project Execution</title>
+    <style>
+        /* -----------------------------------------------------------------------------
+           1. CSS VARIABLES & RESET
+           ----------------------------------------------------------------------------- */
+        :root {
+            /* Brand Colors */
+            --primary: #0f62fe; /* Enterprise Blue */
+            --primary-hover: #0353e9;
+            --secondary: #393939;
+            --bg-body: #f4f7f6;
+            --bg-surface: #ffffff;
+            --bg-sidebar: #161616;
+            --text-main: #161616;
+            --text-muted: #6f6f6f;
+            --text-light: #ffffff;
+            --border: #e0e0e0;
+            --border-light: #f0f0f0;
+
+            /* Status Colors (RAG) */
+            --status-green: #198038;
+            --status-green-bg: #defbe6;
+            --status-amber: #b28600;
+            --status-amber-bg: #fff8e1;
+            --status-red: #da1e28;
+            --status-red-bg: #fff1f1;
+            --status-blue: #0f62fe;
+            --status-blue-bg: #d0e2ff;
+            --status-gray: #8d8d8d;
+            --status-gray-bg: #e0e0e0;
+
+            /* Metrics */
+            --sidebar-width: 260px;
+            --header-height: 50px;
+            --radius: 4px;
+            --shadow: 0 2px 6px rgba(0,0,0,0.05);
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        body { margin: 0; padding: 0; font-family: var(--font-sans); background-color: var(--bg-body); color: var(--text-main); font-size: 14px; overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; cursor: pointer; }
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        /* -----------------------------------------------------------------------------
+           2. UTILITIES & COMPONENTS
+           ----------------------------------------------------------------------------- */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-1 { flex: 1; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .p-2 { padding: 0.5rem; }
+        .p-4 { padding: 1rem; }
+        .m-4 { margin: 1rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .font-bold { font-weight: 600; }
+        .text-xl { font-size: 1.25rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .text-muted { color: var(--text-muted); }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .hidden { display: none !important; }
+
+        /* Buttons */
+        .btn { padding: 8px 16px; border-radius: var(--radius); border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-secondary:hover { background: #f3f3f3; }
+        .btn-danger { background: var(--status-red); color: white; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        /* Inputs */
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 12px; color: var(--text-muted); }
+        .input-control { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 13px; }
+        .input-control:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--status-blue-bg); }
+        
+        /* Cards */
+        .card { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+        .card-header { padding: 12px 16px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+        .card-body { padding: 16px; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px 16px; border-bottom: 2px solid var(--border-light); color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+        td { padding: 10px 16px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+        tr:hover td { background-color: #f9f9f9; }
+
+        /* Badges */
+        .badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-green { background: var(--status-green-bg); color: var(--status-green); }
+        .badge-amber { background: var(--status-amber-bg); color: var(--status-amber); }
+        .badge-red { background: var(--status-red-bg); color: var(--status-red); }
+        .badge-blue { background: var(--status-blue-bg); color: var(--status-blue); }
+        .badge-gray { background: var(--status-gray-bg); color: #555; }
+
+        /* -----------------------------------------------------------------------------
+           3. LAYOUT STRUCTURE
+           ----------------------------------------------------------------------------- */
+        #app { height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Login Screen */
+        #login-view { position: fixed; inset: 0; background: #f0f2f5; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .login-box { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 360px; }
+        .brand-logo { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 2rem; display: flex; align-items: center; gap: 8px; }
+
+        /* Main App */
+        .app-layout { display: flex; height: 100%; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-width); background: var(--bg-sidebar); color: #a8a8a8; display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.2s; }
+        .sidebar-header { height: 60px; display: flex; align-items: center; padding: 0 20px; color: white; font-weight: 700; border-bottom: 1px solid #333; }
+        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { background: #262626; color: white; }
+        .nav-item.active { background: #262626; color: white; border-left-color: var(--primary); }
+        .nav-item svg { width: 18px; height: 18px; fill: currentColor; }
+        .sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid #333; }
+
+        /* Content Area */
+        .main-content { flex: 1; display: flex; flex-direction: column; background: var(--bg-body); overflow: hidden; }
+        .top-bar { height: var(--header-height); background: white; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .view-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+        /* -----------------------------------------------------------------------------
+           4. MODULE SPECIFIC STYLES
+           ----------------------------------------------------------------------------- */
+        
+        /* Charts */
+        .chart-container { position: relative; height: 200px; width: 100%; }
+        .bar-chart-bar { transition: height 0.3s ease; }
+        .bar-chart-bar:hover { opacity: 0.8; }
+        
+        /* Gantt Chart */
+        .gantt-wrapper { border: 1px solid var(--border); background: white; border-radius: var(--radius); display: flex; flex-direction: column; height: 500px; overflow: hidden; }
+        .gantt-toolbar { padding: 10px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; background: #fafafa; }
+        .gantt-container { display: flex; flex: 1; overflow: hidden; position: relative; }
+        .gantt-sidebar { width: 250px; border-right: 1px solid var(--border-light); overflow-y: hidden; background: white; z-index: 2; }
+        .gantt-header-row { height: 40px; border-bottom: 1px solid var(--border-light); background: #f4f4f4; display: flex; align-items: center; padding-left: 10px; font-weight: 600; font-size: 12px; }
+        .gantt-task-row { height: 36px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; padding-left: 10px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .gantt-timeline-scroll { flex: 1; overflow: auto; position: relative; cursor: grab; }
+        .gantt-timeline-scroll:active { cursor: grabbing; }
+        .gantt-svg { display: block; }
+        .gantt-bar { rx: 4; cursor: pointer; transition: filter 0.2s; }
+        .gantt-bar:hover { filter: brightness(0.9); }
+        .gantt-bar-progress { pointer-events: none; }
+        .gantt-connector { stroke: #b0b0b0; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+        .gantt-grid-line { stroke: #f0f0f0; stroke-width: 1; shape-rendering: crispEdges; }
+        .gantt-today-line { stroke: red; stroke-width: 1; stroke-dasharray: 4; }
+
+        /* Buffer Chart (Fever Chart) */
+        .fever-chart-bg { fill: none; }
+        .zone-green { fill: #defbe6; }
+        .zone-yellow { fill: #fff8e1; }
+        .zone-red { fill: #fff1f1; }
+        .fever-point { fill: var(--secondary); stroke: white; stroke-width: 2; }
+
+        /* Modals */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.2s; }
+        .modal-overlay.open { opacity: 1; visibility: visible; }
+        .modal-content { background: white; width: 500px; max-width: 90%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: translateY(20px); transition: 0.2s; max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-overlay.open .modal-content { transform: translateY(0); }
+        .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 10px; background: #fafafa; border-radius: 0 0 8px 8px; }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #333; color: white; padding: 12px 20px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 10px; min-width: 250px; }
+        .toast.success { background: var(--status-green); }
+        .toast.error { background: var(--status-red); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Loading */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <!-- APP ROOT -->
+    <div id="app"></div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
+
+    <!-- MODULES SCRIPT -->
+    <script type="module">
+        /**
+         * --------------------------------------------------------------------------
+         * 1. CORE UTILITIES & HELPERS
+         * --------------------------------------------------------------------------
+         */
+        
+        const Utils = {
+            id: () => '_' + Math.random().toString(36).substr(2, 9),
+            
+            formatCurrency: (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num),
+            
+            formatDate: (dateStr) => {
+                if(!dateStr) return '-';
+                return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            },
+
+            addDays: (dateStr, days) => {
+                const date = new Date(dateStr);
+                date.setDate(date.getDate() + days);
+                return date.toISOString().split('T')[0];
+            },
+
+            daysBetween: (d1, d2) => {
+                const oneDay = 24 * 60 * 60 * 1000;
+                return Math.round((new Date(d2) - new Date(d1)) / oneDay);
+            },
+
+            delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+
+            calculateStatusColor: (status) => {
+                switch(status) {
+                    case 'Completed': return 'badge-green';
+                    case 'In Progress': return 'badge-blue';
+                    case 'At Risk': return 'badge-red';
+                    case 'On Track': return 'badge-green';
+                    case 'Warning': return 'badge-amber';
+                    case 'Planned': return 'badge-gray';
+                    default: return 'badge-gray';
+                }
+            }
+        };
+
+        const Toast = {
+            show: (message, type = 'info') => {
+                const container = document.getElementById('toast-container');
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                el.innerHTML = `<span>${message}</span>`;
+                container.appendChild(el);
+                setTimeout(() => {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 300);
+                }, 3000);
+            }
+        };
+
+        /**
+         * --------------------------------------------------------------------------
+         * 2. DATA LAYER (MOCK DB & SEEDER)
+         * --------------------------------------------------------------------------
+         */
+
+        const DB_KEY = 'STREAMLINER_DB_V1';
+
+        const InitialData = {
+            users: [
+                { id: 'u1', name: 'Sarthak Handa', email: 'sarthak.handa@ydgroup.com', role: 'Admin', avatar: 'AU' },
+                { id: 'u2', name: 'Project Manager', email: 'pm@corp.com', role: 'Manager', avatar: 'PM' }
+            ],
+            projects: [],
+            tasks: [],
+            issues: [],
+            settings: {
+                fiscalYearStart: '2025-01-01',
+                dateFormat: 'MM/DD/YYYY'
+            }
+        };
+
+        // Realistic Seeder
+        function seedData() {
+            const projects = [
+                { id: 'p1', name: 'ERP Migration Phase 2', manager: 'Admin User', status: 'In Progress', start: '2025-01-10', end: '2025-06-15', budget: 1500000, actual: 450000, bufferTotal: 30, bufferConsumed: 12, progress: 35 },
+                { id: 'p2', name: 'Cloud Infrastructure Upgrade', manager: 'Jane Doe', status: 'At Risk', start: '2025-02-01', end: '2025-05-20', budget: 800000, actual: 600000, bufferTotal: 20, bufferConsumed: 18, progress: 60 },
+                { id: 'p3', name: 'Q3 Marketing Campaign', manager: 'John Smith', status: 'On Track', start: '2025-03-01', end: '2025-04-30', budget: 200000, actual: 50000, bufferTotal: 10, bufferConsumed: 2, progress: 15 },
+                { id: 'p4', name: 'AI Analytics Pilot', manager: 'Sarthak Handa', status: 'Completed', start: '2024-11-01', end: '2025-01-15', budget: 500000, actual: 480000, bufferTotal: 15, bufferConsumed: 10, progress: 100 },
+                { id: 'p5', name: 'Logistics Optimization', manager: 'Sarah Connor', status: 'Planned', start: '2025-06-01', end: '2025-12-30', budget: 2200000, actual: 0, bufferTotal: 45, bufferConsumed: 0, progress: 0 }
+            ];
+
+            const tasks = [];
+            // Generate tasks for Project 1 (ERP)
+            let baseDate = '2025-01-10';
+            ['Requirements Gathering', 'Vendor Selection', 'Infrastructure Setup', 'Data Migration', 'User Training', 'Go Live'].forEach((name, idx) => {
+                const duration = 10 + Math.floor(Math.random() * 20);
+                const start = baseDate;
+                const end = Utils.addDays(start, duration);
+                tasks.push({
+                    id: Utils.id(),
+                    projectId: 'p1',
+                    name: name,
+                    start: start,
+                    end: end,
+                    duration: duration,
+                    progress: idx < 2 ? 100 : (idx === 2 ? 50 : 0),
+                    status: idx < 2 ? 'Completed' : (idx === 2 ? 'In Progress' : 'Pending'),
+                    predecessors: idx > 0 ? [tasks[tasks.length-1].id] : []
+                });
+                baseDate = Utils.addDays(end, 2);
+            });
+
+            // Generate some issues
+            const issues = [
+                { id: 'i1', projectId: 'p1', title: 'Data format incompatibility in legacy DB', severity: 'High', status: 'Open', assignee: 'DB Admin' },
+                { id: 'i2', projectId: 'p2', title: 'AWS region outage risk', severity: 'Medium', status: 'Resolved', assignee: 'DevOps Lead' }
+            ];
+
+            return { ...InitialData, projects, tasks, issues };
+        }
+
+        class Store {
+            constructor() {
+                this.state = this.load();
+                this.listeners = [];
+            }
+
+            load() {
+                const raw = localStorage.getItem(DB_KEY);
+                if (!raw) {
+                    const seed = seedData();
+                    localStorage.setItem(DB_KEY, JSON.stringify(seed));
+                    return seed;
+                }
+                return JSON.parse(raw);
+            }
+
+            save() {
+                localStorage.setItem(DB_KEY, JSON.stringify(this.state));
+                this.notify();
+            }
+
+            subscribe(listener) {
+                this.listeners.push(listener);
+                return () => this.listeners = this.listeners.filter(l => l !== listener);
+            }
+
+            notify() {
+                this.listeners.forEach(l => l(this.state));
+            }
+
+            // Actions
+            updateProject(project) {
+                const idx = this.state.projects.findIndex(p => p.id === project.id);
+                if (idx !== -1) this.state.projects[idx] = project;
+                else this.state.projects.push(project);
+                this.save();
+            }
+
+            addTask(task) {
+                this.state.tasks.push(task);
+                this.recalculateProject(task.projectId);
+                this.save();
+            }
+
+            updateTask(task) {
+                const idx = this.state.tasks.findIndex(t => t.id === task.id);
+                if (idx !== -1) {
+                    this.state.tasks[idx] = task;
+                    this.recalculateProject(task.projectId);
+                    this.save();
+                }
+            }
+
+            recalculateProject(projectId) {
+                // Simple roll-up logic for High Fidelity Simulation
+                const pTasks = this.state.tasks.filter(t => t.projectId === projectId);
+                if (pTasks.length === 0) return;
+
+                const totalDuration = pTasks.reduce((acc, t) => acc + parseInt(t.duration), 0);
+                const completedWeight = pTasks.reduce((acc, t) => acc + (parseInt(t.duration) * (t.progress / 100)), 0);
+                const percent = Math.round((completedWeight / totalDuration) * 100);
+
+                const projectIdx = this.state.projects.findIndex(p => p.id === projectId);
+                if (projectIdx !== -1) {
+                    this.state.projects[projectIdx].progress = percent;
+                    // Simulate buffer consumption roughly correlated but with variance
+                    // If progress is slow, buffer consumes faster
+                    const idealProgress = 50; // Mock current date relative position
+                    // This is a simplified enterprise formula
+                }
+            }
+        }
+
+        const appStore = new Store();
+        const Session = { user: null };
+
+        /**
+         * --------------------------------------------------------------------------
+         * 3. COMPONENTS & VIEWS
+         * --------------------------------------------------------------------------
+         */
+
+        // --- LOGIN VIEW ---
+        const LoginView = () => {
+            return `
+                <div id="login-view">
+                    <div class="login-box">
+                        <div class="brand-logo">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="var(--primary)"><rect x="4" y="4" width="24" height="24" rx="4" opacity="0.2"/><path d="M10 16 L14 20 L22 12" stroke="var(--primary)" stroke-width="3" fill="none" /></svg>
+                            Streamliner
+                        </div>
+                        <div class="mb-4">
+                            <h2 class="text-xl font-bold">Sign In</h2>
+                            <p class="text-muted text-sm">Enterprise Project Execution Platform</p>
+                        </div>
+                        <div class="input-group">
+                            <label>Email Address</label>
+                            <input type="email" id="email" class="input-control" value="sarthak.handa@ydgroup.com">
+                        </div>
+                        <div class="input-group">
+                            <label>Password</label>
+                            <input type="password" id="password" class="input-control" value="password">
+                        </div>
+                        <button class="btn btn-primary w-full mt-4" onclick="handleLogin()">
+                            Access Workspace
+                        </button>
+                        <div class="mt-4 text-center text-xs text-muted">
+                            v2.4.0-ENT | Mode: Offline Secure
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // --- LAYOUT ---
+        const Layout = (content) => {
+            const user = Session.user || { name: 'Guest', role: 'Viewer' };
+            const path = window.location.hash || '#dashboard';
+            
+            const nav = (href, label, icon) => `
+                <div class="nav-item ${path === href ? 'active' : ''}" onclick="window.location.hash='${href}'">
+                    ${icon} <span>${label}</span>
+                </div>
+            `;
+
+            // Icons
+            const iDash = `<svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>`;
+            const iProj = `<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+            const iGantt = `<svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>`;
+            const iFin = `<svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`;
+
+            return `
+                <div class="app-layout">
+                    <aside class="sidebar">
+                        <div class="sidebar-header">
+                            Streamliner <span class="badge badge-blue" style="margin-left: 8px">ENT</span>
+                        </div>
+                        <nav style="flex:1; padding-top: 20px;">
+                            ${nav('#dashboard', 'Dashboard', iDash)}
+                            ${nav('#projects', 'Projects', iProj)}
+                            ${nav('#gantt', 'Timeline', iGantt)}
+                            ${nav('#financials', 'Financials', iFin)}
+                        </nav>
+                        <div class="sidebar-footer">
+                            <div class="flex items-center gap-2">
+                                <div style="width:32px; height:32px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">${user.name.charAt(0)}</div>
+                                <div>
+                                    <div style="color:white; font-size:13px; font-weight:500;">${user.name}</div>
+                                    <div style="font-size:11px;">${user.role}</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm w-full mt-4" onclick="handleLogout()">Sign Out</button>
+                        </div>
+                    </aside>
+                    <main class="main-content">
+                        <header class="top-bar">
+                            <h2 class="font-bold text-xl" id="page-title">Workspace</h2>
+                            <div class="flex gap-2">
+                                <button class="btn btn-secondary btn-sm" onclick="seedAndReload()">Reset Data</button>
+                                <button class="btn btn-primary btn-sm" onclick="Modal.open('project-modal')">+ New Project</button>
+                            </div>
+                        </header>
+                        <div class="view-content" id="main-view-area">
+                            ${content}
+                        </div>
+                    </main>
+                </div>
+            `;
+        };
+
+        // --- DASHBOARD VIEW ---
+        const DashboardView = () => {
+            const projects = appStore.state.projects;
+            const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
+            const totalActual = projects.reduce((sum, p) => sum + p.actual, 0);
+            const atRisk = projects.filter(p => p.status === 'At Risk' || p.status === 'Warning').length;
+
+            // Simple SVG Bar Chart generation
+            const generateBarChart = () => {
+                const height = 150;
+                const width = 100; // percent
+                const barWidth = 10;
+                const gap = 5;
+                let svg = `<svg width="100%" height="100%" viewBox="0 0 300 150" preserveAspectRatio="none">`;
+                projects.forEach((p, i) => {
+                    const h = (p.progress / 100) * 120;
+                    const x = i * (300 / projects.length) + 10;
+                    const color = p.status === 'At Risk' ? '#da1e28' : '#0f62fe';
+                    svg += `<rect x="${x}" y="${140-h}" width="40" height="${h}" fill="${color}" rx="2" class="bar-chart-bar"><title>${p.name}: ${p.progress}%</title></rect>`;
+                    svg += `<text x="${x+20}" y="150" font-size="10" text-anchor="middle" fill="#666">${p.id.toUpperCase()}</text>`;
+                });
+                svg += `</svg>`;
+                return svg;
+            };
+
+            return `
+                <div class="flex gap-4 mb-4">
+                    <div class="card flex-1 p-4">
+                        <div class="text-muted text-xs font-bold uppercase">Portfolio Value</div>
+                        <div class="text-xl font-bold mt-2">${Utils.formatCurrency(totalBudget)}</div>
+                        <div class="text-xs text-muted mt-1">Total Planned Budget</div>
+                    </div>
+                    <div class="card flex-1 p-4">
+                        <div class="text-muted text-xs font-bold uppercase">Actual Spend</div>
+                        <div class="text-xl font-bold mt-2 ${totalActual > totalBudget ? 'text-danger' : ''}">${Utils.formatCurrency(totalActual)}</div>
+                        <div class="text-xs text-muted mt-1">${Math.round((totalActual/totalBudget)*100)}% of Budget</div>
+                    </div>
+                    <div class="card flex-1 p-4">
+                        <div class="text-muted text-xs font-bold uppercase">Projects at Risk</div>
+                        <div class="text-xl font-bold mt-2" style="color: var(--status-red)">${atRisk}</div>
+                        <div class="text-xs text-muted mt-1">Requires Attention</div>
+                    </div>
+                    <div class="card flex-1 p-4">
+                        <div class="text-muted text-xs font-bold uppercase">Active Projects</div>
+                        <div class="text-xl font-bold mt-2">${projects.length}</div>
+                        <div class="text-xs text-muted mt-1">In Execution</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 h-full">
+                    <div class="card flex-1">
+                        <div class="card-header">
+                            <span class="font-bold">Portfolio Progress</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                ${generateBarChart()}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card flex-1">
+                        <div class="card-header">
+                            <span class="font-bold">Buffer Consumption (Fever Chart)</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="display:flex; align-items:center; justify-content:center;">
+                                <svg width="300" height="200" viewBox="0 0 300 200">
+                                    <!-- Zones -->
+                                    <path d="M0,200 L300,200 L300,0 L0,0 Z" fill="#defbe6" /> <!-- Green -->
+                                    <path d="M0,200 L300,100 L300,0 L0,0 Z" fill="#fff8e1" /> <!-- Yellow -->
+                                    <path d="M0,200 L300,50 L300,0 L0,0 Z" fill="#fff1f1" /> <!-- Red -->
+                                    
+                                    <!-- Axes -->
+                                    <line x1="0" y1="200" x2="300" y2="200" stroke="#ccc" stroke-width="2"/>
+                                    <line x1="0" y1="0" x2="0" y2="200" stroke="#ccc" stroke-width="2"/>
+                                    <text x="150" y="190" font-size="10" fill="#666" text-anchor="middle">Project Completion %</text>
+                                    <text x="10" y="100" font-size="10" fill="#666" transform="rotate(-90 10,100)">Buffer Consumed %</text>
+
+                                    <!-- Project Points -->
+                                    ${projects.map(p => {
+                                        const x = (p.progress / 100) * 300;
+                                        const bufferPct = p.bufferTotal > 0 ? (p.bufferConsumed / p.bufferTotal) * 100 : 0;
+                                        const y = 200 - ((bufferPct / 100) * 200);
+                                        return `<circle cx="${x}" cy="${y}" r="6" class="fever-point"><title>${p.name}</title></circle>`;
+                                    }).join('')}
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // --- PROJECTS VIEW ---
+        const ProjectListView = () => {
+            const projects = appStore.state.projects;
+            
+            return `
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Project Name</th>
+                                    <th>Manager</th>
+                                    <th>Timeline</th>
+                                    <th>Budget</th>
+                                    <th>Progress</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${projects.map(p => `
+                                    <tr>
+                                        <td>
+                                            <div class="font-bold">${p.name}</div>
+                                            <div class="text-xs text-muted">ID: ${p.id.toUpperCase()}</div>
+                                        </td>
+                                        <td>${p.manager}</td>
+                                        <td>
+                                            <div class="text-xs">${Utils.formatDate(p.start)}</div>
+                                            <div class="text-xs text-muted">to ${Utils.formatDate(p.end)}</div>
+                                        </td>
+                                        <td>
+                                            <div>${Utils.formatCurrency(p.budget)}</div>
+                                            <div class="text-xs text-muted">${Math.round((p.actual/p.budget)*100)}% Used</div>
+                                        </td>
+                                        <td style="width: 150px">
+                                            <div class="flex items-center gap-2">
+                                                <div style="flex:1; height:6px; background:#e0e0e0; border-radius:3px; overflow:hidden;">
+                                                    <div style="width:${p.progress}%; height:100%; background:var(--primary);"></div>
+                                                </div>
+                                                <div class="text-xs">${p.progress}%</div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge ${Utils.calculateStatusColor(p.status)}">${p.status}</span></td>
+                                        <td>
+                                            <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#gantt'">Plan</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        };
+
+        // --- GANTT VIEW (High Fidelity Complex) ---
+        const GanttView = () => {
+            // Flatten tasks and sort by start date
+            const tasks = [...appStore.state.tasks].sort((a,b) => new Date(a.start) - new Date(b.start));
+            if(tasks.length === 0) return `<div class="p-4 text-center text-muted">No tasks available. Seed data in settings.</div>`;
+
+            // Calculate timeline range
+            const minDate = new Date(Math.min(...tasks.map(t => new Date(t.start))));
+            const maxDate = new Date(Math.max(...tasks.map(t => new Date(t.end))));
+            minDate.setDate(minDate.getDate() - 5); // padding
+            maxDate.setDate(maxDate.getDate() + 15);
+
+            const totalDays = Utils.daysBetween(minDate, maxDate);
+            const pxPerDay = 30; // Zoom level
+            const chartWidth = totalDays * pxPerDay;
+            const rowHeight = 36;
+            const headerHeight = 40;
+
+            // Generate Time Scale
+            let headerHTML = '';
+            let gridLinesHTML = '';
+            for(let i=0; i <= totalDays; i+=7) {
+                const d = new Date(minDate);
+                d.setDate(d.getDate() + i);
+                const left = i * pxPerDay;
+                headerHTML += `<div style="position:absolute; left:${left}px; top:0; height:100%; border-left:1px solid #ddd; padding-left:4px; font-size:10px; color:#999;">${d.toLocaleDateString()}</div>`;
+                gridLinesHTML += `<line x1="${left}" y1="0" x2="${left}" y2="${tasks.length * rowHeight}" class="gantt-grid-line" />`;
+            }
+
+            // Generate Bars & Sidebar
+            let sidebarHTML = '';
+            let barsHTML = '';
+            
+            tasks.forEach((task, index) => {
+                const y = index * rowHeight + (rowHeight - 20) / 2; // vertically centered
+                const startOffset = Utils.daysBetween(minDate, task.start);
+                const durationDays = Utils.daysBetween(task.start, task.end);
+                const x = startOffset * pxPerDay;
+                const width = durationDays * pxPerDay;
+                
+                const color = task.status === 'Completed' ? '#198038' : (task.status === 'In Progress' ? '#0f62fe' : '#a8a8a8');
+
+                sidebarHTML += `<div class="gantt-task-row">${index+1}. ${task.name}</div>`;
+                
+                barsHTML += `
+                    <g class="gantt-task-group" data-id="${task.id}">
+                        <rect x="${x}" y="${y}" width="${width}" height="20" fill="${color}" class="gantt-bar" rx="4">
+                            <title>${task.name}: ${task.start} - ${task.end}</title>
+                        </rect>
+                        <text x="${x + width + 5}" y="${y + 14}" font-size="10" fill="#555">${task.progress}%</text>
+                    </g>
+                `;
+
+                // Render Dependency Arrows
+                if (task.predecessors && task.predecessors.length) {
+                    task.predecessors.forEach(predId => {
+                        const predTask = tasks.find(t => t.id === predId);
+                        const predIndex = tasks.findIndex(t => t.id === predId);
+                        if(predTask) {
+                            const predEndOffset = Utils.daysBetween(minDate, predTask.end);
+                            const x1 = predEndOffset * pxPerDay;
+                            const y1 = predIndex * rowHeight + rowHeight/2;
+                            const x2 = x;
+                            const y2 = index * rowHeight + rowHeight/2;
+                            
+                            // Simple Path
+                            barsHTML += `<path d="M ${x1} ${y1} L ${x1+10} ${y1} L ${x1+10} ${y2} L ${x2} ${y2}" class="gantt-connector" />`;
+                        }
+                    });
+                }
+            });
+
+            return `
+                <div class="h-full flex flex-col p-4">
+                    <div class="gantt-wrapper flex-1">
+                        <div class="gantt-toolbar">
+                            <button class="btn btn-secondary btn-sm">Zoom In</button>
+                            <button class="btn btn-secondary btn-sm">Zoom Out</button>
+                            <button class="btn btn-primary btn-sm" onclick="Modal.open('task-modal')">+ Add Task</button>
+                            <span class="text-xs text-muted ml-auto">Hold Shift + Scroll to pan horizontally</span>
+                        </div>
+                        <div class="gantt-container">
+                            <div class="gantt-sidebar">
+                                <div class="gantt-header-row">Task Name</div>
+                                ${sidebarHTML}
+                            </div>
+                            <div class="gantt-timeline-scroll" id="gantt-scroll-area">
+                                <div style="width: ${chartWidth}px; height: ${tasks.length * rowHeight}px; position: relative;">
+                                    <!-- Header Overlay -->
+                                    <div style="position:sticky; top:0; height:${headerHeight}px; background:#f4f4f4; border-bottom:1px solid #ddd; z-index:10; width:100%; overflow:hidden;">
+                                        ${headerHTML}
+                                    </div>
+                                    <svg class="gantt-svg" width="${chartWidth}" height="${tasks.length * rowHeight}" style="margin-top:${headerHeight}px">
+                                        <defs>
+                                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                                <polygon points="0 0, 10 3.5, 0 7" fill="#b0b0b0" />
+                                            </marker>
+                                        </defs>
+                                        ${gridLinesHTML}
+                                        ${barsHTML}
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // --- FINANCIALS VIEW ---
+        const FinancialsView = () => {
+             const projects = appStore.state.projects;
+             return `
+                <div class="card p-4">
+                    <h3 class="font-bold mb-4">Financial Performance</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Planned Budget</th>
+                                    <th>Actual Cost</th>
+                                    <th>Variance</th>
+                                    <th>CPI (Cost Perf. Index)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${projects.map(p => {
+                                    const variance = p.budget - p.actual;
+                                    const cpi = p.actual > 0 ? (p.budget * (p.progress/100)) / p.actual : 1;
+                                    const cpiClass = cpi < 0.9 ? 'text-danger font-bold' : 'text-success';
+                                    return `
+                                    <tr>
+                                        <td>${p.name}</td>
+                                        <td>${Utils.formatCurrency(p.budget)}</td>
+                                        <td>${Utils.formatCurrency(p.actual)}</td>
+                                        <td class="${variance < 0 ? 'text-danger' : 'text-success'}">${Utils.formatCurrency(variance)}</td>
+                                        <td class="${cpiClass}">${cpi.toFixed(2)}</td>
+                                    </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+             `;
+        };
+
+        // --- MODALS ---
+        const ModalTemplate = (id, title, content) => `
+            <div id="${id}" class="modal-overlay">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <span class="font-bold text-xl">${title}</span>
+                        <button class="btn btn-secondary btn-sm" onclick="Modal.close('${id}')">X</button>
+                    </div>
+                    <div class="modal-body">
+                        ${content}
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="Modal.close('${id}')">Cancel</button>
+                        <button class="btn btn-primary" onclick="Modal.submit('${id}')">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const renderModals = () => {
+            const projectForm = `
+                <div class="input-group">
+                    <label>Project Name</label>
+                    <input type="text" id="new-proj-name" class="input-control" placeholder="e.g. Q4 Migration">
+                </div>
+                <div class="input-group">
+                    <label>Budget ($)</label>
+                    <input type="number" id="new-proj-budget" class="input-control" value="100000">
+                </div>
+                <div class="flex gap-4">
+                    <div class="input-group flex-1">
+                        <label>Start Date</label>
+                        <input type="date" id="new-proj-start" class="input-control">
+                    </div>
+                    <div class="input-group flex-1">
+                        <label>End Date</label>
+                        <input type="date" id="new-proj-end" class="input-control">
+                    </div>
+                </div>
+            `;
+            
+            const taskForm = `
+                <div class="input-group">
+                    <label>Task Name</label>
+                    <input type="text" id="new-task-name" class="input-control">
+                </div>
+                <div class="input-group">
+                    <label>Duration (days)</label>
+                    <input type="number" id="new-task-dur" class="input-control" value="5">
+                </div>
+                <div class="input-group">
+                    <label>Assign to Project</label>
+                    <select id="new-task-proj" class="input-control">
+                        ${appStore.state.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                    </select>
+                </div>
+            `;
+
+            return ModalTemplate('project-modal', 'Create New Project', projectForm) + 
+                   ModalTemplate('task-modal', 'Add New Task', taskForm);
+        };
+
+        /**
+         * --------------------------------------------------------------------------
+         * 4. APP CONTROLLER & INIT
+         * --------------------------------------------------------------------------
+         */
+
+        const App = {
+            render: () => {
+                const appEl = document.getElementById('app');
+                
+                // Auth Check
+                if (!Session.user) {
+                    appEl.innerHTML = LoginView();
+                    return;
+                }
+
+                // Router Logic
+                const hash = window.location.hash || '#dashboard';
+                let content = '';
+                
+                switch(hash) {
+                    case '#dashboard': content = DashboardView(); break;
+                    case '#projects': content = ProjectListView(); break;
+                    case '#gantt': content = GanttView(); break;
+                    case '#financials': content = FinancialsView(); break;
+                    default: content = DashboardView();
+                }
+
+                appEl.innerHTML = Layout(content) + renderModals();
+
+                // Re-attach listeners for charts/scroll if needed
+                if(hash === '#gantt') {
+                    const scrollArea = document.getElementById('gantt-scroll-area');
+                    // Center the scroll initially
+                    if(scrollArea) scrollArea.scrollLeft = 0;
+                }
+            },
+
+            init: () => {
+                // Subscribe to store changes to re-render
+                appStore.subscribe(() => {
+                    App.render();
+                });
+
+                // Listen to hash change
+                window.addEventListener('hashchange', App.render);
+
+                // Check for existing session (simulate check)
+                const savedUser = localStorage.getItem('STREAMLINER_USER');
+                if(savedUser) Session.user = JSON.parse(savedUser);
+
+                App.render();
+            }
+        };
+
+        // --- GLOBAL HANDLERS (Exposed to window) ---
+
+        window.handleLogin = async () => {
+            const btn = document.querySelector('.btn-primary');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader"></div>';
+            
+            await Utils.delay(800); // Simulate API
+            
+            Session.user = InitialData.users[0];
+            localStorage.setItem('STREAMLINER_USER', JSON.stringify(Session.user));
+            
+            Toast.show('Welcome back, ' + Session.user.name, 'success');
+            App.render();
+        };
+
+        window.handleLogout = () => {
+            Session.user = null;
+            localStorage.removeItem('STREAMLINER_USER');
+            window.location.hash = '';
+            App.render();
+        };
+
+        window.seedAndReload = () => {
+            if(confirm("This will reset all data to default factory settings. Continue?")) {
+                localStorage.removeItem(DB_KEY);
+                location.reload();
+            }
+        };
+
+        window.Modal = {
+            open: (id) => {
+                document.getElementById(id).classList.add('open');
+            },
+            close: (id) => {
+                document.getElementById(id).classList.remove('open');
+            },
+            submit: (id) => {
+                if (id === 'project-modal') {
+                    const name = document.getElementById('new-proj-name').value;
+                    const budget = parseFloat(document.getElementById('new-proj-budget').value);
+                    const start = document.getElementById('new-proj-start').value;
+                    const end = document.getElementById('new-proj-end').value;
+
+                    if (!name || !start || !end) return Toast.show('Please fill all fields', 'error');
+
+                    appStore.updateProject({
+                        id: Utils.id(),
+                        name,
+                        manager: Session.user.name,
+                        status: 'Planned',
+                        start,
+                        end,
+                        budget,
+                        actual: 0,
+                        progress: 0,
+                        bufferTotal: 0, 
+                        bufferConsumed: 0
+                    });
+                    Toast.show('Project created successfully', 'success');
+                } else if (id === 'task-modal') {
+                    const name = document.getElementById('new-task-name').value;
+                    const dur = document.getElementById('new-task-dur').value;
+                    const pid = document.getElementById('new-task-proj').value;
+
+                    // Naive date calc
+                    const proj = appStore.state.projects.find(p => p.id === pid);
+                    
+                    appStore.addTask({
+                        id: Utils.id(),
+                        projectId: pid,
+                        name,
+                        duration: dur,
+                        start: proj.start,
+                        end: Utils.addDays(proj.start, parseInt(dur)),
+                        status: 'Planned',
+                        progress: 0
+                    });
+                    Toast.show('Task added to plan', 'success');
+                }
+                
+                Modal.close(id);
+            }
+        };
+
+        // Initialize Application
+        App.init();
+
+    </script>
+</body>
+</html>

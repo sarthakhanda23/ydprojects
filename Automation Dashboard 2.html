@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cold Rolling Mill Analytics Suite</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f8fafc; }
+        .tab-btn.active { @apply bg-blue-600 text-white border-blue-600; }
+        .tab-btn { @apply bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all; }
+        .control-group { @apply flex flex-col gap-1; }
+        .control-label { @apply text-xs font-semibold text-slate-500 uppercase; }
+        .control-input { @apply bg-white border border-slate-300 text-slate-700 text-sm rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none; }
+        /* Custom Scrollbar for table */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-slate-900 h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-slate-900 text-white shadow-lg flex-none z-50">
+        <div class="px-6 py-3 flex justify-between items-center">
+            
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-700 p-2 rounded-lg shadow-inner">
+                        <i class="fa-solid fa-layer-group text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight leading-tight">CRM Analytics Suite</h1>
+                        <p class="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Cold Rolling Mill Operations</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 p-1 rounded-lg flex gap-1 border border-slate-700 ml-4">
+                    <button onclick="switchTab('explorer')" id="btn-explorer" class="tab-btn px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line"></i> Explorer
+                    </button>
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn active px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-table-columns"></i> Dashboard
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden md:block">
+                    <p class="text-xs text-slate-400">Current Dataset</p>
+                    <p id="fileNameDisplay" class="text-sm font-medium text-white truncate max-w-[200px]">Production_Data.csv</p>
+                </div>
+                <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2 border border-blue-400/30">
+                    <i class="fa-solid fa-upload"></i>
+                    <span>Load CSV</span>
+                    <input type="file" id="globalFileInput" accept=".csv" class="hidden">
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow overflow-hidden relative">
+        
+        <div id="view-explorer" class="absolute inset-0 flex flex-col md:flex-row bg-slate-50 overflow-hidden hidden">
+            <aside class="w-full md:w-80 bg-white border-r border-slate-200 flex-none flex flex-col h-full overflow-y-auto shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10">
+                <div class="p-5 space-y-6">
+                    <div class="pb-4 border-b border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-filter text-blue-600"></i> Fetch & Analyze
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Configure your analysis parameters.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="control-group">
+                            <label class="control-label">Metric (Y-Axis)</label>
+                            <select id="exp-y-axis" class="control-input">
+                                <option value="coil_count">Coil Count</option>
+                                <option value="energy">Energy (Sum)</option>
+                                <option value="avg_mpm">Average MPM</option>
+                                <option value="calc_weight">Calculated Weight (Sum)</option>
+                                <option value="max_mill_power" selected>Maximum Mill Power</option>
+                                <option value="time_run">Run Time (Sum)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">Dimension (X-Axis)</label>
+                            <select id="exp-x-axis" class="control-input">
+                                <option value="date" selected>Date / Time</option>
+                                <option value="coil_id">Coil Sequence</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Granularity</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setGranularity('day')" class="granularity-btn active px-3 py-2 text-xs font-medium rounded border border-blue-600 bg-blue-50 text-blue-700 text-center hover:bg-blue-100">Day</button>
+                            <button onclick="setGranularity('week')" class="granularity-btn px-3 py-2 text-xs font-medium rounded border border-slate-200 bg-white text-slate-600 text-center hover:bg-slate-50">Week</button>
+                            <button onclick="setGranularity('month')" class="granularity-btn px-3 py-2 text-xs font-medium rounded border border-slate-200 bg-white text-slate-600 text-center hover:bg-slate-50">Month</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-2 border-t border-slate-100">
+                        <label class="control-label">Time Range</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="text-[10px] text-slate-400 mb-1 block">Start Date</span>
+                                <input type="date" id="exp-start-date" class="control-input w-full">
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-400 mb-1 block">End Date</span>
+                                <input type="date" id="exp-end-date" class="control-input w-full">
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="setQuickRange(30)" class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded">30 Days</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 mt-auto">
+                        <button onclick="updateExplorerChart()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-200 transition-all flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                            Fetch & Analyze
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="flex-grow p-6 overflow-y-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 h-full min-h-[500px] p-6 flex flex-col">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 id="chart-title" class="text-xl font-bold text-slate-800">Maximum Mill Power Over Time</h2>
+                            <p id="chart-subtitle" class="text-sm text-slate-500 mt-1">Analysis View</p>
+                        </div>
+                    </div>
+                    <div class="flex-grow relative w-full">
+                        <canvas id="explorerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-dashboard" class="absolute inset-0 bg-slate-100 overflow-y-auto">
+            <div class="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+                
+                <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200 flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <h2 class="font-bold text-slate-700 uppercase tracking-wide text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-blue-500"></i> Operation Monitor
+                        </h2>
+                        <div class="h-6 w-px bg-slate-200"></div>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-regular fa-calendar text-slate-400"></i>
+                            <input type="date" id="dash-start" class="control-input py-1 text-xs">
+                            <span class="text-slate-400">-</span>
+                            <input type="date" id="dash-end" class="control-input py-1 text-xs">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                           <p class="text-[10px] uppercase font-bold text-slate-400">Total Coils</p>
+                           <p id="kpi-total-coils" class="text-lg font-bold text-slate-800 leading-none">0</p>
+                        </div>
+                        <div class="h-6 w-px bg-slate-200"></div>
+                        <div class="text-right">
+                           <p class="text-[10px] uppercase font-bold text-slate-400">Total Energy</p>
+                           <p id="kpi-total-energy" class="text-lg font-bold text-blue-600 leading-none">0 <span class="text-xs text-slate-400">KWh</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Energy Consumption</h3>
+                        <p class="text-[10px] text-slate-400 mb-4 uppercase">Energy & No. of Coils Rolled</p>
+                        <div class="h-[250px] w-full"><canvas id="ssEnergyChart"></canvas></div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                         <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide">Mill Power Profile</h3>
+                            <div class="text-right">
+                                <span class="text-xs font-bold text-slate-800 block">Sum of Max Mill Power (KW)</span>
+                            </div>
+                        </div>
+                        <div class="h-[250px] w-full"><canvas id="ssPowerChart"></canvas></div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Productivity</h3>
+                        <p class="text-[10px] text-slate-400 mb-4 uppercase">Calculated Wt & Avg MPM</p>
+                        <div class="h-[250px] w-full"><canvas id="ssProdChart"></canvas></div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200 grid grid-cols-5 gap-4">
+                        <div class="col-span-2 flex flex-col">
+                            <h3 class="text-[10px] font-bold text-slate-400 mb-2 uppercase">No. of Coils & Avg. Reduction%</h3>
+                            <div class="flex-grow min-h-[200px]"><canvas id="ssPassBarChart"></canvas></div>
+                            <p class="text-[10px] text-center text-slate-500 mt-1 uppercase font-bold">No. of Passes</p>
+                        </div>
+                        <div class="col-span-3 flex flex-col items-center justify-center relative">
+                             <div class="h-[220px] w-full"><canvas id="ssTimePieChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200 col-span-1 lg:col-span-2">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Output Thickness</h3>
+                        <p class="text-[10px] text-slate-400 mb-4 uppercase">No. of Coils & Input Thickness Distribution</p>
+                        <div class="h-[200px] w-full"><canvas id="ssThickChart"></canvas></div>
+                        <p class="text-[10px] text-center text-slate-500 mt-1 uppercase font-bold italic">Output Coil Thickness (mm)</p>
+                    </div>
+
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center cursor-pointer" onclick="document.getElementById('table-container').classList.toggle('hidden')">
+                         <span class="text-xs font-bold text-slate-500 uppercase">View Detailed Data Table <i class="fa-solid fa-chevron-down ml-2"></i></span>
+                    </div>
+                    <div id="table-container" class="hidden overflow-x-auto max-h-[300px]">
+                        <table class="w-full text-xs text-left">
+                            <thead class="text-slate-500 uppercase bg-slate-100 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-2">Date</th>
+                                    <th class="px-4 py-2">Coil #</th>
+                                    <th class="px-4 py-2 text-right">Passes</th>
+                                    <th class="px-4 py-2 text-right">Energy</th>
+                                    <th class="px-4 py-2 text-right">MPM</th>
+                                    <th class="px-4 py-2 text-right">Thick Out</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- CHART JS DEFAULTS ---
+        Chart.register(ChartDataLabels);
+        Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+        Chart.defaults.font.size = 11;
+        Chart.defaults.color = '#64748b';
+        
+        // --- CONSTANTS & STATE ---
+        const COLORS = {
+            blue: '#2563eb', // Standard Blue
+            blueLight: '#60a5fa', 
+            blueDark: '#1e40af', 
+            amber: '#f59e0b',
+            orange: '#ea580c',
+            slate: '#475569',
+            bg: '#ffffff',
+            purple: '#6366f1'
+        };
+
+        // Generating slightly more mock data to fill the charts nicely
+        const generateMockData = () => {
+            const base = [
+                { "Shift": "A", "No. of Pass": 7, "Date": "2025-11-17", "Coil Number": "8529", "Total Power Used": 9819.2, "Max Mill Power (KW)": 4091, "Max ISU Power (KW)": 5728.2, "Energy (KWh)": 1606, "Input Coil Thick (mm)": 2.5, "Output Coil Thick (mm)": 0.50, "Avg MPM": 706.86, "Run Time_mins": 32.37, "Idle Time2_mins": 3.0, "Feed + warmup Time_mins": 5.7 },
+                { "Shift": "B", "No. of Pass": 5, "Date": "2025-11-18", "Coil Number": "8562", "Total Power Used": 9666.1, "Max Mill Power (KW)": 4104, "Max ISU Power (KW)": 5562.1, "Energy (KWh)": 1033, "Input Coil Thick (mm)": 2.15, "Output Coil Thick (mm)": 0.42, "Avg MPM": 650.2, "Run Time_mins": 25.0, "Idle Time2_mins": 5.0, "Feed + warmup Time_mins": 5.0 },
+                { "Shift": "C", "No. of Pass": 6, "Date": "2025-11-19", "Coil Number": "8533", "Total Power Used": 9100.5, "Max Mill Power (KW)": 3900, "Max ISU Power (KW)": 5400.1, "Energy (KWh)": 1450, "Input Coil Thick (mm)": 2.8, "Output Coil Thick (mm)": 0.60, "Avg MPM": 690.0, "Run Time_mins": 30.0, "Idle Time2_mins": 4.0, "Feed + warmup Time_mins": 8.0 },
+                { "Shift": "A", "No. of Pass": 5, "Date": "2025-11-20", "Coil Number": "8540", "Total Power Used": 8800.0, "Max Mill Power (KW)": 3850, "Max ISU Power (KW)": 4950.0, "Energy (KWh)": 1200, "Input Coil Thick (mm)": 2.0, "Output Coil Thick (mm)": 0.40, "Avg MPM": 620.0, "Run Time_mins": 28.0, "Idle Time2_mins": 5.0, "Feed + warmup Time_mins": 5.0 },
+                { "Shift": "B", "No. of Pass": 7, "Date": "2025-11-21", "Coil Number": "8545", "Total Power Used": 10500.0, "Max Mill Power (KW)": 4200, "Max ISU Power (KW)": 6000.0, "Energy (KWh)": 1800, "Input Coil Thick (mm)": 3.0, "Output Coil Thick (mm)": 0.60, "Avg MPM": 710.0, "Run Time_mins": 40.0, "Idle Time2_mins": 5.0, "Feed + warmup Time_mins": 10.0 },
+                { "Shift": "A", "No. of Pass": 6, "Date": "2025-11-22", "Coil Number": "8548", "Total Power Used": 9200.0, "Max Mill Power (KW)": 3950, "Max ISU Power (KW)": 5250.0, "Energy (KWh)": 1500, "Input Coil Thick (mm)": 2.6, "Output Coil Thick (mm)": 0.55, "Avg MPM": 680.0, "Run Time_mins": 35.0, "Idle Time2_mins": 4.0, "Feed + warmup Time_mins": 6.0 },
+                { "Shift": "C", "No. of Pass": 4, "Date": "2025-11-23", "Coil Number": "8550", "Total Power Used": 7500.0, "Max Mill Power (KW)": 3200, "Max ISU Power (KW)": 4300.0, "Energy (KWh)": 900, "Input Coil Thick (mm)": 1.8, "Output Coil Thick (mm)": 0.35, "Avg MPM": 580.0, "Run Time_mins": 20.0, "Idle Time2_mins": 3.0, "Feed + warmup Time_mins": 4.0 },
+                { "Shift": "A", "No. of Pass": 8, "Date": "2025-11-24", "Coil Number": "8555", "Total Power Used": 11000.0, "Max Mill Power (KW)": 4500, "Max ISU Power (KW)": 6500.0, "Energy (KWh)": 2100, "Input Coil Thick (mm)": 3.2, "Output Coil Thick (mm)": 0.65, "Avg MPM": 750.0, "Run Time_mins": 50.0, "Idle Time2_mins": 6.0, "Feed + warmup Time_mins": 12.0 },
+                { "Shift": "B", "No. of Pass": 6, "Date": "2025-11-25", "Coil Number": "8560", "Total Power Used": 9300.0, "Max Mill Power (KW)": 4000, "Max ISU Power (KW)": 5300.0, "Energy (KWh)": 1550, "Input Coil Thick (mm)": 2.7, "Output Coil Thick (mm)": 0.58, "Avg MPM": 695.0, "Run Time_mins": 36.0, "Idle Time2_mins": 4.5, "Feed + warmup Time_mins": 6.5 },
+                { "Shift": "C", "No. of Pass": 7, "Date": "2025-11-26", "Coil Number": "8565", "Total Power Used": 10200.0, "Max Mill Power (KW)": 4150, "Max ISU Power (KW)": 6050.0, "Energy (KWh)": 1750, "Input Coil Thick (mm)": 2.9, "Output Coil Thick (mm)": 0.62, "Avg MPM": 720.0, "Run Time_mins": 42.0, "Idle Time2_mins": 5.5, "Feed + warmup Time_mins": 9.0 },
+                { "Shift": "A", "No. of Pass": 5, "Date": "2025-11-27", "Coil Number": "8570", "Total Power Used": 8900.0, "Max Mill Power (KW)": 3880, "Max ISU Power (KW)": 5020.0, "Energy (KWh)": 1300, "Input Coil Thick (mm)": 2.2, "Output Coil Thick (mm)": 0.45, "Avg MPM": 640.0, "Run Time_mins": 29.0, "Idle Time2_mins": 5.2, "Feed + warmup Time_mins": 5.5 },
+                { "Shift": "B", "No. of Pass": 6, "Date": "2025-11-28", "Coil Number": "8575", "Total Power Used": 9400.0, "Max Mill Power (KW)": 4050, "Max ISU Power (KW)": 5350.0, "Energy (KWh)": 1600, "Input Coil Thick (mm)": 2.8, "Output Coil Thick (mm)": 0.59, "Avg MPM": 700.0, "Run Time_mins": 37.0, "Idle Time2_mins": 4.8, "Feed + warmup Time_mins": 7.0 },
+                { "Shift": "C", "No. of Pass": 4, "Date": "2025-11-29", "Coil Number": "8580", "Total Power Used": 7800.0, "Max Mill Power (KW)": 3300, "Max ISU Power (KW)": 4500.0, "Energy (KWh)": 950, "Input Coil Thick (mm)": 1.9, "Output Coil Thick (mm)": 0.38, "Avg MPM": 600.0, "Run Time_mins": 22.0, "Idle Time2_mins": 3.5, "Feed + warmup Time_mins": 4.5 },
+                { "Shift": "A", "No. of Pass": 7, "Date": "2025-11-30", "Coil Number": "8585", "Total Power Used": 10800.0, "Max Mill Power (KW)": 4300, "Max ISU Power (KW)": 6500.0, "Energy (KWh)": 1900, "Input Coil Thick (mm)": 3.1, "Output Coil Thick (mm)": 0.63, "Avg MPM": 740.0, "Run Time_mins": 45.0, "Idle Time2_mins": 6.0, "Feed + warmup Time_mins": 11.0 },
+                { "Shift": "B", "No. of Pass": 5, "Date": "2025-12-01", "Coil Number": "8590", "Total Power Used": 9000.0, "Max Mill Power (KW)": 3900, "Max ISU Power (KW)": 5100.0, "Energy (KWh)": 1400, "Input Coil Thick (mm)": 2.4, "Output Coil Thick (mm)": 0.50, "Avg MPM": 660.0, "Run Time_mins": 32.0, "Idle Time2_mins": 4.0, "Feed + warmup Time_mins": 6.0 }
+            ];
+            return base;
+        };
+
+        let appState = {
+            data: generateMockData(),
+            granularity: 'day',
+            charts: {}
+        };
+
+        // --- PARSING UTILS (Same as before) ---
+        const parseDuration = (str) => {
+            if (!str) return 0;
+            const p = str.split(':');
+            return p.length === 3 ? (parseInt(p[0])*60 + parseInt(p[1]) + parseInt(p[2])/60) : 0;
+        };
+
+        const parseCSV = (text) => {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            return lines.slice(1).map(line => {
+                const values = [];
+                let cur = '', inQ = false;
+                for(let c of line) {
+                    if(c === '"') inQ = !inQ;
+                    else if(c === ',' && !inQ) { values.push(cur); cur = ''; }
+                    else cur += c;
+                }
+                values.push(cur);
+                const row = {};
+                headers.forEach((h, i) => {
+                    let v = values[i] ? values[i].trim().replace(/^"|"$/g, '') : '';
+                    if (['Total Power Used','Max Mill Power (KW)','Max ISU Power (KW)','Energy (KWh)','Input Coil Thick (mm)','Output Coil Thick (mm)','Avg MPM'].some(k => h.includes(k))) {
+                        row[h] = parseFloat(v.replace(/,/g,'')) || 0;
+                    } else if (['Run Time','Idle Time2'].includes(h)) {
+                        row[h] = v;
+                        row[`${h}_mins`] = parseDuration(v);
+                    } else if (h === 'No. of Pass') row[h] = parseInt(v) || 0;
+                    else row[h] = v;
+                });
+                return row;
+            });
+        };
+
+        // --- NAVIGATION ---
+        function switchTab(viewId) {
+            document.getElementById('view-explorer').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('btn-explorer').classList.remove('active');
+            document.getElementById('btn-dashboard').classList.remove('active');
+
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            document.getElementById(`btn-${viewId}`).classList.add('active');
+
+            if(viewId === 'dashboard') updateDashboard();
+        }
+
+        function setGranularity(g) {
+            appState.granularity = g;
+            document.querySelectorAll('.granularity-btn').forEach(b => {
+                b.classList.remove('active', 'bg-blue-50', 'text-blue-700', 'border-blue-600');
+            });
+            event.target.classList.add('active', 'bg-blue-50', 'text-blue-700', 'border-blue-600');
+            updateExplorerChart();
+        }
+        
+        function setQuickRange(days) {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - days);
+            document.getElementById('exp-start-date').value = start.toISOString().split('T')[0];
+            document.getElementById('exp-end-date').value = end.toISOString().split('T')[0];
+            updateExplorerChart();
+        }
+
+        // --- EXPLORER LOGIC ---
+        function updateExplorerChart() {
+            // Basic implementation to keep the explorer functional
+            const ctx = document.getElementById('explorerChart').getContext('2d');
+            if(appState.charts.explorer) appState.charts.explorer.destroy();
+            
+            // Simple mapping for demonstration
+            const labels = appState.data.map(d => d.Date);
+            const data = appState.data.map(d => d['Max Mill Power (KW)']);
+
+            appState.charts.explorer = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Max Mill Power (KW)',
+                        data: data,
+                        borderColor: COLORS.blue,
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // --- DASHBOARD LOGIC (THE MAIN REQUEST) ---
+        function updateDashboard() {
+            const startStr = document.getElementById('dash-start').value;
+            const endStr = document.getElementById('dash-end').value;
+            
+            const start = startStr ? new Date(startStr) : new Date('2000-01-01');
+            const end = endStr ? new Date(endStr) : new Date('2099-12-31');
+
+            const filtered = appState.data.filter(d => {
+                const dt = new Date(d.Date);
+                return dt >= start && dt <= end;
+            });
+
+            // Update KPIs
+            const totalEnergy = filtered.reduce((a,b) => a + (b['Energy (KWh)']||0), 0);
+            document.getElementById('kpi-total-coils').innerText = filtered.length;
+            document.getElementById('kpi-total-energy').innerHTML = Math.round(totalEnergy).toLocaleString() + ' <span class="text-xs text-slate-400">KWh</span>';
+
+            // Update Charts
+            renderScreenshotCharts(filtered);
+            
+            // Update Table
+            const tbody = document.getElementById('dash-table-body');
+            tbody.innerHTML = filtered.slice(0, 50).map(d => `
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-2 font-medium text-slate-700">${d.Date}</td>
+                    <td class="px-4 py-2 font-mono text-slate-500">${d['Coil Number']}</td>
+                    <td class="px-4 py-2 text-right">${d['No. of Pass']}</td>
+                    <td class="px-4 py-2 text-right font-bold text-slate-700">${Math.round(d['Energy (KWh)'])}</td>
+                    <td class="px-4 py-2 text-right">${d['Avg MPM']?.toFixed(1)}</td>
+                    <td class="px-4 py-2 text-right">${d['Output Coil Thick (mm)']}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderScreenshotCharts(data) {
+            // Common Options for cleaner look
+            const cleanOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, datalabels: { display: true, color: 'white', font: {size: 9}, anchor: 'end', align: 'top', color: '#64748b' } },
+                scales: { 
+                    x: { grid: { display: false } }, 
+                    y: { grid: { color: '#f1f5f9', borderDash: [2, 2] }, ticks: { display: true } }
+                }
+            };
+
+            // 1. ENERGY (Top Left)
+            // Group by Date or Sequence (Using Date for X axis labels)
+            const sortedByDate = [...data].sort((a,b) => new Date(a.Date) - new Date(b.Date));
+            if(appState.charts.ssEnergy) appState.charts.ssEnergy.destroy();
+            appState.charts.ssEnergy = new Chart(document.getElementById('ssEnergyChart'), {
+                type: 'bar',
+                data: {
+                    labels: sortedByDate.map(d => d.Date.substring(5)), // MM-DD
+                    datasets: [{
+                        data: sortedByDate.map(d => d['Energy (KWh)']),
+                        backgroundColor: COLORS.blueLight,
+                        hoverBackgroundColor: COLORS.blue
+                    }]
+                },
+                options: {
+                    ...cleanOptions,
+                    plugins: { 
+                        datalabels: { 
+                            display: true, color: 'white', anchor: 'end', align: 'bottom', offset: -20,
+                            font: { weight: 'bold', size: 10 }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: { x: { display: true, grid: {display:false} }, y: { display: true } }
+                }
+            });
+
+            // 2. POWER vs PASS (Top Right)
+            // Aggregation: Max Mill Power per Pass number
+            const passGroups = {};
+            data.forEach(d => {
+                const p = d['No. of Pass'];
+                if(!passGroups[p]) passGroups[p] = { max: 0, sum: 0, count: 0 };
+                passGroups[p].max = Math.max(passGroups[p].max, d['Max Mill Power (KW)']);
+            });
+            const passes = Object.keys(passGroups).sort((a,b) => a-b);
+            
+            if(appState.charts.ssPower) appState.charts.ssPower.destroy();
+            appState.charts.ssPower = new Chart(document.getElementById('ssPowerChart'), {
+                type: 'line',
+                data: {
+                    labels: passes,
+                    datasets: [{
+                        label: 'Max Power',
+                        data: passes.map(p => passGroups[p].max),
+                        borderColor: '#3b82f6',
+                        backgroundColor: (context) => {
+                            const ctx = context.chart.ctx;
+                            const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+                            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+                            return gradient;
+                        },
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 3,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    ...cleanOptions,
+                    plugins: { datalabels: { display: false } },
+                    scales: { 
+                        x: { title: { display: true, text: 'No. of Pass' }, grid: { display: false } }, 
+                        y: { position: 'right', grid: { color: '#f1f5f9' } } 
+                    }
+                }
+            });
+
+            // 3. PRODUCTIVITY (Middle Left)
+            if(appState.charts.ssProd) appState.charts.ssProd.destroy();
+            appState.charts.ssProd = new Chart(document.getElementById('ssProdChart'), {
+                type: 'bar',
+                data: {
+                    labels: sortedByDate.map((d, i) => i+1), // Sequence 1, 2, 3
+                    datasets: [{
+                        data: sortedByDate.map(d => d['Avg MPM']),
+                        backgroundColor: COLORS.blueLight,
+                    }]
+                },
+                options: {
+                    ...cleanOptions,
+                    plugins: {
+                        datalabels: { 
+                            display: true, color: 'white', anchor: 'center', align: 'center', rotation: -90,
+                            formatter: (val) => Math.round(val) 
+                        }
+                    },
+                    scales: { x: { display: true, grid: {display:false} }, y: { display: false } }
+                }
+            });
+
+            // 4a. PASS DISTRIBUTION (Middle Right - Bar)
+            const passCounts = {};
+            data.forEach(d => {
+                const p = d['No. of Pass'];
+                passCounts[p] = (passCounts[p] || 0) + 1;
+            });
+            const pLabels = Object.keys(passCounts).sort();
+            
+            if(appState.charts.ssPassBar) appState.charts.ssPassBar.destroy();
+            appState.charts.ssPassBar = new Chart(document.getElementById('ssPassBarChart'), {
+                type: 'bar',
+                data: {
+                    labels: pLabels,
+                    datasets: [{
+                        data: pLabels.map(p => passCounts[p]),
+                        backgroundColor: COLORS.blue,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    ...cleanOptions,
+                    plugins: {
+                        datalabels: { 
+                            display: true, anchor: 'end', align: 'top', 
+                            formatter: (val, ctx) => ((val/data.length)*100).toFixed(0) + '%'
+                        }
+                    },
+                    scales: { x: { display: true, grid: {display:false} }, y: { display: false } }
+                }
+            });
+
+            // 4b. TIME PIE (Middle Right - Pie)
+            const timeSums = {
+                'Idle': data.reduce((a,b) => a + (b['Idle Time2_mins']||0), 0),
+                'Run': data.reduce((a,b) => a + (b['Run Time_mins']||0), 0),
+                'Feed': data.reduce((a,b) => a + (b['Feed + warmup Time_mins']||0), 0),
+            };
+
+            if(appState.charts.ssTimePie) appState.charts.ssTimePie.destroy();
+            appState.charts.ssTimePie = new Chart(document.getElementById('ssTimePieChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['IDLE', 'RUN', 'FEED'],
+                    datasets: [{
+                        data: [timeSums.Idle, timeSums.Run, timeSums.Feed],
+                        backgroundColor: [COLORS.blueLight, '#1e3a8a', COLORS.orange], // Match screenshot colors roughly
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 9} } },
+                        datalabels: { display: false }
+                    }
+                }
+            });
+
+            // 5. THICKNESS DISTRIBUTION (Bottom)
+            // Bin the thicknesses or just show them if sparse
+            const thicknessMap = {};
+            data.forEach(d => {
+                const t = parseFloat(d['Output Coil Thick (mm)']).toFixed(2);
+                thicknessMap[t] = (thicknessMap[t] || 0) + 1;
+            });
+            const thickLabels = Object.keys(thicknessMap).sort();
+
+            if(appState.charts.ssThick) appState.charts.ssThick.destroy();
+            appState.charts.ssThick = new Chart(document.getElementById('ssThickChart'), {
+                type: 'bar',
+                data: {
+                    labels: thickLabels,
+                    datasets: [{
+                        data: thickLabels.map(t => thicknessMap[t]),
+                        backgroundColor: COLORS.blueLight,
+                        hoverBackgroundColor: COLORS.blue
+                    }]
+                },
+                options: {
+                    ...cleanOptions,
+                    plugins: {
+                        datalabels: { 
+                            display: true, anchor: 'end', align: 'top', color: '#64748b',
+                            formatter: (val, ctx) => ctx.chart.data.labels[ctx.dataIndex] // Show thickness on top
+                        }
+                    },
+                    scales: { 
+                        x: { display: true, grid: {display:false}, ticks: { font: {size: 9}, maxRotation: 90, minRotation: 90 } }, 
+                        y: { display: false } 
+                    }
+                }
+            });
+        }
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const dates = appState.data.map(d => d.Date).sort();
+            document.getElementById('dash-start').value = dates[0];
+            document.getElementById('dash-end').value = dates[dates.length-1];
+            document.getElementById('exp-start-date').value = dates[0];
+            document.getElementById('exp-end-date').value = dates[dates.length-1];
+
+            document.getElementById('globalFileInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    document.getElementById('fileNameDisplay').innerText = file.name;
+                    const r = new FileReader();
+                    r.onload = (evt) => {
+                        appState.data = parseCSV(evt.target.result);
+                        updateExplorerChart();
+                        if(!document.getElementById('view-dashboard').classList.contains('hidden')) updateDashboard();
+                    };
+                    r.readAsText(file);
+                }
+            });
+
+            ['dash-start','dash-end'].forEach(id => {
+                document.getElementById(id).addEventListener('change', updateDashboard);
+            });
+
+            // Init Dashboard by default for immediate preview
+            switchTab('dashboard');
+        });
+
+    </script>
+</body>
+</html>

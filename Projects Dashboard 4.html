@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOGIJI DIGI - Semantic Engine</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --brand-red: #a81818;
+            --brand-dark: #1f2937;
+        }
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+        /* Tab Styles */
+        .tab-btn { border-bottom: 3px solid transparent; color: #6b7280; transition: all 0.2s; }
+        .tab-btn:hover { color: var(--brand-dark); border-bottom-color: #e5e7eb; }
+        .tab-btn.active { border-bottom-color: var(--brand-red); color: var(--brand-red); font-weight: 700; }
+
+        /* KPI Card Hover */
+        .kpi-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+        /* Table Expansion Animation */
+        .expand-row { animation: slideDown 0.3s ease-out forwards; transform-origin: top; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: scaleY(0); max-height: 0; }
+            to { opacity: 1; transform: scaleY(1); max-height: 500px; }
+        }
+        
+        /* Select Dropdown Custom Arrow */
+        .custom-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { yogi: { red: '#a81818', dark: '#1f2937' } }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 bg-yogi-red flex items-center justify-center rounded shadow-sm">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <span class="font-bold text-xl text-gray-900 tracking-tight">YOGIJI DIGI <span class="text-xs text-yogi-red font-normal uppercase ml-1">Engine v1.0</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                        <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+                        <span class="text-xs font-bold text-green-800">Deterministic Mode</span>
+                    </div>
+                    <div class="h-8 w-8 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-xs cursor-pointer">SH</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end mb-6 gap-4">
+            
+            <div class="w-full xl:w-auto">
+                <h1 class="text-2xl font-bold text-gray-900 mb-4">Project Overview</h1>
+                <div class="flex border-b border-gray-200" id="page-tabs">
+                    <button data-page="forecast" class="tab-btn py-2 px-4 text-sm active">Forecast (TQ3)</button>
+                    <button data-page="actuals" class="tab-btn py-2 px-4 text-sm">Actual Billing (TQ1/TQ2)</button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 w-full xl:w-auto justify-end bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Dispatch Status</label>
+                    <select id="slicer-status" class="custom-select bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-md focus:ring-yogi-red focus:border-yogi-red block w-40 p-2">
+                        <option value="all">All Statuses</option>
+                        <!-- Populated by DataModel -->
+                    </select>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Dispatch Month</label>
+                    <select id="slicer-month" class="custom-select bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-md focus:ring-yogi-red focus:border-yogi-red block w-40 p-2">
+                        <option value="all">All Months</option>
+                        <!-- Populated by DataModel -->
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    <button id="btn-reset" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-md text-sm font-medium transition h-[38px] flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Context Display -->
+        <div id="active-filters-container" class="flex gap-2 mb-4 hidden"></div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="kpi-card bg-white p-5 rounded-lg border-l-4 border-yogi-red shadow-sm">
+                <p class="text-xs font-bold text-gray-400 uppercase">Total Projects</p>
+                <h3 id="kpi-projects" class="text-2xl font-bold text-gray-900 mt-1">-</h3>
+            </div>
+            <div class="kpi-card bg-white p-5 rounded-lg border-l-4 border-yogi-red shadow-sm">
+                <p class="text-xs font-bold text-gray-400 uppercase">Billing Value (Cr)</p>
+                <h3 id="kpi-revenue" class="text-2xl font-bold text-gray-900 mt-1">-</h3>
+            </div>
+            <div class="kpi-card bg-white p-5 rounded-lg border-l-4 border-yogi-red shadow-sm">
+                <p class="text-xs font-bold text-gray-400 uppercase">Assemblies Count</p>
+                <h3 id="kpi-assemblies" class="text-2xl font-bold text-gray-900 mt-1">-</h3>
+            </div>
+            <div class="kpi-card bg-white p-5 rounded-lg border-l-4 border-yogi-red shadow-sm">
+                <p class="text-xs font-bold text-gray-400 uppercase">Avg. Monthly (Cr)</p>
+                <h3 id="kpi-avg" class="text-2xl font-bold text-gray-900 mt-1">-</h3>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            
+            <div class="bg-white p-4 rounded-lg shadow-sm lg:col-span-5 border border-gray-100">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold text-gray-800">Billing by Manager</h3>
+                    <span class="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded">Click Bar to Filter</span>
+                </div>
+                <div class="h-60 relative w-full">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg shadow-sm lg:col-span-3 border border-gray-100">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold text-gray-800">Product Mix</h3>
+                    <span class="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded">Click Slice</span>
+                </div>
+                <div class="h-60 relative w-full flex justify-center">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg shadow-sm lg:col-span-4 border border-gray-100">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold text-gray-800">Monthly Trend</h3>
+                    <span class="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded">Click Point</span>
+                </div>
+                <div class="h-60 relative w-full">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Matrix -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800">Detailed Project Matrix <span class="text-xs font-normal text-gray-500 ml-2">(Click '+' to view assemblies)</span></h3>
+                <span id="table-count" class="text-xs font-semibold text-yogi-red bg-red-50 px-2 py-1 rounded">Loading...</span>
+            </div>
+            <div class="overflow-x-auto max-h-[500px] custom-scroll">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-100 text-xs uppercase text-gray-500 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-6 py-3 border-b border-gray-200 w-12"></th> 
+                            <th class="px-6 py-3 border-b border-gray-200">Project Name</th>
+                            <th class="px-6 py-3 border-b border-gray-200">Manager</th>
+                            <th class="px-6 py-3 border-b border-gray-200">Product</th>
+                            <th class="px-6 py-3 border-b border-gray-200">Status</th>
+                            <th class="px-6 py-3 border-b border-gray-200 text-right">Billing (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-gray-100">
+                        <!-- Rendered by Controller -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ARCHITECTURE IMPLEMENTATION -->
+    <script>
+        /**
+         * 1. DATA MODEL LAYER
+         * Responsible for ingestion, normalization, and indexing.
+         * Immutable foundation.
+         */
+        class DataModel {
+            constructor(rawData) {
+                // Ingest and normalize (Simulating ETL)
+                this.facts = Object.freeze(this._processData(rawData));
+                this.indices = Object.freeze(this._buildIndices(this.facts));
+                console.log(`[DataModel] Loaded ${this.facts.length} rows.`);
+            }
+
+            _processData(data) {
+                // Helper to generate assemblies for the demo
+                const generateAssemblies = (baseValue) => {
+                    const count = Math.floor(Math.random() * 3) + 2; 
+                    let assemblies = [];
+                    let remaining = baseValue;
+                    const names = ["Housing Frame", "Roller Set", "Motor Coupling", "Hydraulic Power Pack", "Control Panel", "Gearbox Assembly"];
+                    for(let i=0; i<count-1; i++) {
+                        let val = Math.floor(remaining * (Math.random() * 0.4));
+                        remaining -= val;
+                        assemblies.push({ name: names[Math.floor(Math.random() * names.length)], val: val });
+                    }
+                    assemblies.push({ name: "Final Assembly & Testing", val: remaining });
+                    return assemblies;
+                };
+
+                return data.map(d => ({
+                    ...d,
+                    // Normalize dimensions
+                    pm: String(d.pm || "Unknown"),
+                    product: String(d.product || "Other"),
+                    status: String(d.status || "Unknown"),
+                    month: String(d.month || "Unknown"),
+                    // Ensure numbers
+                    val: Number(d.val) || 0,
+                    // Semantic Context Partitioning
+                    context: (d.month === 'Oct' || d.month === 'Nov') ? 'actuals' : 'forecast',
+                    // Enrich (Simulating Data Warehouse Join)
+                    assemblies: generateAssemblies(d.val)
+                }));
+            }
+
+            _buildIndices(rows) {
+                const distinct = (key) => [...new Set(rows.map(r => r[key]))].sort();
+                return {
+                    pm: distinct('pm'),
+                    product: distinct('product'),
+                    status: distinct('status'),
+                    month: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb'] // Enforcing specific sort order
+                };
+            }
+
+            getAllRows() { return this.facts; }
+            getIndices() { return this.indices; }
+        }
+
+        /**
+         * 2. SEMANTIC MEASURES LAYER
+         * Pure functions. No UI logic. "DAX" equivalent.
+         */
+        const Measures = {
+            totalBilling: (rows) => rows.reduce((sum, r) => sum + r.val, 0),
+            countProjects: (rows) => rows.length, // Each row is a project in this grain
+            countAssemblies: (rows) => rows.reduce((sum, r) => sum + (r.assemblies ? r.assemblies.length : 0), 0),
+            avgBilling: (rows) => rows.length > 0 ? Measures.totalBilling(rows) / rows.length : 0,
+            
+            // Grouping helper for charts
+            groupBy: (rows, key) => {
+                return rows.reduce((acc, row) => {
+                    const k = row[key];
+                    acc[k] = (acc[k] || 0) + row.val;
+                    return acc;
+                }, {});
+            }
+        };
+
+        /**
+         * 3. FILTER CONTEXT & REDUCER (State Machine)
+         * The Single Source of Truth.
+         */
+        const ContextActions = {
+            SET_PAGE: 'SET_PAGE',
+            TOGGLE_FILTER: 'TOGGLE_FILTER',
+            TOGGLE_EXPANSION: 'TOGGLE_EXPANSION',
+            RESET: 'RESET'
+        };
+
+        const defaultState = {
+            page: 'forecast', // 'forecast' | 'actuals'
+            filters: {
+                pm: null,
+                product: null,
+                status: null,
+                month: null
+            },
+            expandedRows: [] // UI state stored in context for determinism
+        };
+
+        function contextReducer(state, action) {
+            switch (action.type) {
+                case ContextActions.SET_PAGE:
+                    return { ...state, page: action.payload, expandedRows: [] }; // Clear expansion on page switch
+                
+                case ContextActions.TOGGLE_FILTER:
+                    const { dimension, value } = action.payload;
+                    const currentVal = state.filters[dimension];
+                    // Toggle logic
+                    const newValue = currentVal === value ? null : value;
+                    return {
+                        ...state,
+                        filters: { ...state.filters, [dimension]: newValue }
+                    };
+
+                case ContextActions.RESET:
+                    return { ...defaultState, page: state.page }; // Keep current page
+                
+                case ContextActions.TOGGLE_EXPANSION:
+                    const id = action.payload;
+                    const isExpanded = state.expandedRows.includes(id);
+                    const newExpanded = isExpanded 
+                        ? state.expandedRows.filter(rowId => rowId !== id)
+                        : [...state.expandedRows, id];
+                    return { ...state, expandedRows: newExpanded };
+
+                default:
+                    return state;
+            }
+        }
+
+        /**
+         * 4. ENGINE (Filter Pipeline)
+         * Deterministic execution of the Context against the Data Model.
+         */
+        function applyFilters(allRows, context) {
+            return allRows.filter(row => {
+                // A. Page Context (Hard Partition)
+                if (row.context !== context.page) return false;
+
+                // B. Slicer Context
+                const f = context.filters;
+                if (f.pm && row.pm !== f.pm) return false;
+                if (f.product && row.product !== f.product) return false;
+                if (f.status && row.status !== f.status) return false;
+                if (f.month && row.month !== f.month) return false;
+
+                return true;
+            });
+        }
+
+        /**
+         * 5. DASHBOARD CONTROLLER (The Brain)
+         * Connects State, Data, and Views.
+         */
+        class DashboardController {
+            constructor(dataModel) {
+                this.model = dataModel;
+                this.state = { ...defaultState };
+                this.charts = {};
+                
+                // Initialize Listeners
+                this.setupEventListeners();
+                this.initCharts();
+                
+                // Initial Render
+                this.dispatch({ type: 'INIT' });
+                this.populateSlicers();
+            }
+
+            dispatch(action) {
+                console.log(`[Action] ${action.type}`, action.payload);
+                this.state = contextReducer(this.state, action);
+                this.render();
+            }
+
+            // --- VIEW RENDERER ---
+            render() {
+                const filteredData = applyFilters(this.model.getAllRows(), this.state);
+
+                // 1. Update Tabs UI
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    if(btn.dataset.page === this.state.page) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+
+                // 2. Update Slicers UI (Sync with Chart clicks)
+                document.getElementById('slicer-status').value = this.state.filters.status || 'all';
+                document.getElementById('slicer-month').value = this.state.filters.month || 'all';
+
+                // 3. Update KPIs
+                document.getElementById('kpi-projects').innerText = Measures.countProjects(filteredData);
+                document.getElementById('kpi-revenue').innerText = (Measures.totalBilling(filteredData) / 10000000).toFixed(2);
+                document.getElementById('kpi-assemblies').innerText = Measures.countAssemblies(filteredData);
+                document.getElementById('kpi-avg').innerText = (Measures.avgBilling(filteredData) / 10000000).toFixed(2);
+
+                // 4. Update Filter Chips
+                this.renderFilterChips();
+
+                // 5. Update Charts
+                this.updateCharts(filteredData);
+
+                // 6. Update Table
+                this.renderTable(filteredData);
+            }
+
+            populateSlicers() {
+                const indices = this.model.getIndices();
+                
+                const statusSelect = document.getElementById('slicer-status');
+                indices.status.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s; opt.innerText = s;
+                    statusSelect.appendChild(opt);
+                });
+
+                const monthSelect = document.getElementById('slicer-month');
+                indices.month.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m; opt.innerText = m;
+                    monthSelect.appendChild(opt);
+                });
+            }
+
+            renderFilterChips() {
+                const container = document.getElementById('active-filters-container');
+                container.innerHTML = '';
+                const active = Object.entries(this.state.filters).filter(([k, v]) => v !== null);
+                
+                if (active.length > 0) {
+                    container.classList.remove('hidden');
+                    active.forEach(([key, val]) => {
+                        const chip = document.createElement('div');
+                        chip.className = 'bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded flex items-center gap-1 animate-fadeIn';
+                        chip.innerHTML = `<span>${key.toUpperCase()}: ${val}</span><span class="cursor-pointer hover:text-red-600 font-bold">×</span>`;
+                        chip.onclick = () => this.dispatch({ type: ContextActions.TOGGLE_FILTER, payload: { dimension: key, value: val } }); // Clicking X toggles it off
+                        container.appendChild(chip);
+                    });
+                } else {
+                    container.classList.add('hidden');
+                }
+            }
+
+            renderTable(data) {
+                const tbody = document.getElementById('table-body');
+                document.getElementById('table-count').innerText = `${data.length} Projects`;
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No projects match filters</td></tr>`;
+                    return;
+                }
+
+                data.forEach(row => {
+                    const isExpanded = this.state.expandedRows.includes(row.id);
+                    
+                    // Style logic
+                    let statusBadge = row.status === 'Dispatched' ? 'bg-green-100 text-green-800' : 
+                                      row.status === 'Hold' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = `hover:bg-gray-50 transition border-b border-gray-100 ${isExpanded ? 'bg-gray-50' : 'bg-white'}`;
+                    tr.innerHTML = `
+                        <td class="px-6 py-4">
+                            <button data-id="${row.id}" class="btn-expand w-6 h-6 flex items-center justify-center rounded border ${isExpanded ? 'bg-yogi-red border-yogi-red text-white' : 'border-gray-300 text-gray-500 hover:border-yogi-red hover:text-yogi-red'} transition">
+                                ${isExpanded ? '−' : '+'}
+                            </button>
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-900">${row.name}</td>
+                        <td class="px-6 py-4 text-gray-600">${row.pm}</td>
+                        <td class="px-6 py-4"><span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs font-semibold">${row.product}</span></td>
+                        <td class="px-6 py-4"><span class="${statusBadge} py-1 px-2 rounded text-xs font-semibold">${row.status}</span></td>
+                        <td class="px-6 py-4 text-right font-bold text-gray-900">₹${row.val.toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    if (isExpanded) {
+                        const childTr = document.createElement('tr');
+                        const assembliesHtml = row.assemblies.map(a => `
+                            <div class="flex justify-between items-center py-2 border-b border-gray-200 last:border-0 text-sm">
+                                <span class="text-gray-600 pl-4 border-l-2 border-gray-300">${a.name}</span>
+                                <span class="font-medium text-gray-800">₹${a.val.toLocaleString()}</span>
+                            </div>
+                        `).join('');
+                        
+                        childTr.innerHTML = `
+                            <td colspan="6" class="p-0 bg-gray-50">
+                                <div class="expand-row px-12 py-4 shadow-inner bg-gray-100">
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Assembly Breakdown</h4>
+                                    ${assembliesHtml}
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(childTr);
+                    }
+                });
+
+                // Re-bind table events (delegation would be better, but simple is fine here)
+                document.querySelectorAll('.btn-expand').forEach(btn => {
+                    btn.onclick = () => this.dispatch({ type: ContextActions.TOGGLE_EXPANSION, payload: parseInt(btn.dataset.id) });
+                });
+            }
+
+            // --- CHART LAYER ---
+            initCharts() {
+                const commonOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+
+                this.charts.bar = new Chart(document.getElementById('barChart'), {
+                    type: 'bar',
+                    data: { labels: [], datasets: [] },
+                    options: {
+                        ...commonOpts,
+                        onClick: (e, els) => {
+                            if (els.length) this.dispatch({ type: ContextActions.TOGGLE_FILTER, payload: { dimension: 'pm', value: this.charts.bar.data.labels[els[0].index] } });
+                        },
+                        scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+                    }
+                });
+
+                this.charts.pie = new Chart(document.getElementById('pieChart'), {
+                    type: 'doughnut',
+                    data: { labels: [], datasets: [] },
+                    options: {
+                        ...commonOpts, cutout: '65%', plugins: { legend: { position: 'right' } },
+                        onClick: (e, els) => {
+                            if (els.length) this.dispatch({ type: ContextActions.TOGGLE_FILTER, payload: { dimension: 'product', value: this.charts.pie.data.labels[els[0].index] } });
+                        }
+                    }
+                });
+
+                this.charts.line = new Chart(document.getElementById('lineChart'), {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: {
+                        ...commonOpts, scales: { y: { display: false }, x: { grid: { display: false } } },
+                        onClick: (e, els) => {
+                            if (els.length) this.dispatch({ type: ContextActions.TOGGLE_FILTER, payload: { dimension: 'month', value: this.charts.line.data.labels[els[0].index] } });
+                        }
+                    }
+                });
+            }
+
+            updateCharts(data) {
+                const colors = { brand: '#a81818', gray: '#e5e7eb', pie: ['#a81818', '#1f2937', '#6b7280', '#9ca3af', '#d1d5db'] };
+
+                // Bar Chart (PM)
+                const pmData = Measures.groupBy(data, 'pm');
+                this.charts.bar.data.labels = Object.keys(pmData);
+                this.charts.bar.data.datasets = [{
+                    data: Object.values(pmData).map(v => (v/10000000).toFixed(2)),
+                    backgroundColor: Object.keys(pmData).map(pm => pm === this.state.filters.pm ? colors.brand : colors.gray),
+                    hoverBackgroundColor: colors.brand,
+                    borderRadius: 4
+                }];
+                this.charts.bar.update();
+
+                // Pie Chart (Product)
+                const prodData = Measures.groupBy(data, 'product');
+                this.charts.pie.data.labels = Object.keys(prodData);
+                this.charts.pie.data.datasets = [{
+                    data: Object.values(prodData).map(v => (v/10000000).toFixed(2)),
+                    backgroundColor: colors.pie,
+                    borderWidth: 2, borderColor: '#ffffff'
+                }];
+                this.charts.pie.update();
+
+                // Line Chart (Month)
+                const monthOrder = this.model.getIndices().month;
+                const monthData = Measures.groupBy(data, 'month');
+                const labels = monthOrder.filter(m => Object.keys(monthData).includes(m));
+                this.charts.line.data.labels = labels;
+                this.charts.line.data.datasets = [{
+                    data: labels.map(m => (monthData[m]/10000000).toFixed(2)),
+                    borderColor: colors.brand,
+                    backgroundColor: 'rgba(168, 24, 24, 0.1)',
+                    fill: true, tension: 0.3, pointRadius: 6,
+                    pointBackgroundColor: labels.map(m => m === this.state.filters.month ? colors.brand : '#fff'),
+                    pointBorderColor: colors.brand
+                }];
+                this.charts.line.update();
+            }
+
+            setupEventListeners() {
+                // Tabs
+                document.querySelectorAll('#page-tabs button').forEach(btn => {
+                    btn.addEventListener('click', () => this.dispatch({ type: ContextActions.SET_PAGE, payload: btn.dataset.page }));
+                });
+
+                // Slicers
+                const statusSlicer = document.getElementById('slicer-status');
+                statusSlicer.addEventListener('change', (e) => {
+                    const val = e.target.value === 'all' ? null : e.target.value;
+                    this.dispatch({ type: ContextActions.TOGGLE_FILTER, payload: { dimension: 'status', value: val } });
+                });
+
+                const monthSlicer = document.getElementById('slicer-month');
+                monthSlicer.addEventListener('change', (e) => {
+                    const val = e.target.value === 'all' ? null : e.target.value;
+                    this.dispatch({ type: ContextActions.TOGGLE_FILTER, payload: { dimension: 'month', value: val } });
+                });
+
+                // Reset
+                document.getElementById('btn-reset').addEventListener('click', () => {
+                    this.dispatch({ type: ContextActions.RESET });
+                });
+            }
+        }
+
+        // --- 6. INITIALIZATION ---
+        const rawData = [
+            { id: 101, name: "2231-SHYAM-6HI CRM", pm: "Saurabh", product: "CRM", month: "Oct", status: "Not Dispatched", val: 48500000 },
+            { id: 102, name: "2403-GOPANI-4HI CRM", pm: "Mayank", product: "CRM", month: "Nov", status: "Dispatched", val: 10000000 },
+            { id: 103, name: "2412-HI TECH-SPARE", pm: "Mayank", product: "SPARE", month: "Dec", status: "Hold", val: 10000000 },
+            { id: 104, name: "2405-JSPL-TRIMMING", pm: "Saurabh", product: "TRIMMING", month: "Oct", status: "Not Dispatched", val: 37650000 },
+            { id: 105, name: "2305-APL-CGL", pm: "Saurabh", product: "CGL", month: "Jan", status: "Not Dispatched", val: 139000000 },
+            { id: 106, name: "2404-GOPANI-4HI SPM", pm: "Aditya Sharma", product: "SPM", month: "Oct", status: "Dispatched", val: 15900000 },
+            { id: 107, name: "2502-AL SHAKER-PICKLING", pm: "Aditya Saini", product: "PICKLING", month: "Nov", status: "Not Dispatched", val: 110880000 },
+            { id: 108, name: "2521-BMWIL-6HI CRM", pm: "Mayank", product: "CRM", month: "Dec", status: "Not Dispatched", val: 357500000 },
+            { id: 109, name: "2527-AECPL-GI/GL LINE", pm: "Saurabh", product: "CGL", month: "Jan", status: "Dispatched", val: 413125000 },
+            { id: 110, name: "2506-JSW-APL", pm: "Aditya Sharma", product: "APL", month: "Feb", status: "Not Dispatched", val: 436474820 },
+            { id: 111, name: "2420-INDIA STEEL-CCL", pm: "Saurabh", product: "CCL", month: "Nov", status: "Dispatched", val: 49092705 },
+            { id: 112, name: "2522-APL-SPM", pm: "Aditya Saini", product: "SPM", month: "Dec", status: "Not Dispatched", val: 51000000 },
+            { id: 113, name: "2425-MMI-6HI CRM", pm: "Mayank", product: "CRM", month: "Oct", status: "Dispatched", val: 85286000 },
+            { id: 114, name: "2511-GAURANG-6HI", pm: "Aditya Sharma", product: "CRM", month: "Jan", status: "Not Dispatched", val: 107254700 },
+            { id: 115, name: "2427-PROMPT-6HI CRM", pm: "Mayank", product: "CRM", month: "Feb", status: "Hold", val: 112028000 }
+        ];
+
+        // Boot
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new DashboardController(new DataModel(rawData));
+            window.app = app; // For debugging
+        });
+
+    </script>
+</body>
+</html>

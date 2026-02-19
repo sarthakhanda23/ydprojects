@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>User Configuration | YOGIJI DIGI</title>
+    
+    <link href="assets/img/yd-favicon.png" rel="icon" />
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
+    
+    <style>
+      :root {
+        --yd-primary: #2a5071; /* Corporate Blue */
+        --yd-red: #ad283f;     /* Corporate Red */
+        --yd-bg: #f5f7fa;
+      }
+      
+      body {
+        background: url('ydbg.jpeg') no-repeat center center fixed;
+        background-size: cover;
+        font-family: "Open Sans", system-ui, sans-serif;
+        color: #444444;
+      }
+
+      /* --- HEADER STYLING --- */
+      .header {
+        transition: all 0.5s;
+        z-index: 997;
+        padding: 15px;
+        background-color: #ffffff;
+        box-shadow: 0px 2px 20px rgba(1, 41, 112, 0.1);
+      }
+      .logo img {
+        max-height: 40px;
+        margin-right: 6px;
+      }
+      .btn-getstarted {
+        color: var(--yd-primary);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      /* --- MAIN CONTENT --- */
+      .main {
+        margin-top: 80px; 
+        padding: 20px 0;
+        min-height: 80vh;
+      }
+
+      .table-container {
+        background: #fffffff0; 
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0px 0px 30px rgba(127, 137, 161, 0.25);
+        backdrop-filter: blur(5px);
+        margin-bottom: 30px;
+      }
+
+      h2.page-title {
+        color: var(--yd-red);
+        font-weight: 700;
+        font-family: "Nunito", sans-serif;
+      }
+
+      /* --- SECTION HEADERS --- */
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 35px;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 10px;
+      }
+
+      h4.section-title {
+        color: var(--yd-primary);
+        font-weight: 700;
+        font-family: "Nunito", sans-serif;
+        margin: 0;
+        border-left: 5px solid var(--yd-red);
+        padding-left: 10px;
+      }
+
+      .btn-add-section {
+        background-color: var(--yd-primary);
+        color: white;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 6px 15px;
+        border-radius: 5px;
+        transition: 0.3s;
+        border: none;
+      }
+      .btn-add-section:hover {
+        background-color: #1a3a55;
+        color: white;
+      }
+
+      /* --- TABLE STYLING --- */
+      .custom-table thead th {
+        background-color: var(--yd-primary);
+        color: white;
+        font-weight: 600;
+        font-size: 0.85rem;
+        vertical-align: middle;
+        border: none;
+        padding: 12px;
+      }
+      .custom-table tbody td {
+        vertical-align: middle;
+        font-size: 0.85rem;
+        background-color: white;
+        padding: 12px;
+      }
+      
+      /* Inactive State Styling */
+      .row-inactive td {
+        background-color: #f8f9fa;
+        color: #adb5bd !important;
+      }
+      .row-inactive .text-dark, 
+      .row-inactive .text-primary, 
+      .row-inactive .text-success {
+        color: #adb5bd !important;
+      }
+      .row-inactive .noti-icon {
+        filter: grayscale(100%);
+        opacity: 0.5;
+      }
+
+      /* Action Buttons */
+      .btn-action {
+        padding: 4px 10px;
+        font-size: 0.8rem;
+        margin-left: 5px;
+        transition: 0.2s;
+      }
+      .btn-edit {
+        color: var(--yd-primary);
+        border: 1px solid var(--yd-primary);
+        background: white;
+      }
+      .btn-edit:hover {
+        background: var(--yd-primary);
+        color: white;
+      }
+      .btn-delete {
+        color: #dc3545;
+        border: 1px solid #dc3545;
+        background: white;
+      }
+      .btn-delete:hover {
+        background: #dc3545;
+        color: white;
+      }
+
+      /* Notification Icons */
+      .noti-icon { font-size: 1.1rem; }
+      .noti-wa { color: #25D366; }
+      .noti-mail { color: #0d6efd; }
+      .noti-both {
+        background: linear-gradient(45deg, #25D366 50%, #0d6efd 50%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      /* Toggle Switch */
+      .form-switch .form-check-input {
+        width: 2.5em;
+        cursor: pointer;
+      }
+      .form-switch .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+      }
+
+      /* --- MODALS --- */
+      .modal-header { border-bottom: 2px solid var(--yd-primary); }
+      .modal-title { color: var(--yd-primary); font-weight: 700; }
+      .form-label { font-size: 0.85rem; font-weight: 600; color: #666; margin-bottom: 2px; }
+      
+      /* --- FOOTER --- */
+      .footer { background: #f1f1f1; padding: 30px 0; font-size: 14px; margin-top: auto; }
+      .footer h4 { font-size: 16px; font-weight: bold; color: var(--yd-primary); padding-bottom: 12px; }
+      .footer ul { list-style: none; padding: 0; }
+      .footer ul li { padding: 8px 0; }
+      .footer ul li a { color: #6c757d; text-decoration: none; transition: 0.3s; }
+      .footer ul li a:hover { color: var(--yd-primary); }
+      .copyright { padding-top: 25px; border-top: 1px solid #d1d7dc; color: var(--yd-primary); }
+    </style>
+  </head>
+
+  <body>
+    
+    <header id="header" class="header d-flex align-items-center sticky-top" style="padding: 15px">
+      <ul class="container-fluid position-relative d-flex align-items-center gap-3" style="margin-bottom: 0px; padding-left: 1rem; padding-right: 1rem;">
+        <a href="#" class="logo d-flex align-items-center me-auto text-decoration-none">
+          <img src="YDLOGO.png" alt="YD" onerror="this.onerror=null; this.src='https://via.placeholder.com/150x40?text=YD+LOGO';">
+        </a>
+        
+        <a href="https://ydprojects.ydagchmi.com/projectReport.html" 
+           class="position-relative d-inline-block btn btn-sm" 
+           style="background: #fde2e4; color: #9f1239; font-weight:600">
+           Report
+        </a>
+
+        <a href="https://ydprojects.ydagchmi.com/meetings.html" 
+           class="position-relative d-inline-block btn btn-sm" 
+           style="background: #fff4cc; color: #92400e; font-weight:600">
+           Meeting
+        </a>
+
+        <a href="https://ydprojects.ydagchmi.com/meetings.html" 
+           class="position-relative d-inline-block btn btn-sm" 
+           style="background: #e0f2fe; color: #0369a1; font-weight:600">
+           Attendance
+        </a>
+        
+        <a href="#" class="position-relative d-inline-block ms-2">
+          <i class="fa-solid fa-bell text-primary fs-5"></i>
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px; padding: 3px 6px">3</span>
+        </a>
+
+        <div class="dropdown ms-2">
+            <a class="btn-getstarted d-flex align-items-center dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="fa-solid fa-screwdriver-wrench fs-4 me-2"></i>
+                <span>Admin Config</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li><button class="dropdown-item" onclick="configApp.exportData()"><i class="fa fa-download me-2 text-primary"></i>Backup JSON</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item text-danger" onclick="configApp.resetData()"><i class="fa fa-refresh me-2"></i>Reset Default Data</button></li>
+            </ul>
+        </div>
+      </ul>
+    </header>
+
+    <main class="main">
+      <div class="container table-container">
+        
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h2 class="page-title mb-0">User Configuration</h2>
+                <p class="text-muted small mb-0">Manage notification channels & access control.</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="input-group input-group-sm w-50 ms-auto">
+                    <span class="input-group-text bg-white border-end-0"><i class="fa fa-search text-muted"></i></span>
+                    <input type="text" id="userSearch" class="form-control border-start-0" placeholder="Search user..." onkeyup="configApp.render()">
+                </div>
+            </div>
+        </div>
+
+        <div id="configurationContent">
+            </div>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer position-relative light-background">
+      <div class="container-fluid footer-top">
+        <div class="row gy-4" style="padding-left: 50px">
+          <div class="col-lg-3 col-md-3 footer-about">
+            <a href="#" class="logo d-flex align-items-center">
+              <img height="100" src="yd-footer.png" onerror="this.onerror=null; this.src='https://via.placeholder.com/150x60?text=YD+Footer';">
+            </a>
+          </div>
+          <div class="col-lg-3 col-md-3 footer-links">
+            <h4>Products</h4>
+            <ul>
+              <li><a href="#">Cold Rolling Mills</a></li>
+              <li><a href="#">GI/GL Lines</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-3 col-md-3 footer-links footer-right" style="padding-left: 90px">
+            <h4>Information</h4>
+            <ul>
+              <li><a href="#">Company Profile</a></li>
+              <li><a href="#">Infrastructure</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-3 col-md-3 footer-links footer-right" style="padding-left: 70px">
+            <h4>Get In Touch</h4>
+            <ul>
+              <li><a href="#">Faridabad 121004</a></li>
+              <li><a href="mailto:sales@ydgroup.com">sales@ydgroup.com</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="container copyright text-center">
+        <p>
+          © <span>Copyright</span> <strong class="px-1 sitename">YOGIJI DIGI</strong> <span>All Rights Reserved</span>
+        </p>
+      </div>
+    </footer>
+
+    <div class="modal fade" id="addUserModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle"><i class="fa fa-user-plus me-2"></i>Add User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <input type="hidden" id="inpDeptHidden">
+                        <input type="hidden" id="inpEditId">
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">User Name</label>
+                                <input type="text" class="form-control" id="inpName" placeholder="e.g. Amit Kumar" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Notification Channel <i class="fa fa-lock small text-muted ms-1" title="Locked by Governance Policy"></i></label>
+                                <select class="form-select" id="inpNotiType" disabled>
+                                    <option value="EMAIL">Email Only</option>
+                                    <option value="WHATSAPP">WhatsApp Only</option>
+                                    <option value="BOTH">WhatsApp + Email</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="inpEmail" placeholder="name@ydgroup.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">WhatsApp Number</label>
+                                <input type="text" class="form-control" id="inpPhone" placeholder="10-digit number">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="configApp.saveUser()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const configApp = {
+            data: {},
+
+            init() {
+                this.loadData();
+                this.render();
+            },
+
+            loadData() {
+                // 1. DATA MIGRATION GUARD
+                let stored = localStorage.getItem('yd_user_config_v4');
+                
+                if (!stored) {
+                    const legacy = localStorage.getItem('yd_user_config_v3') || localStorage.getItem('yd_user_config_v2');
+                    if (legacy) {
+                        try {
+                            const parsed = JSON.parse(legacy);
+                            
+                            // 7. MIGRATION INJECTION FOR SUPER ADMIN
+                            if (!parsed["Super Admin"]) {
+                                parsed["Super Admin"] = [
+                                    {
+                                        id: 1001,
+                                        name: "Sarthak Handa",
+                                        email: "sarthak.handa@ydgroup.com",
+                                        phone: "9990696116",
+                                        noti: "BOTH",
+                                        active: true,
+                                        createdAt: new Date().toISOString(),
+                                        updatedAt: new Date().toISOString()
+                                    },
+                                    {
+                                        id: 1002,
+                                        name: "Sarthak Handa",
+                                        email: "tester@ydgroup.com",
+                                        phone: "9999710484",
+                                        noti: "BOTH",
+                                        active: true,
+                                        createdAt: new Date().toISOString(),
+                                        updatedAt: new Date().toISOString()
+                                    }
+                                ];
+                            }
+
+                            Object.keys(parsed).forEach(dept => {
+                                parsed[dept] = parsed[dept].map(u => ({
+                                    ...u,
+                                    active: true, // Default to active on migration
+                                    createdAt: u.createdAt || new Date().toISOString(),
+                                    updatedAt: new Date().toISOString()
+                                }));
+                            });
+                            this.data = parsed;
+                            this.saveData(); // Save to v4 immediately
+                            console.log("Migrated legacy data to v4");
+                            return;
+                        } catch (e) {
+                            console.error("Migration failed, loading defaults");
+                        }
+                    }
+                }
+
+                if (stored) {
+                    this.data = JSON.parse(stored);
+                } else {
+                    // Initial Default Data
+                    this.data = {
+                        // 2. SUPER ADMIN SECTION (Default)
+                        "Super Admin": [
+                            { id: 1001, name: "Sarthak Handa", email: "sarthak.handa@ydgroup.com", phone: "9990696116", noti: "BOTH", active: true, createdAt: new Date().toISOString() },
+                            { id: 1002, name: "Sarthak Handa", email: "tester@ydgroup.com", phone: "9999710484", noti: "BOTH", active: true, createdAt: new Date().toISOString() }
+                        ],
+                        "Design Team": [
+                            { id: 1, name: "Vinit Jain", email: "vinit.jain@ydgroup.com", phone: "8586982887", noti: "EMAIL", active: true, createdAt: new Date().toISOString() },
+                            { id: 2, name: "Smith Kashid", email: "smith.kashid@ydgroup.com", phone: "7588574704", noti: "EMAIL", active: true, createdAt: new Date().toISOString() }
+                        ],
+                        "Directors": [
+                            { id: 3, name: "Navneet Singh", email: "navneet.singh@ydgroup.com", phone: "9810005675", noti: "WHATSAPP", active: true, createdAt: new Date().toISOString() },
+                            { id: 4, name: "Sameer Bansal", email: "sameer.bansal@ydgroup.com", phone: "9810160260", noti: "WHATSAPP", active: true, createdAt: new Date().toISOString() }
+                        ],
+                        "Finance Team": [
+                            { id: 5, name: "Anup Sharma", email: "anup.sharma@ydgroup.com", phone: "8588827835", noti: "EMAIL", active: true, createdAt: new Date().toISOString() },
+                            { id: 6, name: "Manish Goel", email: "manish.goel@ydgroup.com", phone: "9873664567", noti: "EMAIL", active: true, createdAt: new Date().toISOString() }
+                        ],
+                        "COO/VP": [
+                            { id: 7, name: "Varun Jay Rana", email: "varun.rana@ydgroup.com", phone: "9999577918", noti: "BOTH", active: true, createdAt: new Date().toISOString() },
+                            { id: 8, name: "Aseem Gill", email: "aseem.gill@ydgroup.com", phone: "9910005675", noti: "BOTH", active: true, createdAt: new Date().toISOString() }
+                        ]
+                    };
+                    this.saveData();
+                }
+            },
+
+            saveData() {
+                localStorage.setItem('yd_user_config_v4', JSON.stringify(this.data));
+            },
+
+            exportData() {
+                const blob = new Blob([JSON.stringify(this.data, null, 2)], {type:'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `yd_user_config_backup_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            },
+
+            resetData() {
+                if(confirm('Reset all user configuration to default? This cannot be undone.')) {
+                    localStorage.removeItem('yd_user_config_v4');
+                    location.reload();
+                }
+            },
+
+            render() {
+                const container = document.getElementById('configurationContent');
+                container.innerHTML = ''; 
+                const searchTerm = $('#userSearch').val().toLowerCase();
+
+                // 3. UPDATED SECTION ORDER
+                const sections = [
+                    "Super Admin",
+                    "Design Team", 
+                    "Directors", 
+                    "Finance Team", 
+                    "COO/VP"
+                ];
+
+                sections.forEach(dept => {
+                    let users = this.data[dept] || [];
+                    
+                    // Filter logic
+                    if (searchTerm) {
+                        users = users.filter(u => 
+                            u.name.toLowerCase().includes(searchTerm) || 
+                            (u.email && u.email.toLowerCase().includes(searchTerm)) ||
+                            (u.phone && u.phone.includes(searchTerm))
+                        );
+                        if (users.length === 0) return;
+                    }
+                    
+                    // HEADER WITH "ADD NEW" BUTTON
+                    let html = `
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="section-header">
+                                    <h4 class="section-title">${dept}</h4>
+                                    <button class="btn-add-section" onclick="configApp.openAddModal('${dept}')">
+                                        <i class="fa fa-plus-circle me-1"></i> Add User
+                                    </button>
+                                </div>
+                                
+                                <div class="table-responsive shadow-sm rounded">
+                                    <table class="table table-hover table-bordered custom-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 5%">Active</th>
+                                                <th style="width: 25%">User Name</th>
+                                                <th style="width: 30%">Contact Details</th>
+                                                <th style="width: 20%; text-align:center">Notification</th>
+                                                <th style="width: 20%; text-align: center;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                    `;
+
+                    if (users.length === 0) {
+                        html += `<tr><td colspan="5" class="text-center text-muted py-3">No matching users found.</td></tr>`;
+                    } else {
+                        users.forEach(user => {
+                            const inactiveClass = !user.active ? 'row-inactive' : '';
+                            const checkedAttr = user.active ? 'checked' : '';
+                            const isSuperAdmin = dept === 'Super Admin';
+                            
+                            // Determine Notification Icon
+                            let notiIcon = '';
+                            let notiText = '';
+                            if(user.noti === 'EMAIL') {
+                                notiIcon = '<i class="fa-solid fa-envelope noti-icon noti-mail"></i>';
+                                notiText = '<span class="d-block small text-muted">Email Only</span>';
+                            } else if(user.noti === 'WHATSAPP') {
+                                notiIcon = '<i class="fa-brands fa-whatsapp noti-icon noti-wa"></i>';
+                                notiText = '<span class="d-block small text-muted">WhatsApp Only</span>';
+                            } else {
+                                notiIcon = '<i class="fa-solid fa-bell noti-icon noti-both"></i>';
+                                notiText = '<span class="d-block small text-muted">WhatsApp + Email</span>';
+                            }
+
+                            // Lock UI elements for Super Admin in the table view
+                            const lockClass = isSuperAdmin ? 'opacity-50' : '';
+                            const deleteBtn = isSuperAdmin 
+                                ? `<button class="btn btn-sm btn-action btn-delete opacity-50" onclick="configApp.deleteUser('${dept}', ${user.id})" title="Super Admin Protected"><i class="fa fa-lock"></i></button>`
+                                : `<button class="btn btn-sm btn-action btn-delete" onclick="configApp.deleteUser('${dept}', ${user.id})"><i class="fa fa-trash-alt"></i></button>`;
+
+                            html += `
+                                <tr class="${inactiveClass}" id="row-${user.id}">
+                                    <td class="align-middle text-center">
+                                        <div class="form-check form-switch d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" onchange="configApp.toggleActive('${dept}', ${user.id}, this)" ${checkedAttr}>
+                                        </div>
+                                    </td>
+                                    <td class="fw-bold text-dark">
+                                        ${user.name}
+                                        ${isSuperAdmin ? '<span class="badge bg-warning text-dark ms-2" style="font-size:0.6rem">ADMIN</span>' : ''}
+                                        <div style="font-size:0.7rem; color:#ccc; font-weight:normal">Created: ${user.createdAt ? user.createdAt.slice(0,10) : 'N/A'}</div>
+                                    </td>
+                                    <td>
+                                        <div class="small"><i class="fa fa-envelope text-primary me-1"></i> ${user.email || '--'}</div>
+                                        <div class="small mt-1"><i class="fa-brands fa-whatsapp text-success me-1"></i> ${user.phone || '--'}</div>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        ${notiIcon}
+                                        ${notiText}
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-action btn-edit" onclick="configApp.openEditModal('${dept}', ${user.id})">
+                                            <i class="fa fa-edit"></i> Edit
+                                        </button>
+                                        ${deleteBtn}
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    }
+
+                    html += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Optimized Insertion
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+            },
+
+            openAddModal(dept) {
+                this.resetModal();
+                $('#inpDeptHidden').val(dept);
+                $('#modalTitle').html(`<i class="fa fa-user-plus me-2"></i>Add User to <strong>${dept}</strong>`);
+                this.applyGovernanceRules(dept);
+                new bootstrap.Modal(document.getElementById('addUserModal')).show();
+            },
+
+            openEditModal(dept, id) {
+                this.resetModal();
+                const user = this.data[dept].find(u => u.id === id);
+                if (!user) return;
+
+                $('#inpDeptHidden').val(dept);
+                $('#inpEditId').val(user.id);
+                $('#inpName').val(user.name);
+                $('#inpEmail').val(user.email);
+                $('#inpPhone').val(user.phone);
+                
+                $('#modalTitle').html(`<i class="fa fa-edit me-2"></i>Edit User: <strong>${user.name}</strong>`);
+                
+                this.applyGovernanceRules(dept);
+                
+                new bootstrap.Modal(document.getElementById('addUserModal')).show();
+            },
+
+            applyGovernanceRules(dept) {
+                const el = $('#inpNotiType');
+                el.prop('disabled', true); 
+
+                // 4. GOVERNANCE RULE FOR SUPER ADMIN
+                if(dept === 'Super Admin') el.val('BOTH');
+                else if(dept === 'Directors') el.val('WHATSAPP');
+                else if(dept === 'Finance Team' || dept === 'Design Team') el.val('EMAIL');
+                else if(dept === 'COO/VP') el.val('BOTH');
+                else el.val('EMAIL'); 
+            },
+
+            resetModal() {
+                document.getElementById('addUserForm').reset();
+                $('#inpEditId').val('');
+                $('#inpNotiType').prop('disabled', false); 
+            },
+
+            saveUser() {
+                const dept = $('#inpDeptHidden').val();
+                const id = $('#inpEditId').val(); 
+                const name = $('#inpName').val();
+                const emailRaw = $('#inpEmail').val();
+                const phone = $('#inpPhone').val();
+                const noti = $('#inpNotiType').val();
+
+                if (!name) return Swal.fire('Error', 'User Name is required.', 'error');
+
+                const email = emailRaw ? emailRaw.trim().toLowerCase() : '';
+
+                if (phone && !/^\d{10}$/.test(phone)) {
+                    return Swal.fire('Invalid Phone', 'Please enter a valid 10-digit mobile number.', 'warning');
+                }
+
+                if (noti === 'EMAIL' && !email) return Swal.fire('Validation Error', 'Email Address is required.', 'warning');
+                if (noti === 'WHATSAPP' && !phone) return Swal.fire('Validation Error', 'WhatsApp Number is required.', 'warning');
+                if (noti === 'BOTH' && (!email || !phone)) return Swal.fire('Validation Error', 'Both Email and WhatsApp Number are required.', 'warning');
+
+                if (!this.data[dept]) this.data[dept] = [];
+
+                const exists = this.data[dept].some(u => {
+                    const isSelf = id && u.id == id;
+                    if (isSelf) return false;
+                    const sameName = u.name.toLowerCase() === name.toLowerCase();
+                    const sameEmail = email && u.email === email; 
+                    return sameName || sameEmail;
+                });
+
+                if (exists) {
+                    return Swal.fire('Duplicate Detected', 'User with this Name or Email already exists in this department.', 'warning');
+                }
+
+                if (id) {
+                    const index = this.data[dept].findIndex(u => u.id == id);
+                    if (index !== -1) {
+                        this.data[dept][index].name = name;
+                        this.data[dept][index].email = email;
+                        this.data[dept][index].phone = phone;
+                        this.data[dept][index].noti = noti;
+                        this.data[dept][index].updatedAt = new Date().toISOString();
+                    }
+                } else {
+                    const newUser = {
+                        id: Date.now(),
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        noti: noti,
+                        active: true,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    this.data[dept].push(newUser);
+                }
+
+                this.saveData();
+                this.render();
+                bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+
+                const Toast = Swal.mixin({
+                    toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true,
+                });
+                Toast.fire({ icon: 'success', title: id ? 'User Updated' : 'User Added' });
+            },
+
+            toggleActive(dept, id, checkbox) {
+                // 6. LOCK DEACTIVATION FOR SUPER ADMIN
+                if (dept === "Super Admin") {
+                    checkbox.checked = true; // Revert UI
+                    return Swal.fire('Restricted', 'Super Admin cannot be deactivated.', 'warning');
+                }
+
+                const user = this.data[dept].find(u => u.id === id);
+                if(user) {
+                    user.active = !user.active;
+                    user.updatedAt = new Date().toISOString();
+                    this.saveData();
+                    
+                    const row = document.getElementById(`row-${id}`);
+                    if (row) {
+                        if (user.active) row.classList.remove('row-inactive');
+                        else row.classList.add('row-inactive');
+                    }
+                }
+            },
+
+            deleteUser(dept, id) {
+                // 5. LOCK DELETION FOR SUPER ADMIN
+                if (dept === "Super Admin") {
+                    return Swal.fire('Restricted', 'Super Admin cannot be deleted.', 'warning');
+                }
+
+                Swal.fire({
+                    title: 'Delete User?',
+                    text: "Action cannot be undone. Consider deactivating instead.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Delete Permanently'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.data[dept] = this.data[dept].filter(u => u.id !== id);
+                        this.saveData();
+                        this.render();
+                        Swal.fire('Deleted!', 'User removed.', 'success');
+                    }
+                });
+            }
+        };
+
+        $(document).ready(() => { configApp.init(); });
+    </script>
+  </body>
+</html>
